@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filmtools – Werkzeuge für österreichische Filmschaffende</title>
+<meta name="description" content="Kostenlose Online-Tools für österreichische Filmschaffende: Gagenrechner, Stundenliste, CO₂-Rechner und Set-Displays nach KV §7.">
+<style>
+:root{
+  --rot:#b00d23;--dunkel:#1a1a1a;--grau:#6e6e6e;--hellgrau:#f0f0f0;
+  --rand:#cdd4cd;--feld:#f5f7f5;--gruen:#1e7b34;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--dunkel);background:#fff;line-height:1.6}
+a{color:var(--rot);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Header */
+header{background:var(--dunkel);color:#fff;padding:0}
+.header-inner{max-width:1080px;margin:0 auto;padding:32px 20px 28px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.site-title{font-size:2.4rem;font-weight:800;letter-spacing:-.02em}
+.site-title span{color:var(--rot)}
+.site-subtitle{font-size:.95rem;color:#aaa;margin-top:4px;font-weight:400}
+.header-kv{font-size:.75rem;color:#888;align-self:flex-end;text-align:right;line-height:1.5}
+
+/* Nav */
+nav{background:#111;border-bottom:2px solid var(--rot)}
+.nav-inner{max-width:1080px;margin:0 auto;padding:0 20px;display:flex;gap:0;overflow-x:auto}
+nav a{display:block;padding:12px 16px;color:#ccc;font-size:.82rem;font-weight:600;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-2px}
+nav a:hover,nav a:focus{color:#fff;border-bottom-color:var(--rot);text-decoration:none}
+
+/* Hero */
+.hero{background:var(--feld);border-bottom:1px solid var(--rand);padding:36px 20px}
+.hero-inner{max-width:1080px;margin:0 auto}
+.hero h1{font-size:1.45rem;font-weight:700;margin-bottom:10px}
+.hero p{font-size:.95rem;color:var(--grau);max-width:680px;line-height:1.7}
+
+/* Main */
+main{max-width:1080px;margin:0 auto;padding:40px 20px 60px}
+
+/* Section */
+section{margin-bottom:52px}
+section h2{font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-left:4px solid var(--rot);padding-left:10px;margin-bottom:20px;color:var(--dunkel)}
+
+/* Tool Cards */
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.tool-card{border:1px solid var(--rand);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s}
+.tool-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.1)}
+.tool-card-header{background:var(--dunkel);color:#fff;padding:18px 20px 14px}
+.tool-card-header h3{font-size:1.05rem;margin-bottom:4px}
+.tool-card-header .kv-ref{font-size:.72rem;color:#aaa}
+.tool-card-body{padding:16px 20px;flex:1;font-size:.88rem;color:var(--grau);line-height:1.6}
+.tool-card-body ul{padding-left:16px;margin-top:8px}
+.tool-card-body li{margin-bottom:4px}
+.tool-card-footer{padding:14px 20px;border-top:1px solid var(--hellgrau);display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-block;padding:8px 16px;border-radius:4px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none}
+.btn:hover{opacity:.85;text-decoration:none}
+.btn-prim{background:var(--rot);color:#fff}
+.btn-sec{background:var(--feld);color:var(--dunkel);border:1px solid var(--rand)}
+.tag{display:inline-block;background:var(--feld);border:1px solid var(--rand);border-radius:3px;padding:2px 7px;font-size:.trem;color:var(--grau);font-weight:600;margin:2px}
+
+/* Info boxes */
+.info-box{background:var(--feld);border:1px solid var(--rand);border-radius:6px;padding:20px 24px;margin-bottom:16px;font-size:.88rem;line-height:1.7}
+.info-box h3{font-size:.95rem;font-weight:700;margin-bottom:700;margin-bottom:8px}
+.info-box p+p{margin-top:8px}
+.warn-box{background:#fdecee;border:1px solid #e8b4bc;border-radius:6px;padding:16px 20px;margin-bottom:16px;font-size:.85rem;line-height:1.6}
+.warn-box strong{color:var(--rot)}
+
+/* Zweispaltig */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:640px){.two-col{grid-template-columns:1fr}}
+
+/* Footer */
+footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;margin-top:40px}
+.footer-inner{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between}
+.footer-col h4{color:#fff;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.footer-col a{color:#aaa;display:block;margin-bottom:4px}
+.footer-col a:hover{color:#fff}
+.footer-bottom{max-width:1080px;margin:20px auto 0;padding-top:16px;border-top:1px solid #333;font-size:.72rem;color:#666}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <div class="site-title">Film<span>tools</span></div>
+      <div class="site-subtitle">Werkzeuge für österreichische Filmschaffende</div>
+    </div>
+    <div class="header-kv">Kollektivvertrag Filmschaffende<br>KV §7 Wochenpauschalgage · Österreich</div>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-inner">
+    <a href="#tools">Tools</a>
+    <a href="#gagenrechner">Gagenrechner</a>
+    <a href="#stundenrechner">Stundenliste</a>
+    <a href="#co2">CO₂-Rechner</a>
+    <a href="#screens">green-blue-grey-screens</a>
+    <a href="#haftung">Haftungsausschluss</a>
+    <a href="#kontakt">Kontakt</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <h1>Praxistools für den österreichischen Filmbetrieb</h1>
+    <p>Diese Tools unterstützen Filmschaffende bei der Überprüfung von Gagen, der Dokumentation von Arbeitszeiten, der Nachhaltigkeitsbewertung von Materialien und bei Set-Displays. Alle Berechnungen basieren auf dem aktuellen Kollektivvertrag Filmschaffende (KV, gültig ab 1.7.2026). Die Nutzung ist kostenlos, ohne Registrierung und ohne Datenweitergabe.</p>
+  </div>
+</div>
+
+<main>
+
+  <!-- Tools -->
+  <section id="tools">
+    <h2>Alle Tools</h2>
+    <div class="tool-grid">
+
+      <!-- Gagenrechner -->
+      <div class="tool-card" id="gagenrechner">
+        <div class="tool-card-header">
+          <h3>Gagenrechner</h3>
+          <div class="kv-ref">KV §7 · §8 · §9 · §10 · §11 · §12 · §16</div>
+        </div>
+        <div class="tool-card-body">
+          Überprüft, ob deine vereinbarte Wochenpauschalgage dem KV-Minimum entspricht, und zeigt alle Bestandteile auf einen Blick.
+          <ul>
+            <li>65 Berufsgruppen mit Tarifen 2024/2025/ab 1.7.2026</li>
+            <li>Überstundenpauschale, SZ, UEL, Tages- und Stundengagen</li>
+            <li>Zuschläge §9–§11 mit KV-2026-Toggle (Widerspruch §10 Abs. 6)</li>
+            <li>Selbsttest prüft Referenzfälle bei jedem Aufruf</li>
+          </ul>
+          <div style="margin-top:10px">
+            <span class="tag">Keine Datenspeicherung</span>
+            <span class="tag">Offline-fähig</span>
+          </div>
+        </div>
+        <div class="tool-card-footer">
+          <a class="btn btn-prim" href="gagenrechner.html">Zum Gagenrechner →</a>
+        </div>
+      </div>
+
+      <!-- Stundenrechner -->
+      <div class="tool-card" id="stundenrechner">
+        <div class="tool-card-header">
+          <h3>Stundenliste</h3>
+          <div class="kv-ref">KV §5 · §7 · §8 · §10 · §11 · §17</div>
+        </div>
+        <div class="tool-card-body">
+          Erfassung und Auswertung von Arbeitszeiten über einen Projektzeitraum nach KV §7 Wochenpauschalgage.
+          <ul>
+            <li>Projektzeitraum mit automatischer Wochenstruktur</li>
+            <li>Mittagspause mit Lagekontrolle (≤6h nach Arbeitsbeginn)</li>
+            <li>Bezahlte Pflichtpause §5 Abs. 4 ab 9h netto dokumentierbar</li>
+            <li>Außerhalb-Checkbox für Diäten §17</li>
+            <li>Faktor-Überstunden ab 12h/Tag (5T) bzw. 10h/Tag (6T)</li>
+            <li>Export als CSV und PDF · lokale Speicherung (localStorage)</li>
+          </ul>
+          <div style="margin-top:10px">
+            <span class="tag">Lokal gespeichert</span>
+            <span class="tag">CSV-Export</span>
+            <span class="tag">PDF-Druck</span>
+          </div>
+        </div>
+        <div class="tool-card-footer">
+          <a class="btn btn-prim" href="stundenrechner.html">Zur Stundenliste →</a>
+        </div>
+      </div>
+
+      <!-- CO2-Rechner -->
+      <div class="tool-card" id="co2">
+        <div class="tool-card-header">
+          <h3>CO₂-Rechner</h3>
+          <div class="kv-ref">Szenenbild · Nachhaltigkeit · Materialvergleich</div>
+        </div>
+        <div class="tool-card-body">
+          Vergleicht den CO₂-Fußabdruck und die Kosten von 17 Plattenwerkstoffen für Schilder und Kulissenelemente im Szenenbild.
+          <ul>
+            <li>17 Materialien: Holz, Kunststoff, Metall, Karton u.v.m.</li>
+            <li>CO₂-Äquivalente pro m² und kg nach Lebenszyklus</li>
+            <li>Kostenvergleich und Nachhaltigkeitsrating</li>
+            <li>Für Set-Designer und Art-Departments</li>
+          </ul>
+          <div style="margin-top:10px">
+            <span class="tag">Keine Datenspeicherung</span>
+            <span class="tag">Offline-fähig</span>
+          </div>
+        </div>
+        <div class="tool-card-footer">
+          <a class="btn btn-prim" href="https://danielsteinbach.github.io/CO2-Rechner/" target="_blank" rel="noopener">Zum CO₂-Rechner →</a>
+        </div>
+      </div>
+
+      <!-- Screens -->
+      <div class="tool-card" id="screens">
+        <div class="tool-card-header">
+          <h3>green-blue-grey-screens</h3>
+          <div class="kv-ref">Prop Screens · HTML · Szenenbild</div>
+        </div>
+        <div class="tool-card-body">
+          Farbkalibrierte Set-Displays für den Set-Einsatz: täuschend echte Bildschirminhalte in den Farbbereichen Green, Blue und Grey – direkt im Browser am Set.
+          <ul>
+            <li>Chat-Verläufe, Wetterkamera, Zeitungsseiten</li>
+            <li>Tierbilder und Flächenübersichten</li>
+            <li>Vollbild-optimiert für Tablets und Monitore</li>
+            <li>Keine Installation, keine App</li>
+          </ul>
+          <div style="margin-top:10px">
+            <span class="tag">Offline-fähig</span>
+            <span class="tag">Vollbild</span>
+          </div>
+        </div>
+        <div class="tool-card-footer">
+          <a class="btn btn-prim" href="https://danielsteinbach.github.io/Screens/flaechen/" target="_blank" rel="noopener">Zu den Screens →</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Haftungsausschluss -->
+  <section id="haftung">
+    <h2>Haftungsausschluss</h2>
+
+    <div class="warn-box">
+      <strong>Kein Ersatz für Rechtsberatung.</strong> Diese Tools wurden mit großer Sorgfalt auf Basis des Kollektivvertrags Filmschaffende erstellt, ersetzen jedoch keine rechtliche oder steuerliche Beratung. Für verbindliche Auskünfte wende dich an younion – Die Younion, die WKO Fachgruppe Film- und Musikwirtschaft oder einen Rechtsanwalt.
+    </div>
+
+    <div class="two-col">
+      <div class="info-box">
+        <h3>Richtigkeit der Berechnungen</h3>
+        <p>Alle Berechnungen basieren auf dem Kollektivvertrag Filmschaffende in der jeweils angegebenen Fassung. Die Mindestgagentarife wurden aus den offiziellen Tabellen der WKO und younion entnommen. Trotz sorgfältiger Erstellung wird keine Gewähr für die Richtigkeit, Vollständigkeit oder Aktualität der Ergebnisse übernommen.</p>
+        <p>Insbesondere zum Widerspruch in §10 Abs. 1 und §10 Abs. 6 KV ab 1.7.2026 (Berechnungsbasis Sa/So/Feiertag-Zuschläge) steht eine Klärung durch die Schiedskommission aus. Der Rechner zeigt beide Lesarten.</p>
+      </div>
+      <div class="info-box">
+        <h3>Aktualität</h3>
+        <p>Die eingebetteten Tarifdaten gelten für die Gagenjahre 2024, 2025 und ab 1.7.2026. Bei Tarifänderungen oder neuen KV-Fassungen werden die Tools aktualisiert, soweit möglich. Das Datum der letzten Aktualisierung ist im jeweiligen Tool vermerkt.</p>
+        <p>Österreichische gesetzliche Feiertage sind für die Jahre 2024–2030 hinterlegt (Berechnung auf Basis des Gaußschen Algorithmus für Ostern).</p>
+      </div>
+      <div class="info-box">
+        <h3>Datenschutz</h3>
+        <p>Diese Seite verwendet keine Cookies, keine Tracker und keine externen Dienste. Der Gagenrechner und der CO₂-Rechner speichern keinerlei Daten. Die Stundenliste speichert Eingaben ausschließlich lokal im Browser (localStorage) des jeweiligen Geräts – kein Server, keine Weitergabe.</p>
+        <p>Die Seite wird über GitHub Pages bereitgestellt. Es gelten die <a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener">Datenschutzbestimmungen von GitHub</a>.</p>
+      </div>
+      <div class="info-box">
+        <h3>Urheberrecht</h3>
+        <p>Die Tools wurden von Daniel Steinbach entwickelt. Der Quellcode ist auf GitHub öffentlich einsehbar. Eine Weiterverwendung für private und nicht-kommerzielle Zwecke ist gestattet, sofern der Urheber genannt wird. Kommerzielle Nutzung oder Weiterverbreitung ohne Zustimmung ist nicht gestattet.</p>
+        <p>Der Kollektivvertragstext ist Eigentum der Kollektivvertragsparteien (WKO / younion).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Kontakt -->
+  <section id="kontakt">
+    <h2>Kontakt &amp; Über diese Seite</h2>
+    <div class="two-col">
+      <div class="info-box">
+        <h3>Autor</h3>
+        <p><strong>Daniel Steinbach</strong><br>
+        Szenenbildner (Filmarchitektur)<br>
+        A-2391 Kaltenleutgeben, Österreich</p>
+        <p style="margin-top:12px">
+          <a href="mailto:danielsteinbach@gmx.net">danielsteinbach@gmx.net</a><br>
+          <a href="tel:+436644217082">+43&nbsp;664&nbsp;421&nbsp;70&nbsp;82</a><br>
+          <a href="https://github.com/danielsteinbach" target="_blank" rel="noopener">github.com/danielsteinbach</a>
+        </p>
+      </div>
+      <div class="info-box">
+        <h3>Quellen &amp; Grundlagen</h3>
+        <p>Kollektivvertrag für DienstnehmerInnen in österreichischen Filmproduktionsunternehmen (Filmschaffende), gültig ab 1.7.2026 — WKO Fachgruppe Film- und Musikwirtschaft / younion – Die Younion.</p>
+        <p style="margin-top:8px">Mindestgagentarife 2024, 2025 und ab 1.7.2026 gemäß den publizierten Tabellen der Kollektivvertragsparteien.</p>
+        <p style="margin-top:8px">
+          <a href="https://www.wko.at/kollektivvertrag" target="_blank" rel="noopener">wko.at/kollektivvertrag</a><br>
+          <a href="https://www.younionfilm.at" target="_blank" rel="noopener">younionfilm.at</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-col">
+      <h4>Filmtools</h4>
+      <a href="#gagenrechner">Gagenrechner</a>
+      <a href="#stundenrechner">Stundenliste</a>
+      <a href="#co2">CO₂-Rechner</a>
+      <a href="#screens">green-blue-grey-screens</a>
+    </div>
+    <div class="footer-col">
+      <h4>Rechtliches</h4>
+      <a href="#haftung">Haftungsausschluss</a>
+      <a href="#haftung">Datenschutz</a>
+      <a href="#kontakt">Impressum</a>
+    </div>
+    <div class="footer-col">
+      <h4>Externe Links</h4>
+      <a href="https://www.wko.at/kollektivvertrag" target="_blank" rel="noopener">WKO Kollektivverträge</a>
+      <a href="https://www.younionfilm.at" target="_blank" rel="noopener">younion Film</a>
+      <a href="https://github.com/danielsteinbach" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    © Daniel Steinbach · A-2391 Kaltenleutgeben · <a href="mailto:danielsteinbach@gmx.net" style="color:#888">danielsteinbach@gmx.net</a> · Ohne Gewähr · KV Filmschaffende ab 1.7.2026
+  </div>
+</footer>
+
+</body>
+</html>
