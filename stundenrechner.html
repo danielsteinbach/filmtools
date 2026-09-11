@@ -160,7 +160,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
     <div class="fld">
       <label for="s-faktor">Faktor auf Gesamtentgelt für Stunden über Limit</label>
       <input type="number" id="s-faktor" value="1.5" min="1" step="0.1">
-      <p class="fn">Der Faktor wird auf den vollständigen Entgeltwert der jeweiligen Stunde — einschließlich der für diesen Zeitraum geltenden Zuschläge (Nacht, Samstag etc.) — angewendet. Stunden jenseits 12h/Tag (5T) bzw. 10h/Tag (6T). Standard: 1,5.</p>
+      <p class="fn">Zuerst wird der reguläre Gesamtstundenwert berechnet (Stundenlohn + 100%-ÜSt + ggf. Sa-Zuschlag), danach wird dieser vollständige Wert mit dem Faktor multipliziert. Kein KV-Zuschlag — frei einstellbarer Vertragsparameter. Standard: 1,5.</p>
     </div>
     <div class="fld">
       <label for="s-diaet">Diäten außerhalb Firmensitz (>3h, §17)</label>
@@ -604,26 +604,35 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
   }
 
   // 4. FAKTOR AUF GESAMTENTGELT — Stunden über Limit
-  // Gesamtentgeltwert = Basis + Nacht-Zuschlag(OL) + Sa-Zuschlag(OL), dann × Faktor
+  //
+  // Regulärer Stundenwert jeder OL-Stunde = std × 2 (Basis + 100%-ÜSt)
+  // Begründung: Alle OL-Stunden liegen jenseits Stunde 12 (thr=12) bzw. 10 (thr=10).
+  //   Nach KV §9 gilt für die 3.+ ÜSt 100% Zuschlag (8h NAZ + 2×50% + alle weiteren 100%).
+  //   → Jede OL-Stunde: regulärer Wert = std + 100% ÜSt = 2×std
+  //
+  // Nacht bei OL: Nacht-ÜSt-Rate = 100% = OT-Rate → kein zusätzlicher Nachtzuschlag (kein double-count).
+  // Sa bei OL: 100% Sa-Zuschlag (§10 Abs.1) ist additiv zum OT-Zuschlag → OL-Sa-Stunde = 3×std.
+  // Sondernacht (Sa→So etc.): 100% = OT-Rate → ebenfalls kein Zusatz.
+  //
+  // Gesamtentgelt OL = regulärer_Stundenwert × Faktor (kein KV-Zuschlag, frei einstellbar)
   if(fh>0.01){
-    // Basis der OL-Stunden
-    var olBaseVal=fh*std;
-    // Nacht-Zuschlagswert der OL-Nachtstunden (schließt Sondernacht ein)
-    var olNightVal=nightSurchargeVal(earlyOlH,earlySnt)+nightSurchargeVal(lateOlH,lateSnt);
-    // Samstag-Zuschlagswert der OL-Sa-Stunden (100 % auf Stundenlohn)
-    var olSaVal=0;
+    // Basis aller OL-Stunden: std × 2 (Basis + 100%-ÜSt)
+    var olRegVal=fh*std*2;
+
+    // + Sa-Zuschlag (100%) für OL-Stunden in der Sa-Zuschlagszone (additiv zu OT)
     if(saFrom2!==null&&saFrom2<bb){
       var saOlFrom=Math.max(olStart,saFrom2);
       if(saOlFrom<bb){
         var saOlGross=bb-saOlFrom,saOlPause=0;
         if(pm0>0&&pvMin!==null){saOlPause=Math.max(0,Math.min(pvMin+pm0,bb)-Math.max(pvMin,saOlFrom));}
         var saOlNetH=Math.max(0,saOlGross-saOlPause)/60;
-        olSaVal=saOlNetH*std;
+        olRegVal+=saOlNetH*std; // +100% Sa auf OL-Stunden
       }
     }
+
     // Gesamtentgelt × Faktor
-    var olTotalReg=olBaseVal+olNightVal+olSaVal;
-    s.push({l:'Faktor \u00d7'+faktor+' auf Gesamtentgelt ('+Math.round(fh*10)/10+'h \u00fcber '+thr+'h)',b:GR.r2(olTotalReg*faktor),typ:'faktor'});
+    s.push({l:'Faktor \u00d7'+faktor+' auf Gesamtentgelt ('+Math.round(fh*10)/10+'h \u00fcber '+thr+'h)',
+            b:GR.r2(olRegVal*faktor),typ:'faktor'});
   }
 
   // 5. Bezahlte Pflichtpause nicht erhalten
