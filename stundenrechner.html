@@ -218,6 +218,91 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
   </span>
   <span style="font-size:.72rem;color:var(--grau);align-self:center;margin-left:4px">Alle Eingaben werden automatisch im Browser gespeichert (localStorage).</span>
 </div>
+
+<!-- Hinweis: Einschränkungen und nicht abgebildete KV-Fälle -->
+<div style="margin-top:32px;border-top:2px solid var(--rand);padding-top:20px">
+  <h2 style="border-left:4px solid var(--grau);color:var(--grau)">Hinweise zu Berechnungsgrenzen</h2>
+  <p style="font-size:.82rem;color:var(--grau);margin-bottom:14px;line-height:1.6">
+    Diese Stundenliste unterstützt die Dokumentation von Arbeitszeiten nach KV §7 und zeigt
+    KV-Zuschläge als Orientierungswerte. Folgende Fälle werden <strong>nicht oder nur näherungsweise</strong> abgebildet:
+  </p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 24px">
+
+    <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Nacht-NAZ vs. Nacht-Überstunden (Näherung)</strong>
+      Die Aufteilung von Nachtstunden in Normalarbeitszeit (50&nbsp;%) und
+      Überstunden (100&nbsp;%) erfolgt proportional auf Basis von 8&nbsp;Stunden NAZ-Grenze.
+      Eine minutengenaue Segmentierung der tatsächlichen Zeitachse
+      (Normalarbeitszeit&nbsp;Tag / Nacht / Überstunden&nbsp;50&nbsp;%&nbsp;/&nbsp;100&nbsp;%) ist in dieser Version
+      nicht implementiert. Für eine exakte Berechnung komplex gelagerter Nachtschichten
+      empfiehlt sich eine manuelle Prüfung.
+    </div>
+
+    <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ §10 Abs. 4 — Ausnahme vom Wochenend-/Feiertagszuschlag</strong>
+      Kein Zuschlag nach §10, wenn unmittelbar vor und nach der Wochenend- oder
+      Feiertagsarbeit mindestens drei aufeinanderfolgende Tage kein aufrechtes
+      Arbeitsverhältnis mit demselben Arbeitgeber bestand. Diese Konstellation
+      kann die Stundenliste nicht automatisch erkennen. Bei Anwendbarkeit
+      müssen die Zuschläge manuell herausgerechnet werden.
+    </div>
+
+    <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ §6-Verschiebungszuschlag (25&nbsp;%) nicht abgebildet</strong>
+      Wird Arbeitsleistung nach §6 auf Samstag oder Sonntag verschoben,
+      kann ein zusätzlicher Zuschlag von 25&nbsp;% zur Tagesgage entstehen.
+      Die Stundenliste kennt keine Information darüber, ob ein Wochenendtag
+      regulär oder nach §6 verschoben war. Dieser Zuschlag ist manuell
+      zu prüfen und gegebenenfalls hinzuzurechnen.
+    </div>
+
+    <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Ersatzruhe wird nicht dokumentiert</strong>
+      Bei Sonn- und Feiertagsarbeit sowie bestimmten Sondernächten
+      (Sa→So, So→Mo, nach Feiertag) kann Anspruch auf bezahlte Ersatzruhe
+      bestehen. Die Stundenliste weist nur den Geldwert der Zuschläge aus,
+      nicht den Ersatzruheanspruch. Dieser ist separat zu dokumentieren
+      und mit dem Arbeitgeber abzustimmen.
+    </div>
+
+    <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ 24. und 31. Dezember — Warnung vorhanden, Berechnung vereinfacht</strong>
+      Die Sonderregel (NAZ endet nach 4&nbsp;Stunden / spätestens 12:00&nbsp;Uhr) wird
+      als Hinweis angezeigt. Die Zuschlagsberechnung folgt aber der normalen
+      Tageslogik. Für eine regelkonforme Abrechnung dieser Tage
+      ist die Berechnung manuell zu prüfen.
+    </div>
+
+    <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Bezahlte Pflichtpause — Entgeltanspruch bei Nichtgewährung</strong>
+      Bei Nichtgewährung der bezahlten Pflichtpause nach §5 Abs.&nbsp;4 wird
+      automatisch 0,5&nbsp;× Stundenlohn als Entgeltanspruch ausgewiesen.
+      Ob dieser Anspruch in jeder Konstellation in dieser Höhe entsteht,
+      ist arbeitsrechtlich noch nicht abschließend geklärt. Betrag als
+      Orientierungswert verstehen; im Zweifelsfall younionfil.at kontaktieren.
+    </div>
+
+    <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Teilwochenberechnung — methodische Einschränkung</strong>
+      Teilwochen werden als Anzahl der Tage im Projektzeitraum × 1/5 oder 1/6
+      der Wochenpauschalgage berechnet. Dies entspricht nicht zwingend der
+      KV-§8-Logik, die zwischen Vertragsdauer, vereinbarten und tatsächlich
+      geleisteten Arbeitstagen unterscheidet. Bei ungewöhnlichen Teilwochen
+      empfiehlt sich eine manuelle Kontrolle anhand §8 KV.
+    </div>
+
+    <div style="background:var(--infobg);border:1px solid var(--infobord);border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
+      <strong style="display:block;margin-bottom:4px">ℹ Allgemeiner Hinweis</strong>
+      Alle Beträge sind Orientierungswerte auf Basis des KV Filmschaffende
+      (gültig ab 1.7.2026). Individuelle Vertragsgestaltungen, Betriebsvereinbarungen
+      und konkrete Auslegungsfragen des KV können zu abweichenden Ergebnissen führen.
+      Für verbindliche Auskünfte: <a href="https://www.younionfilm.at" target="_blank" rel="noopener">younion Film</a>
+      oder eine arbeitsrechtliche Beratung.
+    </div>
+
+  </div>
+</div>
+
 </div>
 
 <script>
@@ -356,10 +441,11 @@ function addDU(d,n){var r=new Date(d);r.setUTCDate(r.getUTCDate()+n);return r}
 function dShort(ds){var d=new Date(ds+'T12:00:00');return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'}
 
 /* ====================================================
- * BERECHNUNG — überarbeitet (Prüfbericht Sept. 2026)
- * A1 Samstagszuschlag | A2 Nacht-NAZ vs. ÜSt | A3 Sondernächte
- * A4 Pausenlage Nacht | A5 Mindestpause 30 Min | A6 Mitternacht-Fix
- * B3 >12h Warnung | B4 24./31.12.
+ * BERECHNUNG — überarbeitet v2 (Prüfbericht 11.9.2026)
+ * A1 Samstagszuschlag | A2 Nacht-Sondernacht nach tatsächl. Datum
+ * A3 Frühschicht-Nacht 00:00–06:00 | A4 Pausenlage Nacht
+ * A5 Mindestpause 30 Min | A6 Mitternacht-Fix
+ * B1 Ruhezeit | B2 60h | B3 >12h | B4 24./31.12.
  * ==================================================== */
 function pt(s){if(!s||!s.includes(':'))return null;var p=s.split(':');return+p[0]*60+ +p[1]}
 
@@ -372,26 +458,50 @@ function nettoMin(v,b,pm){
 function overlapMin(a,b,intvs){
   var t=0;intvs.forEach(function(iv){t+=Math.max(0,Math.min(b,iv[1])-Math.max(a,iv[0]));});return t;
 }
-var NIGHT_INTVS=[[1320,1440],[1440,1800]]; // 22:00–24:00 und 00:00–06:00 Folgetag
 
-/* A4: Nachtstunden korrekt berechnen — Pause anhand tatsächlicher Lage abziehen */
-function nightMin(v,b,pm,pauseVon){
-  var vv=pt(v),bb=pt(b);if(vv===null||bb===null)return 0;
+/* FIX A1+A2: Nachtstunden in zwei Segmente aufteilen:
+   earlyIntvs = 00:00–06:00 des aktuellen Tages (gehört zur Nacht des Vortags)
+   lateIntvs  = 22:00–06:00+1 (Nacht des aktuellen Tages ins nächste)
+   So werden Frühschichten (z.B. Mo 01:00–05:00) korrekt als Nacht erkannt. */
+var EARLY_INTVS=[[0,360]];
+var LATE_INTVS=[[1320,1440],[1440,1800]];
+
+/* Gibt {earlyM, lateM} — Nachtminuten früh / spät, Pause korrekt abgezogen */
+function nightSegments(v,b,pm0,pvMin){
+  var vv=pt(v),bb=pt(b);
+  if(vv===null||bb===null)return{earlyM:0,lateM:0};
   if(bb<=vv)bb+=1440;
-  var grossNight=overlapMin(vv,bb,NIGHT_INTVS);
-  if(!grossNight)return 0;
-  var pauseNight=0;
-  if((pm||0)>0){
-    var pvMin=pt(pauseVon);
+  var eG=overlapMin(vv,bb,EARLY_INTVS);
+  var lG=overlapMin(vv,bb,LATE_INTVS);
+  if(!eG&&!lG)return{earlyM:0,lateM:0};
+  var eP=0,lP=0;
+  if(pm0>0){
     if(pvMin!==null){
-      if(pvMin<vv)pvMin+=1440; // A6: Mitternacht-Korrektur
-      pauseNight=overlapMin(pvMin,pvMin+(pm||0),NIGHT_INTVS);
+      eP=overlapMin(pvMin,pvMin+pm0,EARLY_INTVS);
+      lP=overlapMin(pvMin,pvMin+pm0,LATE_INTVS);
     } else {
-      // Kein Pausenzeitpunkt: proportionaler Fallback
-      pauseNight=(pm||0)*grossNight/(bb-vv);
+      var gross=bb-vv;
+      eP=pm0*eG/gross;lP=pm0*lG/gross;
     }
   }
-  return Math.max(0,grossNight-pauseNight);
+  return{earlyM:Math.max(0,eG-eP),lateM:Math.max(0,lG-lP)};
+}
+
+/* Gesamte Nachtminuten (Summe beider Segmente) */
+function nightMin(v,b,pm,pauseVon){
+  var pvMin=pt(pauseVon);
+  var vv=pt(v);if(pvMin!==null&&vv!==null&&pvMin<vv)pvMin+=1440;
+  var ns=nightSegments(v,b,pm||0,pvMin);
+  return ns.earlyM+ns.lateM;
+}
+
+/* A2: Sondernacht-Typ — jetzt nach tatsächlichem Nacht-Datum */
+function specialNightType(ds){
+  var typ=dayType(ds);
+  if(typ==='samstag')return'saso';
+  if(typ==='sonntag')return'somo';
+  if(typ==='feiertag')return'nachtFt';
+  return null;
 }
 
 /* A5+A6: Pausenlage — Mindestdauer 30 Min., Mitternacht-Korrektur */
@@ -405,23 +515,13 @@ function pauseLage(vonStr,pauseVonStr,netH,pm){
   return pv<=(v+360)?'ok':'spaet';
 }
 
-/* A3: Sondernacht-Typ für Sa→So, So→Mo, nach Feiertag */
-function specialNightType(ds){
-  var typ=dayType(ds);
-  if(typ==='samstag')return'saso';
-  if(typ==='sonntag')return'somo';
-  if(typ==='feiertag')return'nachtFt';
-  return null;
-}
-
-/* Tageszuschläge — vollständig überarbeitet */
+/* Tageszuschläge */
 function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErhalten){
   var typ=dayType(ds);
   var vv=pt(v),bb=pt(b);
   if(vv===null||bb===null)return{s:[],total:0,nH:0,nightH:0,fh:0,thr:12,warns:[]};
   if(bb<=vv)bb+=1440;
   var pm0=pm||0;
-  // Pause-Position (Mitternacht-korrigiert)
   var pvMin=pt(pauseVon);if(pvMin!==null&&pvMin<vv)pvMin+=1440;
 
   var nM=Math.max(0,bb-vv-pm0),nH=nM/60;
@@ -433,13 +533,13 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
   var fh=Math.max(0,nH-thr);
   var s=[],warns=[];
 
-  // So/FT-Tageszuschlag (Tagesgage)
+  // So/FT-Tageszuschlag
   if((typ==='sonntag'||typ==='feiertag')&&nH>0)
     s.push({l:typ==='feiertag'?'Feiertagszuschlag (§10)':'Sonntagszuschlag (§10)',b:GR.r2(tg),typ:'so'});
 
-  // A1: Samstagszuschlag §10 Abs. 1 (ab 5. Stunde oder jedenfalls ab 15:00)
+  // Samstagszuschlag §10 Abs. 1 (ab 5. Stunde oder jedenfalls ab 15:00)
   if(typ==='samstag'&&nH>0){
-    var sa5=vv+240,sa15=900; // 5.Std-Beginn, 15:00
+    var sa5=vv+240,sa15=900;
     var saStart=Math.min(sa5,sa15);
     if(bb>Math.max(vv,saStart)){
       var saFrom=Math.max(vv,saStart);
@@ -451,42 +551,54 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
       }
       var saNetH=Math.max(0,saGross-saPause)/60;
       if(saNetH>0.01){
-        var saKind=(sa5<=sa15)?'ab 5.Std':'ab 15:00';
-        s.push({l:'Samstagszuschlag 100% §10 Abs.1 ('+saKind+')',b:GR.r2(saNetH*std),typ:'sa'});
+        s.push({l:'Samstagszuschlag 100% §10 Abs.1 ('+(sa5<=sa15?'ab 5.Std':'ab 15:00')+')',b:GR.r2(saNetH*std),typ:'sa'});
       }
     }
   }
 
-  // A2+A3: Nachtzuschläge
-  var nightNetM=nightMin(v,b,pm0,pauseVon),nightH=nightNetM/60;
-  if(nightH>0.01){
-    var snt=specialNightType(ds);
+  // FIX A1+A2: Nachtzuschläge — segmentiert nach tatsächlicher Nacht-Zuordnung
+  var ns=nightSegments(v,b,pm0,pvMin);
+  var earlyH=ns.earlyM/60; // 00:00–06:00 ds → gehört zur Nacht von ds-1 auf ds
+  var lateH=ns.lateM/60;   // 22:00–06:00+1 → Nacht von ds auf ds+1
+  var nightH=earlyH+lateH;
+
+  function addNightSurcharge(segH,snt){
+    if(segH<0.01)return;
     if(snt){
-      // A3: Sondernacht → pauschal 100%
-      var sntL=snt==='saso'?'Nacht Sa→So 100% (§11)':snt==='somo'?'Nacht So→Mo 100% (§11)':'Nacht nach Feiertag 100% (§11)';
-      s.push({l:sntL,b:GR.r2(nightH*std),typ:'nacht100'});
+      var lbl=snt==='saso'?'Nacht Sa\u2192So 100% (\u00a711)':snt==='somo'?'Nacht So\u2192Mo 100% (\u00a711)':'Nacht nach Feiertag 100% (\u00a711)';
+      s.push({l:lbl,b:GR.r2(segH*std),typ:'nacht100'});
     } else {
-      // A2: Reguläre Nacht — innerhalb NAZ (50%) vs. Überstunden (100%)
-      var nazFrac=nH>0?Math.min(1,thr/nH):1;
-      var nightNazH=nightH*nazFrac,nightOtH=nightH*(1-nazFrac);
-      if(nightNazH>0.01)s.push({l:'Nachtzuschlag 50% '+Math.round(nightNazH*10)/10+'h (§11)',b:GR.r2(nightNazH*std*0.5),typ:'nacht'});
-      if(nightOtH>0.01)s.push({l:'Nacht-ÜSt 100% '+Math.round(nightOtH*10)/10+'h (§11)',b:GR.r2(nightOtH*std),typ:'nacht100'});
+      // Proportionale NAZ/ÜSt-Aufteilung (Näherung, siehe Hinweis unten)
+      var nazFrac=nH>0?Math.min(1,8/nH):1;
+      var nzH=segH*nazFrac,ozH=segH*(1-nazFrac);
+      if(nzH>0.01)s.push({l:'Nachtzuschlag 50% '+Math.round(nzH*10)/10+'h (\u00a711)',b:GR.r2(nzH*std*0.5),typ:'nacht'});
+      if(ozH>0.01)s.push({l:'Nacht-\u00dcSt 100% '+Math.round(ozH*10)/10+'h (\u00a711)',b:GR.r2(ozH*std),typ:'nacht100'});
     }
   }
 
+  // Frühsegment: Sondernacht basiert auf dem VORTAG
+  if(earlyH>0.01){
+    var prevDs=ymd(addD(new Date(ds+'T12:00:00'),-1));
+    addNightSurcharge(earlyH,specialNightType(prevDs));
+  }
+  // Spätsegment: Sondernacht basiert auf dem AKTUELLEN Tag
+  if(lateH>0.01){
+    addNightSurcharge(lateH,specialNightType(ds));
+  }
+
   // Faktor-Überstunden
-  if(fh>0.01)s.push({l:'Faktor-ÜSt '+Math.round(fh*10)/10+'h ×'+faktor+' (>'+thr+'h)',b:GR.r2(fh*vstd*faktor),typ:'faktor'});
+  if(fh>0.01)s.push({l:'Faktor-\u00dcSt '+Math.round(fh*10)/10+'h \u00d7'+faktor+' (>'+thr+'h)',b:GR.r2(fh*vstd*faktor),typ:'faktor'});
 
   // §5 Abs. 4: Bezahlte Pflichtpause nicht erhalten
   if(nH>9&&bezPauseErhalten===false)
-    s.push({l:'Bez. Pause nicht erhalten – Anspruch §5 Abs. 4 (0,5h)',b:GR.r2(vstd*0.5),typ:'warn'});
+    s.push({l:'Bez. Pause nicht erhalten \u2013 Anspr. \u00a75 Abs.\u00a04 (0,5h)',b:GR.r2(vstd*0.5),typ:'warn'});
 
   // B3: >12h Tagesarbeitszeit
-  if(nH>12)warns.push('⚠ Über 12h Arbeitszeit – arbeitszeitrechtlich prüfen (§7)');
+  if(nH>12)warns.push('\u26a0 \u00dcber 12h Arbeitszeit \u2013 arbeitszeitrechtlich pr\u00fcfen (\u00a77)');
   // B4: 24./31. Dezember
   var mmdd=ds.slice(5);
-  if(mmdd==='12-24')warns.push('⚠ 24.12.: KV-NAZ endet nach 4h / spätestens 12:00 Uhr');
-  if(mmdd==='12-31')warns.push('⚠ 31.12.: KV-NAZ endet nach 4h / spätestens 12:00 Uhr');
+  if(mmdd==='12-24')warns.push('\u26a0 24.12.: KV-NAZ endet nach 4h\u00a0/\u00a0sp\u00e4testens 12:00 Uhr');
+  if(mmdd==='12-31')warns.push('\u26a0 31.12.: KV-NAZ endet nach 4h\u00a0/\u00a0sp\u00e4testens 12:00 Uhr');
 
   return{s,total:s.reduce(function(x,c){return x+c.b},0),nH,nightH,fh,thr,warns};
 }
@@ -609,6 +721,28 @@ function renderAll(){
   var prev=null,gesamtRows=[],gtotal=0;
   var totAusserhalb=0,totDrinnen=0,totBezPauseFaellig=0,totBezPauseNichtErhalten=0;
 
+  // FIX A4: Alle gearbeiteten Tage projektweit sammeln für KW-grenzen-übergreifende Ruhezeitprüfung
+  var allWorkedDays=[];
+  wks.forEach(function(wk){
+    daysInWeek(wk,s,e).filter(function(d){return d.inRange;}).forEach(function(d){
+      var t=getTag(d.ds);if(t.von&&t.bis)allWorkedDays.push(d.ds);
+    });
+  });
+  allWorkedDays.sort();
+  // ruheVerletzt: Set von Datum-Strings wo Ruhezeit < 11h
+  var ruheVerletzt={};
+  for(var ri=1;ri<allWorkedDays.length;ri++){
+    var tpDs=allWorkedDays[ri-1],tcDs=allWorkedDays[ri];
+    var tp=getTag(tpDs),tc=getTag(tcDs);
+    var pVon=pt(tp.von),pBis=pt(tp.bis),cVon=pt(tc.von);
+    if(pVon===null||pBis===null||cVon===null)continue;
+    if(pBis<=pVon)pBis+=1440;
+    var d1=new Date(tpDs+'T12:00:00'),d2=new Date(tcDs+'T12:00:00');
+    var dayDiff=Math.round((d2-d1)/86400000);
+    var gapMin=dayDiff*1440+cVon-pBis;
+    if(gapMin<660)ruheVerletzt[tcDs]={gapH:Math.round(gapMin*10/60)/10};
+  }
+
   wks.forEach(function(wk){
     var partial=isPartial(wk,s,e,wmod);
     var wst=getWoche(wk);
@@ -619,7 +753,7 @@ function renderAll(){
     gesamtRows.push({wk,wr});gtotal+=wr.total;
     var el=c.querySelector('[data-week="'+wk+'"]');
     if(!el){el=document.createElement('div');el.className='woche';el.dataset.week=wk;c.appendChild(el)}
-    el.innerHTML=weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr);
+    el.innerHTML=weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt);
     attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst);
     prev=el;
   });
@@ -627,7 +761,7 @@ function renderAll(){
   gb.style.display='';
 }
 
-function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr){
+function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt){
   var mon=mondayOf(wk),sun=addDU(mon,6);
   var kwN=wk.split('-W')[1];
   var hdr='KW\u00a0'+kwN+'\u00a0\u2014\u00a0'+dShort(ymd(mon))+'\u2013'+dShort(ymd(sun));
@@ -661,10 +795,10 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr){
     if(res&&res.warns&&res.warns.length){
       dayWarnHtml='<div style="font-size:.67rem;color:var(--rot);line-height:1.4;margin-top:2px">'+res.warns.join('<br>')+'</div>';
     }
-    // B1: Ruhezeit-Warnung für diesen Tag
-    if(wr.ruheWarn){
-      var rw=wr.ruheWarn.filter(function(r){return r.ds===d.ds;});
-      if(rw.length){dayWarnHtml+='<div style="font-size:.67rem;color:var(--rot);line-height:1.4;margin-top:2px">⚠ Ruhezeit nur '+rw[0].gapH+'h (KV-Minimum: 11h)</div>';}
+    // B1: Ruhezeit-Warnung — jetzt projektweit (auch über KW-Grenzen)
+    if(ruheVerletzt&&ruheVerletzt[d.ds]){
+      var rv=ruheVerletzt[d.ds];
+      dayWarnHtml+='<div style="font-size:.67rem;color:var(--rot);line-height:1.4;margin-top:2px">\u26a0 Ruhezeit nur '+rv.gapH+'h (KV-Minimum: 11h)</div>';
     }
 
     // Bezahlte Pause
@@ -730,7 +864,13 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr){
   if(wr.drinnenTage>0)statsItems.push('<span>'+wr.drinnenTage+' innerhalb</span>');
   if(wr.bezPauseNichtErhalten>0)statsItems.push('<span class="warn">'+wr.bezPauseNichtErhalten+'× bez. Pause nicht erhalten (§5 Abs. 4)</span>');
   else if(wr.bezPauseFaellig>0)statsItems.push('<span class="ok">'+wr.bezPauseFaellig+'× bez. Pause ✓</span>');
-  if(wr.ruheWarn&&wr.ruheWarn.length)wr.ruheWarn.forEach(function(rw){statsItems.push('<span class="warn">⚠ Ruhezeit vor '+new Date(rw.ds+'T12:00:00').getDate()+'. nur '+rw.gapH+'h (Min. 11h)</span>');});
+  if(wr.warn60h?wr.warn60h:false){}
+  // Ruhezeit-Warnungen aus globalem ruheVerletzt (wird in weekHTML übergeben)
+  var ruheWarnDays=days.filter(function(d){return ruheVerletzt&&ruheVerletzt[d.ds];});
+  if(ruheWarnDays.length)ruheWarnDays.forEach(function(d){
+    var gapH=ruheVerletzt[d.ds].gapH;
+    statsItems.push('<span class="warn">\u26a0 Ruhezeit vor '+new Date(d.ds+'T12:00:00').getDate()+'. nur '+gapH+'h (Min.\u00a011h)</span>');
+  });
 
   return'<div class="woche-header" data-toggle="'+wk+'">'+
     '<h3>'+hdr+'</h3>'+
