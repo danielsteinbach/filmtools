@@ -158,9 +158,9 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
   </div>
   <div class="grid3" style="margin-top:4px">
     <div class="fld">
-      <label for="s-faktor">Faktor Überstunden über Limit</label>
+      <label for="s-faktor">Faktor auf Gesamtentgelt für Stunden über Limit</label>
       <input type="number" id="s-faktor" value="1.5" min="1" step="0.1">
-      <p class="fn">Stunden jenseits 12h/Tag (5T) bzw. 10h/Tag (6T) × Vereinbarte Stundengage × Faktor. Standard: 1,5.</p>
+      <p class="fn">Der Faktor wird auf den vollständigen Entgeltwert der jeweiligen Stunde — einschließlich der für diesen Zeitraum geltenden Zuschläge (Nacht, Samstag etc.) — angewendet. Stunden jenseits 12h/Tag (5T) bzw. 10h/Tag (6T). Standard: 1,5.</p>
     </div>
     <div class="fld">
       <label for="s-diaet">Diäten außerhalb Firmensitz (>3h, §17)</label>
@@ -515,7 +515,7 @@ function pauseLage(vonStr,pauseVonStr,netH,pm){
   return pv<=(v+360)?'ok':'spaet';
 }
 
-/* Tageszuschläge */
+/* Tageszuschläge — Faktor multipliziert Gesamtentgelt der OL-Stunden (inkl. Zuschläge) */
 function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErhalten){
   var typ=dayType(ds);
   var vv=pt(v),bb=pt(b);
@@ -531,71 +531,107 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
   var vstd=GR.stundenlohnVon(pg);
   var thr=(wmod===6)?10:(typ==='samstag'?10:12);
   var fh=Math.max(0,nH-thr);
+  var nazFrac=nH>0?Math.min(1,8/nH):1;  // NAZ-Anteil für Nacht-Split
   var s=[],warns=[];
 
-  // So/FT-Tageszuschlag
-  if((typ==='sonntag'||typ==='feiertag')&&nH>0)
-    s.push({l:typ==='feiertag'?'Feiertagszuschlag (§10)':'Sonntagszuschlag (§10)',b:GR.r2(tg),typ:'so'});
+  // Over-Limit-Periode: letzte fh×60 Brutto-Minuten der Schicht (Näherung)
+  var olStart=fh>0.01?(bb-fh*60):bb;
 
-  // Samstagszuschlag §10 Abs. 1 (ab 5. Stunde oder jedenfalls ab 15:00)
+  // — Sondernacht-Typen —
+  var prevDs=ymd(addD(new Date(ds+'T12:00:00'),-1));
+  var earlySnt=specialNightType(prevDs); // Frühsegment: Nacht des Vortags
+  var lateSnt=specialNightType(ds);      // Spätsegment: Nacht des aktuellen Tags
+
+  // — Nacht-Segmente für gesamte Schicht —
+  var ns=nightSegments(v,b,pm0,pvMin);
+  // Within-Limit vs. Over-Limit aufteilen
+  var earlyOlM=fh>0.01?overlapMin(olStart,bb,EARLY_INTVS):0;
+  var lateOlM =fh>0.01?overlapMin(olStart,bb,LATE_INTVS):0;
+  var earlyRegH=Math.max(0,ns.earlyM-earlyOlM)/60; // Nacht within limit (Frühsegment)
+  var lateRegH =Math.max(0,ns.lateM -lateOlM)/60;  // Nacht within limit (Spätsegment)
+  var earlyOlH=earlyOlM/60, lateOlH=lateOlM/60;
+  var nightH=(ns.earlyM+ns.lateM)/60;
+
+  // — Samstag-Zuschlag-Beginn —
+  var saFrom2=null,saKind='';
   if(typ==='samstag'&&nH>0){
     var sa5=vv+240,sa15=900;
-    var saStart=Math.min(sa5,sa15);
-    if(bb>Math.max(vv,saStart)){
-      var saFrom=Math.max(vv,saStart);
-      var saGross=bb-saFrom;
-      var saPause=0;
-      if(pm0>0){
-        if(pvMin!==null){saPause=Math.max(0,Math.min(pvMin+pm0,bb)-Math.max(pvMin,saFrom));}
-        else{saPause=pm0*saGross/(bb-vv);}
-      }
-      var saNetH=Math.max(0,saGross-saPause)/60;
-      if(saNetH>0.01){
-        s.push({l:'Samstagszuschlag 100% §10 Abs.1 ('+(sa5<=sa15?'ab 5.Std':'ab 15:00')+')',b:GR.r2(saNetH*std),typ:'sa'});
-      }
-    }
+    saFrom2=Math.min(sa5,sa15);
+    saKind=(sa5<=sa15)?'ab 5.Std':'ab 15:00';
   }
 
-  // FIX A1+A2: Nachtzuschläge — segmentiert nach tatsächlicher Nacht-Zuordnung
-  var ns=nightSegments(v,b,pm0,pvMin);
-  var earlyH=ns.earlyM/60; // 00:00–06:00 ds → gehört zur Nacht von ds-1 auf ds
-  var lateH=ns.lateM/60;   // 22:00–06:00+1 → Nacht von ds auf ds+1
-  var nightH=earlyH+lateH;
+  /* Nacht-Zuschlagswert (Betrag) für h Stunden mit gegebenem Sondernacht-Typ */
+  function nightSurchargeVal(h,snt){
+    if(h<0.01)return 0;
+    if(snt)return h*std;                               // Sondernacht: 100 %
+    return h*(nazFrac*std*0.5+(1-nazFrac)*std);        // regulär: NAZ→50 %, ÜSt→100 %
+  }
 
+  /* Nacht-Zuschlag als Chip-Einträge für within-limit Stunden */
   function addNightSurcharge(segH,snt){
     if(segH<0.01)return;
     if(snt){
-      var lbl=snt==='saso'?'Nacht Sa\u2192So 100% (\u00a711)':snt==='somo'?'Nacht So\u2192Mo 100% (\u00a711)':'Nacht nach Feiertag 100% (\u00a711)';
-      s.push({l:lbl,b:GR.r2(segH*std),typ:'nacht100'});
+      var l=snt==='saso'?'Nacht Sa\u2192So 100% (\u00a711)':snt==='somo'?'Nacht So\u2192Mo 100% (\u00a711)':'Nacht nach Feiertag 100% (\u00a711)';
+      s.push({l:l,b:GR.r2(segH*std),typ:'nacht100'});
     } else {
-      // Proportionale NAZ/ÜSt-Aufteilung (Näherung, siehe Hinweis unten)
-      var nazFrac=nH>0?Math.min(1,8/nH):1;
       var nzH=segH*nazFrac,ozH=segH*(1-nazFrac);
       if(nzH>0.01)s.push({l:'Nachtzuschlag 50% '+Math.round(nzH*10)/10+'h (\u00a711)',b:GR.r2(nzH*std*0.5),typ:'nacht'});
       if(ozH>0.01)s.push({l:'Nacht-\u00dcSt 100% '+Math.round(ozH*10)/10+'h (\u00a711)',b:GR.r2(ozH*std),typ:'nacht100'});
     }
   }
 
-  // Frühsegment: Sondernacht basiert auf dem VORTAG
-  if(earlyH>0.01){
-    var prevDs=ymd(addD(new Date(ds+'T12:00:00'),-1));
-    addNightSurcharge(earlyH,specialNightType(prevDs));
-  }
-  // Spätsegment: Sondernacht basiert auf dem AKTUELLEN Tag
-  if(lateH>0.01){
-    addNightSurcharge(lateH,specialNightType(ds));
+  // 1. So/FT-Tageszuschlag (Tagesgage, unverändert)
+  if((typ==='sonntag'||typ==='feiertag')&&nH>0)
+    s.push({l:typ==='feiertag'?'Feiertagszuschlag (\u00a710)':'Sonntagszuschlag (\u00a710)',b:GR.r2(tg),typ:'so'});
+
+  // 2. Nacht — NUR within-limit (OL-Nacht geht in Faktor ein, kein double-count)
+  addNightSurcharge(earlyRegH,earlySnt);
+  addNightSurcharge(lateRegH,lateSnt);
+
+  // 3. Samstag — NUR within-limit (OL-Sa geht in Faktor ein, kein double-count)
+  if(saFrom2!==null&&saFrom2<bb){
+    var saRegEnd=fh>0.01?Math.min(bb,olStart):bb;
+    var saFrom3=Math.max(vv,saFrom2);
+    if(saFrom3<saRegEnd){
+      var saGross=saRegEnd-saFrom3,saPause=0;
+      if(pm0>0){
+        if(pvMin!==null){saPause=Math.max(0,Math.min(pvMin+pm0,saRegEnd)-Math.max(pvMin,saFrom3));}
+        else{saPause=pm0*saGross/(bb-vv);}
+      }
+      var saNetH=Math.max(0,saGross-saPause)/60;
+      if(saNetH>0.01)s.push({l:'Samstagszuschlag 100% \u00a710 Abs.1 ('+saKind+')',b:GR.r2(saNetH*std),typ:'sa'});
+    }
   }
 
-  // Faktor-Überstunden
-  if(fh>0.01)s.push({l:'Faktor-\u00dcSt '+Math.round(fh*10)/10+'h \u00d7'+faktor+' (>'+thr+'h)',b:GR.r2(fh*vstd*faktor),typ:'faktor'});
+  // 4. FAKTOR AUF GESAMTENTGELT — Stunden über Limit
+  // Gesamtentgeltwert = Basis + Nacht-Zuschlag(OL) + Sa-Zuschlag(OL), dann × Faktor
+  if(fh>0.01){
+    // Basis der OL-Stunden
+    var olBaseVal=fh*std;
+    // Nacht-Zuschlagswert der OL-Nachtstunden (schließt Sondernacht ein)
+    var olNightVal=nightSurchargeVal(earlyOlH,earlySnt)+nightSurchargeVal(lateOlH,lateSnt);
+    // Samstag-Zuschlagswert der OL-Sa-Stunden (100 % auf Stundenlohn)
+    var olSaVal=0;
+    if(saFrom2!==null&&saFrom2<bb){
+      var saOlFrom=Math.max(olStart,saFrom2);
+      if(saOlFrom<bb){
+        var saOlGross=bb-saOlFrom,saOlPause=0;
+        if(pm0>0&&pvMin!==null){saOlPause=Math.max(0,Math.min(pvMin+pm0,bb)-Math.max(pvMin,saOlFrom));}
+        var saOlNetH=Math.max(0,saOlGross-saOlPause)/60;
+        olSaVal=saOlNetH*std;
+      }
+    }
+    // Gesamtentgelt × Faktor
+    var olTotalReg=olBaseVal+olNightVal+olSaVal;
+    s.push({l:'Faktor \u00d7'+faktor+' auf Gesamtentgelt ('+Math.round(fh*10)/10+'h \u00fcber '+thr+'h)',b:GR.r2(olTotalReg*faktor),typ:'faktor'});
+  }
 
-  // §5 Abs. 4: Bezahlte Pflichtpause nicht erhalten
+  // 5. Bezahlte Pflichtpause nicht erhalten
   if(nH>9&&bezPauseErhalten===false)
     s.push({l:'Bez. Pause nicht erhalten \u2013 Anspr. \u00a75 Abs.\u00a04 (0,5h)',b:GR.r2(vstd*0.5),typ:'warn'});
 
-  // B3: >12h Tagesarbeitszeit
+  // 6. Warnungen
   if(nH>12)warns.push('\u26a0 \u00dcber 12h Arbeitszeit \u2013 arbeitszeitrechtlich pr\u00fcfen (\u00a77)');
-  // B4: 24./31. Dezember
   var mmdd=ds.slice(5);
   if(mmdd==='12-24')warns.push('\u26a0 24.12.: KV-NAZ endet nach 4h\u00a0/\u00a0sp\u00e4testens 12:00 Uhr');
   if(mmdd==='12-31')warns.push('\u26a0 31.12.: KV-NAZ endet nach 4h\u00a0/\u00a0sp\u00e4testens 12:00 Uhr');
