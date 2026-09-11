@@ -53,6 +53,8 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 .chip{display:inline-block;border-radius:3px;padding:1px 5px;margin:1px 2px 1px 0;font-size:.68rem;font-weight:600;white-space:nowrap}
 .chip-warn{background:var(--warnbg);color:var(--rot)}
 .chip-nacht{background:#eef4fb;color:#1a4a7a}
+.chip-nacht100{background:#dde8f5;color:#0d2d5a;font-weight:700}
+.chip-sa{background:#fff0d0;color:#7a4500}
 .chip-faktor{background:#fff3e0;color:#8a4800}
 .chip-so{background:var(--sunbg);color:#7a1a1a}
 .chip-ok{background:#eef7f0;color:var(--gruen)}
@@ -62,6 +64,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 .pause-lage.ok{background:var(--gruen)}
 .pause-lage.spaet{background:var(--rot)}
 .pause-lage.fehlt{background:#f0a000}
+.pause-lage.kurz{background:#e06000}
 .pause-lage.na{background:var(--rand)}
 /* Woche-Footer */
 .woche-total-row{background:var(--feld)}
@@ -353,57 +356,139 @@ function addDU(d,n){var r=new Date(d);r.setUTCDate(r.getUTCDate()+n);return r}
 function dShort(ds){var d=new Date(ds+'T12:00:00');return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'}
 
 /* ====================================================
- * BERECHNUNG
+ * BERECHNUNG — überarbeitet (Prüfbericht Sept. 2026)
+ * A1 Samstagszuschlag | A2 Nacht-NAZ vs. ÜSt | A3 Sondernächte
+ * A4 Pausenlage Nacht | A5 Mindestpause 30 Min | A6 Mitternacht-Fix
+ * B3 >12h Warnung | B4 24./31.12.
  * ==================================================== */
 function pt(s){if(!s||!s.includes(':'))return null;var p=s.split(':');return+p[0]*60+ +p[1]}
+
 function nettoMin(v,b,pm){
   var vv=pt(v),bb=pt(b);if(vv===null||bb===null)return 0;
   if(bb<=vv)bb+=1440;return Math.max(0,bb-vv-(pm||0));
 }
-function nightMin(v,b,pm){
+
+/* Hilfsfunktion: Überschneidung von Intervall [a,b] mit Intervall-Liste */
+function overlapMin(a,b,intvs){
+  var t=0;intvs.forEach(function(iv){t+=Math.max(0,Math.min(b,iv[1])-Math.max(a,iv[0]));});return t;
+}
+var NIGHT_INTVS=[[1320,1440],[1440,1800]]; // 22:00–24:00 und 00:00–06:00 Folgetag
+
+/* A4: Nachtstunden korrekt berechnen — Pause anhand tatsächlicher Lage abziehen */
+function nightMin(v,b,pm,pauseVon){
   var vv=pt(v),bb=pt(b);if(vv===null||bb===null)return 0;
-  if(bb<=vv)bb+=1440;var gross=bb-vv;if(!gross)return 0;
-  var ng=0;[[0,360],[1320,1440],[1440,1800]].forEach(function(p){
-    ng+=Math.max(0,Math.min(bb,p[1])-Math.max(vv,p[0]));
-  });
-  return Math.max(0,ng*(1-(pm||0)/gross));
+  if(bb<=vv)bb+=1440;
+  var grossNight=overlapMin(vv,bb,NIGHT_INTVS);
+  if(!grossNight)return 0;
+  var pauseNight=0;
+  if((pm||0)>0){
+    var pvMin=pt(pauseVon);
+    if(pvMin!==null){
+      if(pvMin<vv)pvMin+=1440; // A6: Mitternacht-Korrektur
+      pauseNight=overlapMin(pvMin,pvMin+(pm||0),NIGHT_INTVS);
+    } else {
+      // Kein Pausenzeitpunkt: proportionaler Fallback
+      pauseNight=(pm||0)*grossNight/(bb-vv);
+    }
+  }
+  return Math.max(0,grossNight-pauseNight);
 }
 
-/* Pausenlage-Prüfung */
+/* A5+A6: Pausenlage — Mindestdauer 30 Min., Mitternacht-Korrektur */
 function pauseLage(vonStr,pauseVonStr,netH,pm){
-  /* Gibt zurück: 'ok'|'spaet'|'fehlt'|'na' */
-  if(netH<=6)return'na';         // Keine Pause nötig
-  if(!pauseVonStr){
-    return pm>0?'fehlt':'fehlt'; // Pause eingetragen, aber kein Zeitpunkt
-  }
+  if(netH<=6)return'na';
+  if(!pauseVonStr)return'fehlt';
+  if((pm||0)<30)return'kurz'; // A5: zu kurz
   var v=pt(vonStr),pv=pt(pauseVonStr);
   if(v===null||pv===null)return'fehlt';
-  // Spätester erlaubter Beginn: nach 6h Arbeit
-  var spaetestens=v+360;
-  return pv<=spaetestens?'ok':'spaet';
+  if(pv<v)pv+=1440; // A6: Mitternacht-Korrektur
+  return pv<=(v+360)?'ok':'spaet';
 }
 
-/* Tageszuschläge */
-function daySurcharges(ds,v,b,pm,pg,pi,yi,basis,wmod,faktor,bezPauseErhalten){
+/* A3: Sondernacht-Typ für Sa→So, So→Mo, nach Feiertag */
+function specialNightType(ds){
   var typ=dayType(ds);
-  var nM=nettoMin(v,b,pm),nH=nM/60;
-  var nightH=nightMin(v,b,pm)/60;
+  if(typ==='samstag')return'saso';
+  if(typ==='sonntag')return'somo';
+  if(typ==='feiertag')return'nachtFt';
+  return null;
+}
+
+/* Tageszuschläge — vollständig überarbeitet */
+function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErhalten){
+  var typ=dayType(ds);
+  var vv=pt(v),bb=pt(b);
+  if(vv===null||bb===null)return{s:[],total:0,nH:0,nightH:0,fh:0,thr:12,warns:[]};
+  if(bb<=vv)bb+=1440;
+  var pm0=pm||0;
+  // Pause-Position (Mitternacht-korrigiert)
+  var pvMin=pt(pauseVon);if(pvMin!==null&&pvMin<vv)pvMin+=1440;
+
+  var nM=Math.max(0,bb-vv-pm0),nH=nM/60;
   var std,tg;
   if(basis==='mindest'&&pi>=0){std=GR.mindestStundenlohn(pi,yi);tg=GR.mindestTagesgage(pi,yi);}
   else{std=GR.stundenlohnVon(pg);tg=GR.tagesgageVon(pg);}
   var vstd=GR.stundenlohnVon(pg);
   var thr=(wmod===6)?10:(typ==='samstag'?10:12);
   var fh=Math.max(0,nH-thr);
-  var s=[];
+  var s=[],warns=[];
+
+  // So/FT-Tageszuschlag (Tagesgage)
   if((typ==='sonntag'||typ==='feiertag')&&nH>0)
     s.push({l:typ==='feiertag'?'Feiertagszuschlag (§10)':'Sonntagszuschlag (§10)',b:GR.r2(tg),typ:'so'});
-  if(nightH>0)s.push({l:'Nacht '+Math.round(nightH*10)/10+'h (§11)',b:GR.r2(nightH*std*.5),typ:'nacht'});
-  if(fh>0)s.push({l:'Faktor-ÜSt '+Math.round(fh*10)/10+'h ×'+faktor+' (>'+thr+'h)',b:GR.r2(fh*vstd*faktor),typ:'faktor'});
-  // §5 Abs. 4 KV: Bezahlte Pflichtpause nicht erhalten → Anspruch auf 0,5h Stundenlohn
-  if(nH>9&&bezPauseErhalten===false){
-    s.push({l:'Bez. Pause nicht erhalten – Anspruch §5 Abs. 4 (0,5h)',b:GR.r2(vstd*0.5),typ:'warn'});
+
+  // A1: Samstagszuschlag §10 Abs. 1 (ab 5. Stunde oder jedenfalls ab 15:00)
+  if(typ==='samstag'&&nH>0){
+    var sa5=vv+240,sa15=900; // 5.Std-Beginn, 15:00
+    var saStart=Math.min(sa5,sa15);
+    if(bb>Math.max(vv,saStart)){
+      var saFrom=Math.max(vv,saStart);
+      var saGross=bb-saFrom;
+      var saPause=0;
+      if(pm0>0){
+        if(pvMin!==null){saPause=Math.max(0,Math.min(pvMin+pm0,bb)-Math.max(pvMin,saFrom));}
+        else{saPause=pm0*saGross/(bb-vv);}
+      }
+      var saNetH=Math.max(0,saGross-saPause)/60;
+      if(saNetH>0.01){
+        var saKind=(sa5<=sa15)?'ab 5.Std':'ab 15:00';
+        s.push({l:'Samstagszuschlag 100% §10 Abs.1 ('+saKind+')',b:GR.r2(saNetH*std),typ:'sa'});
+      }
+    }
   }
-  return{s,total:s.reduce(function(x,c){return x+c.b},0),nH,nightH,fh,thr};
+
+  // A2+A3: Nachtzuschläge
+  var nightNetM=nightMin(v,b,pm0,pauseVon),nightH=nightNetM/60;
+  if(nightH>0.01){
+    var snt=specialNightType(ds);
+    if(snt){
+      // A3: Sondernacht → pauschal 100%
+      var sntL=snt==='saso'?'Nacht Sa→So 100% (§11)':snt==='somo'?'Nacht So→Mo 100% (§11)':'Nacht nach Feiertag 100% (§11)';
+      s.push({l:sntL,b:GR.r2(nightH*std),typ:'nacht100'});
+    } else {
+      // A2: Reguläre Nacht — innerhalb NAZ (50%) vs. Überstunden (100%)
+      var nazFrac=nH>0?Math.min(1,thr/nH):1;
+      var nightNazH=nightH*nazFrac,nightOtH=nightH*(1-nazFrac);
+      if(nightNazH>0.01)s.push({l:'Nachtzuschlag 50% '+Math.round(nightNazH*10)/10+'h (§11)',b:GR.r2(nightNazH*std*0.5),typ:'nacht'});
+      if(nightOtH>0.01)s.push({l:'Nacht-ÜSt 100% '+Math.round(nightOtH*10)/10+'h (§11)',b:GR.r2(nightOtH*std),typ:'nacht100'});
+    }
+  }
+
+  // Faktor-Überstunden
+  if(fh>0.01)s.push({l:'Faktor-ÜSt '+Math.round(fh*10)/10+'h ×'+faktor+' (>'+thr+'h)',b:GR.r2(fh*vstd*faktor),typ:'faktor'});
+
+  // §5 Abs. 4: Bezahlte Pflichtpause nicht erhalten
+  if(nH>9&&bezPauseErhalten===false)
+    s.push({l:'Bez. Pause nicht erhalten – Anspruch §5 Abs. 4 (0,5h)',b:GR.r2(vstd*0.5),typ:'warn'});
+
+  // B3: >12h Tagesarbeitszeit
+  if(nH>12)warns.push('⚠ Über 12h Arbeitszeit – arbeitszeitrechtlich prüfen (§7)');
+  // B4: 24./31. Dezember
+  var mmdd=ds.slice(5);
+  if(mmdd==='12-24')warns.push('⚠ 24.12.: KV-NAZ endet nach 4h / spätestens 12:00 Uhr');
+  if(mmdd==='12-31')warns.push('⚠ 31.12.: KV-NAZ endet nach 4h / spätestens 12:00 Uhr');
+
+  return{s,total:s.reduce(function(x,c){return x+c.b},0),nH,nightH,fh,thr,warns};
 }
 
 /* ====================================================
@@ -464,17 +549,39 @@ function calcWeek(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
     :pg;
   var surchargeTotal=0,nettoTotal=0,faktorTotal=0;
   var bezPauseFaellig=0,bezPauseNichtErhalten=0,ausserhalbTage=0,drinnenTage=0;
+  var dayWarns={}; // ds → [warns]
   active.forEach(function(d){
     var t=getTag(d.ds);
     if(!t.von||!t.bis)return;
-    var r=daySurcharges(d.ds,t.von,t.bis,+t.pause||0,pg,pi,yi,basis,wmod,faktor,t.bezPause);
+    var r=daySurcharges(d.ds,t.von,t.bis,+t.pause||0,t.pauseVon||'',pg,pi,yi,basis,wmod,faktor,t.bezPause);
     surchargeTotal+=r.total;nettoTotal+=r.nH;faktorTotal+=r.fh;
     if(r.nH>9){bezPauseFaellig++;if(!t.bezPause)bezPauseNichtErhalten++;}
-    if(t.ausserhalb)ausserhalbTage++;else drinnenTage++;
+    // A7: Diät nur wenn nH>3
+    if(t.ausserhalb&&r.nH>3)ausserhalbTage++;
+    else if(!t.ausserhalb)drinnenTage++;
+    else drinnenTage++; // außerhalb aber ≤3h → nicht zählen als Diät-Tag
+    if(r.warns&&r.warns.length)dayWarns[d.ds]=r.warns;
   });
+  // B2: 60h-Wochengrenze
+  var warn60h=nettoTotal>60;
+  // B1: 11h Ruhezeit zwischen aufeinanderfolgenden Arbeitstagen
+  var ruheWarn=[];
+  var worked=active.filter(function(d){var t=getTag(d.ds);return t.von&&t.bis;});
+  worked.sort(function(a,b){return a.ds<b.ds?-1:1;});
+  for(var ri=1;ri<worked.length;ri++){
+    var tp=getTag(worked[ri-1].ds),tc=getTag(worked[ri].ds);
+    var pVon=pt(tp.von),pBis=pt(tp.bis),cVon=pt(tc.von);
+    if(pVon===null||pBis===null||cVon===null)continue;
+    if(pBis<=pVon)pBis+=1440;
+    var d1=new Date(worked[ri-1].ds+'T12:00:00'),d2=new Date(worked[ri].ds+'T12:00:00');
+    var dayDiff=Math.round((d2-d1)/86400000);
+    var gapMin=dayDiff*1440+cVon-pBis;
+    if(gapMin<660){ruheWarn.push({ds:worked[ri].ds,gapH:Math.round(gapMin*10/60)/10});}
+  }
   return{wochenbasis,surchargeTotal,total:GR.r2(wochenbasis+surchargeTotal),
          nettoTotal,faktorTotal,bezPauseFaellig,bezPauseNichtErhalten,
-         ausserhalbTage,drinnenTage,activeDays:active.length,partial};
+         ausserhalbTage,drinnenTage,activeDays:active.length,partial,
+         warn60h,ruheWarn,dayWarns};
 }
 
 /* ====================================================
@@ -542,14 +649,23 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr){
     var dow=new Date(d.ds+'T12:00:00').getDay();
     var rc=!d.inRange?'ausserhalb-zeile':(typ==='samstag'?'samstag':(typ==='sonntag'?'sonntag':(typ==='feiertag'?'feiertag':'')));
     var dis=!d.inRange?'disabled':'';
-    var res=(d.inRange&&t.von&&t.bis)?daySurcharges(d.ds,t.von,t.bis,+t.pause||0,pg,pi,yi,basis,wmod,faktor,t.bezPause):null;
+    var res=(d.inRange&&t.von&&t.bis)?daySurcharges(d.ds,t.von,t.bis,+t.pause||0,t.pauseVon||'',pg,pi,yi,basis,wmod,faktor,t.bezPause):null;
     var nH=res?res.nH:0;
 
     // Pause-Lage
     var pl=res?pauseLage(t.von,t.pauseVon,nH,+t.pause||0):'na';
-    var plIcon='<span class="pause-lage '+pl+'" title="'+
-      (pl==='ok'?'Pause im richtigen Zeitfenster':pl==='spaet'?'⚠ Pause zu spät (nach 6h Arbeitszeit)':pl==='fehlt'?'Pausenzeitpunkt nicht eingetragen':'n/a')+
-      '"></span>';
+    var plTip=pl==='ok'?'Pause korrekt (Zeitfenster + ≥30 Min.)':pl==='spaet'?'⚠ Pause zu spät (nach 6h Arbeitszeit)':pl==='kurz'?'⚠ Pause unter 30 Min. (KV-Mindestdauer)':pl==='fehlt'?'Pausenzeitpunkt nicht eingetragen':'n/a';
+    var plIcon='<span class="pause-lage '+pl+'" title="'+plTip+'"></span>';
+    // Tageswarnungen (B3, B4)
+    var dayWarnHtml='';
+    if(res&&res.warns&&res.warns.length){
+      dayWarnHtml='<div style="font-size:.67rem;color:var(--rot);line-height:1.4;margin-top:2px">'+res.warns.join('<br>')+'</div>';
+    }
+    // B1: Ruhezeit-Warnung für diesen Tag
+    if(wr.ruheWarn){
+      var rw=wr.ruheWarn.filter(function(r){return r.ds===d.ds;});
+      if(rw.length){dayWarnHtml+='<div style="font-size:.67rem;color:var(--rot);line-height:1.4;margin-top:2px">⚠ Ruhezeit nur '+rw[0].gapH+'h (KV-Minimum: 11h)</div>';}
+    }
 
     // Bezahlte Pause
     var bezPauseFaellig=nH>9;
@@ -595,23 +711,26 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr){
       '<td style="text-align:center">'+bezPauseCell+'</td>'+
       // Außerhalb
       '<td style="text-align:center">'+
-        (d.inRange?'<label style="cursor:pointer" title="Mehr als 3h außerhalb des Firmensitzes im Ortsgebiet (→ Diäten §17)">'+
+        (d.inRange?'<label style="cursor:pointer" title="'+(nH>0&&nH<=3?'⚠ Netto-Arbeitszeit ≤3h – Diät-Voraussetzung nicht erfüllt':'Mehr als 3h netto außerhalb Firmensitz → Ortsgebietsdiät §17')+'">'+
           '<input type="checkbox" class="ausserhalb" data-date="'+d.ds+'" data-field="ausserhalb"'+
-            (t.ausserhalb?' checked':'')+' '+(dis?'disabled':'')+'>'+
+            (t.ausserhalb?' checked':'')+' '+(dis||(nH>0&&nH<=3)?'':'')+'>'+ // Checkbox bleibt setzbar, wird aber in Berechnung ignoriert
+          (t.ausserhalb&&nH>0&&nH<=3?'<span style="color:var(--rot);font-size:.65rem" title="Netto ≤3h – keine Diät">✕</span>':'')+
         '</label>':'')+
       '</td>'+
-      '<td class="zuschlag-cell">'+chips+' '+typB+'</td>'+
+      '<td class="zuschlag-cell">'+chips+' '+typB+dayWarnHtml+'</td>'+
       '<td><input type="text" value="'+(t.notiz||'').replace(/"/g,'&quot;')+'" placeholder="…" data-date="'+d.ds+'" data-field="notiz" '+(dis?'disabled':'')+'></td>'+
     '</tr>';
   }).join('');
 
   // Woche-Stats-Zeile
   var statsItems=[];
-  statsItems.push('<span>'+wr.nettoTotal.toFixed(1)+' h netto</span>');
-  if(wr.ausserhalbTage>0)statsItems.push('<span>'+wr.ausserhalbTage+' Arbeitstag'+(wr.ausserhalbTage>1?'e':'')+' außerhalb</span>');
+  var nettoClass=wr.warn60h?'warn':'';
+  statsItems.push('<span class="'+nettoClass+'">'+wr.nettoTotal.toFixed(1)+' h netto'+(wr.warn60h?' ⚠ Über 60h/Woche!':'')+' </span>');
+  if(wr.ausserhalbTage>0)statsItems.push('<span>'+wr.ausserhalbTage+' Arbeitstag'+(wr.ausserhalbTage>1?'e':'')+' außerhalb (Diät)</span>');
   if(wr.drinnenTage>0)statsItems.push('<span>'+wr.drinnenTage+' innerhalb</span>');
   if(wr.bezPauseNichtErhalten>0)statsItems.push('<span class="warn">'+wr.bezPauseNichtErhalten+'× bez. Pause nicht erhalten (§5 Abs. 4)</span>');
   else if(wr.bezPauseFaellig>0)statsItems.push('<span class="ok">'+wr.bezPauseFaellig+'× bez. Pause ✓</span>');
+  if(wr.ruheWarn&&wr.ruheWarn.length)wr.ruheWarn.forEach(function(rw){statsItems.push('<span class="warn">⚠ Ruhezeit vor '+new Date(rw.ds+'T12:00:00').getDate()+'. nur '+rw.gapH+'h (Min. 11h)</span>');});
 
   return'<div class="woche-header" data-toggle="'+wk+'">'+
     '<h3>'+hdr+'</h3>'+
@@ -696,9 +815,10 @@ function renderGesamt(rows,gtotal,totAusserh,totDrinnen,totBPF,totBPN,diaet){
       totArbeitsT+' Arbeitstage im Projekt'+
     '</div>'+
     '<div class="report-box">'+
-      '<strong>Arbeit außerhalb Firmensitz (&gt;3h)</strong>'+
-      totAusserh+' Arbeitstag'+(totAusserh!==1?'e':'')+
+      '<strong>Arbeit außerhalb Firmensitz (&gt;3h netto) — Ortsgebietsdiät §17</strong>'+
+      totAusserh+' Arbeitstag'+(totAusserh!==1?'e':'')+' mit &gt;3h netto'+
       '<br>Diäten: '+totAusserh+' × '+fe(diaet)+' = <strong>'+fe(diaetTotal)+'</strong>'+
+      '<br><span style="font-size:.72rem;color:var(--grau)">Nicht enthalten: Taggeld, Nächtigungsgeld, Km-Geld</span>'+
     '</div>'+
     '<div class="report-box">'+
       '<strong>Arbeit innerhalb Firmensitz</strong>'+
@@ -804,7 +924,7 @@ function exportCSV(){
       var t=getTag(d.ds);
       var typ=dayType(d.ds);
       var dow=new Date(d.ds+'T12:00:00').getDay();
-      var res=(t.von&&t.bis)?daySurcharges(d.ds,t.von,t.bis,+t.pause||0,pg,pi,yi,basis,wmod,faktor,t.bezPause):null;
+      var res=(t.von&&t.bis)?daySurcharges(d.ds,t.von,t.bis,+t.pause||0,t.pauseVon||'',pg,pi,yi,basis,wmod,faktor,t.bezPause):null;
       var nH=res?GR.r2(res.nH):0;
       var nightH=res?GR.r2(res.nightH||0):0;
       var fkH=res?GR.r2(res.fh||0):0;
