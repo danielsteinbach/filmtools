@@ -44,7 +44,8 @@ section{margin-bottom:52px}
 section h2{font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-left:4px solid var(--rot);padding-left:10px;margin-bottom:20px;color:var(--dunkel)}
 
 /* Tool Cards */
-.tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+/* Feste Zweierreihen: vier Karten ergeben 2+2, nie drei oben und eine allein darunter. */
+.tool-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
 .tool-card{border:1px solid var(--rand);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s}
 .tool-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.1)}
 .tool-card-header{background:var(--dunkel);color:#fff;padding:18px 20px 14px}
@@ -69,7 +70,8 @@ section h2{font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spac
 
 /* Zweispaltig */
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-@media(max-width:640px){.two-col{grid-template-columns:1fr}}
+@media(max-width:640px){.two-col{grid-template-columns:1fr}
+  .tool-grid{grid-template-columns:1fr}}
 
 /* Footer */
 footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;margin-top:40px}
