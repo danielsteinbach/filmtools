@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Filmtools – Werkzeuge für österreichische Filmschaffende</title>
-<meta name="description" content="Kostenlose Online-Tools für österreichische Filmschaffende: Gagenrechner, Stundenliste, CO₂-Rechner und Trackingflächen nach KV §7.">
+<meta name="description" content="Kostenlose Online-Tools für österreichische Filmschaffende: Gagenrechner, Stundenliste, CO₂-Rechner und Set-Displays nach KV §7.">
 <style>
 :root{
   --rot:#b00d23;--dunkel:#1a1a1a;--grau:#6e6e6e;--hellgrau:#f0f0f0;
@@ -44,8 +44,7 @@ section{margin-bottom:52px}
 section h2{font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-left:4px solid var(--rot);padding-left:10px;margin-bottom:20px;color:var(--dunkel)}
 
 /* Tool Cards */
-/* Feste Zweierreihen: vier Karten ergeben 2+2, nie drei oben und eine allein darunter. */
-.tool-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
 .tool-card{border:1px solid var(--rand);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s}
 .tool-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.1)}
 .tool-card-header{background:var(--dunkel);color:#fff;padding:18px 20px 14px}
@@ -70,8 +69,7 @@ section h2{font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spac
 
 /* Zweispaltig */
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-@media(max-width:640px){.two-col{grid-template-columns:1fr}
-  .tool-grid{grid-template-columns:1fr}}
+@media(max-width:640px){.two-col{grid-template-columns:1fr}}
 
 /* Footer */
 footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;margin-top:40px}
@@ -100,7 +98,7 @@ footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;ma
     <a href="#gagenrechner">Gagenrechner</a>
     <a href="#stundenrechner">Stundenliste</a>
     <a href="#co2">CO₂-Rechner</a>
-    <a href="#screens">Green · Blue · Grey</a>
+    <a href="#screens">green-blue-grey-screens</a>
     <a href="#haftung">Haftungsausschluss</a>
     <a href="#kontakt">Kontakt</a>
   </div>
@@ -154,16 +152,18 @@ footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;ma
           Erfassung und Auswertung von Arbeitszeiten über einen Projektzeitraum nach KV §7 Wochenpauschalgage.
           <ul>
             <li>Projektzeitraum mit automatischer Wochenstruktur</li>
-            <li>Mittagspause mit Lagekontrolle (≤6h nach Arbeitsbeginn)</li>
-            <li>Bezahlte Pflichtpause §5 Abs. 4 ab 9h netto dokumentierbar</li>
+            <li>Mittagspause mit Lagekontrolle (≤ 6h nach Arbeitsbeginn)</li>
+            <li>Nacht-, Samstags- und Feiertagszuschläge zeitgenau</li>
+            <li>Faktor-Überstunden ab 12h/Tag (5T) bzw. 10h/Tag (6T) — pro Woche einstellbar</li>
+            <li>Bezahlte Pflichtpause §5 Abs. 4 und Abrechnungspraxis dokumentierbar</li>
             <li>Außerhalb-Checkbox für Diäten §17</li>
-            <li>Faktor-Überstunden ab 12h/Tag (5T) bzw. 10h/Tag (6T)</li>
-            <li>Export als CSV und PDF · lokale Speicherung (localStorage)</li>
+            <li>Excel-Sicherung (Eingaben) und Excel/PDF-Ergebnisexport</li>
+            <li>Import gesicherter Excel-Daten</li>
           </ul>
           <div style="margin-top:10px">
             <span class="tag">Lokal gespeichert</span>
-            <span class="tag">CSV-Export</span>
-            <span class="tag">PDF-Druck</span>
+            <span class="tag">Excel Import/Export</span>
+            <span class="tag">PDF-Download</span>
           </div>
         </div>
         <div class="tool-card-footer">
@@ -198,24 +198,24 @@ footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;ma
       <!-- Screens -->
       <div class="tool-card" id="screens">
         <div class="tool-card-header">
-          <h3>Green · Blue · Grey</h3>
-          <div class="kv-ref">Trackingflächen · VFX · Szenenbild</div>
+          <h3>green-blue-grey-screens</h3>
+          <div class="kv-ref">Prop Screens · HTML · Szenenbild</div>
         </div>
         <div class="tool-card-body">
-          Formatfüllende einfarbige Flächen mit Trackingpoints, direkt im Browser. Verwandelt Handy, Tablet oder Monitor in eine Greenscreen-Fläche, die sich der Bildschirmgröße des Geräts anpasst.
+          Farbkalibrierte Set-Displays für den Set-Einsatz: täuschend echte Bildschirminhalte in den Farbbereichen Green, Blue und Grey – direkt im Browser am Set.
           <ul>
-            <li>Grün, Blau und Grau, dazu freie Farbwahl und Helligkeit</li>
-            <li>Fünf Punktformen, Marker in Schwarz, Weiß oder Magenta</li>
-            <li>Eckmarken und Bildmitte zuschaltbar</li>
-            <li>Als Bild sichern: PNG in voller Geräteauflösung</li>
+            <li>Chat-Verläufe, Wetterkamera, Zeitungsseiten</li>
+            <li>Tierbilder und Flächenübersichten</li>
+            <li>Vollbild-optimiert für Tablets und Monitore</li>
+            <li>Keine Installation, keine App</li>
           </ul>
           <div style="margin-top:10px">
             <span class="tag">Offline-fähig</span>
-            <span class="tag">Keine Dateien nötig</span>
+            <span class="tag">Vollbild</span>
           </div>
         </div>
         <div class="tool-card-footer">
-          <a class="btn btn-prim" href="https://danielsteinbach.github.io/Screens/flaechen/" target="_blank" rel="noopener">Zu den Flächen →</a>
+          <a class="btn btn-prim" href="https://danielsteinbach.github.io/Screens/flaechen/" target="_blank" rel="noopener">Zu den Screens →</a>
         </div>
       </div>
 
@@ -244,6 +244,7 @@ footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;ma
       <div class="info-box">
         <h3>Datenschutz</h3>
         <p>Diese Seite verwendet keine Cookies, keine Tracker und keine externen Dienste. Der Gagenrechner und der CO₂-Rechner speichern keinerlei Daten. Die Stundenliste speichert Eingaben ausschließlich lokal im Browser (localStorage) des jeweiligen Geräts – kein Server, keine Weitergabe.</p>
+        <p>Für Excel- und PDF-Export in der Stundenliste werden die Bibliotheken SheetJS und html2pdf.js bei Bedarf von <a href="https://cdnjs.cloudflare.com" target="_blank" rel="noopener">cdnjs.cloudflare.com</a> geladen (nur beim ersten Klick, nur wenn Internetverbindung vorhanden). Es werden dabei keine Nutzerdaten übertragen.</p>
         <p>Die Seite wird über GitHub Pages bereitgestellt. Es gelten die <a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener">Datenschutzbestimmungen von GitHub</a>.</p>
       </div>
       <div class="info-box">
@@ -290,7 +291,7 @@ footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;ma
       <a href="#gagenrechner">Gagenrechner</a>
       <a href="#stundenrechner">Stundenliste</a>
       <a href="#co2">CO₂-Rechner</a>
-      <a href="#screens">Green · Blue · Grey</a>
+      <a href="#screens">green-blue-grey-screens</a>
     </div>
     <div class="footer-col">
       <h4>Rechtliches</h4>
