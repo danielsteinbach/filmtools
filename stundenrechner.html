@@ -745,9 +745,12 @@ function getTag(ds){
   return t;
 }
 function getWoche(wk){
-  if(!state.wochen[wk])state.wochen[wk]={teilwocheArt:'fuenftel'};
+  if(!state.wochen[wk])state.wochen[wk]={};
   // wmod pro Woche: Default = Projekt-Wochenmodell
   if(!state.wochen[wk].wmod)state.wochen[wk].wmod=+state.meta.wochenmodell||5;
+  // teilwocheArt folgt dem Wochenmodell, wenn nicht explizit gesetzt
+  if(!state.wochen[wk].teilwocheArt)
+    state.wochen[wk].teilwocheArt=(+state.wochen[wk].wmod===6)?'sechstel':'fuenftel';
   return state.wochen[wk];
 }
 
@@ -781,9 +784,8 @@ function isPartial(wk,s,e,wmod){
  * ==================================================== */
 function calcWeek(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
   var active=days.filter(function(d){return d.inRange});
-  var wochenbasis=partial
-    ?(wst.teilwocheArt==='sechstel'?GR.r2(active.length*pg/6):GR.r2(active.length*pg/5))
-    :pg;
+  var teilDiv=(wst.teilwocheArt==='sechstel')?6:(wst.teilwocheArt==='fuenftel')?5:wmod;
+  var wochenbasis=partial?GR.r2(active.length*pg/teilDiv):pg;
   var surchargeTotal=0,nettoTotal=0,faktorTotal=0;
   var bezPauseFaellig=0,bezPauseNichtErhalten=0,ausserhalbTage=0,drinnenTage=0;
   var dayWarns={}; // ds → [warns]
@@ -1055,8 +1057,11 @@ function attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
   if(tw){tw.addEventListener('change',function(){state.wochen[wk].teilwocheArt=this.value;save();renderAll();})}
   var wmodSel=el.querySelector('[data-wmod]');
   if(wmodSel){wmodSel.addEventListener('change',function(){
-    if(!state.wochen[wk])state.wochen[wk]={teilwocheArt:'fuenftel'};
-    state.wochen[wk].wmod=+this.value;save();renderAll();
+    if(!state.wochen[wk])state.wochen[wk]={};
+    state.wochen[wk].wmod=+this.value;
+    // teilwocheArt automatisch anpassen wenn Wochenmodell wechselt
+    state.wochen[wk].teilwocheArt=(+this.value===6)?'sechstel':'fuenftel';
+    save();renderAll();
   });}
   el.querySelectorAll('[data-date]').forEach(function(inp){
     var ev=inp.type==='checkbox'?'change':'change';
