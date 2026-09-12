@@ -811,14 +811,14 @@ function calcWeek(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
   var teilDiv=(wst.teilwocheArt==='sechstel')?6:(wst.teilwocheArt==='fuenftel')?5:wmod;
   var wochenbasis=partial?GR.r2(active.length*pg/teilDiv):pg;
   var surchargeTotal=0,nettoTotal=0,faktorTotal=0;
-  var bezPauseFaellig=0,bezPauseNichtErhalten=0,ausserhalbTage=0,drinnenTage=0;
+  var bezPauseFaellig=0,bezPauseNichtErhalten=0,bezPauseAutoCount=0,ausserhalbTage=0,drinnenTage=0;
   var dayWarns={}; // ds → [warns]
   active.forEach(function(d){
     var t=getTag(d.ds);
     if(!t.von||!t.bis)return;
     var r=daySurcharges(d.ds,t.von,t.bis,+t.pause||0,t.pauseVon||'',pg,pi,yi,basis,wmod,faktor,t.bezPause);
     surchargeTotal+=r.total;nettoTotal+=r.nH;faktorTotal+=r.fh;
-    if(r.nH>9){bezPauseFaellig++;if(!t.bezPause)bezPauseNichtErhalten++;}
+    if(r.nH>9){bezPauseFaellig++;if(state.meta.bezPauseAuto){bezPauseAutoCount++;}else if(!t.bezPause){bezPauseNichtErhalten++;}}
     // A7: Diät nur wenn nH>3
     if(t.ausserhalb&&r.nH>3)ausserhalbTage++;
     else if(!t.ausserhalb)drinnenTage++;
@@ -842,7 +842,7 @@ function calcWeek(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
     if(gapMin<660){ruheWarn.push({ds:worked[ri].ds,gapH:Math.round(gapMin*10/60)/10});}
   }
   return{wochenbasis,surchargeTotal,total:GR.r2(wochenbasis+surchargeTotal),
-         nettoTotal,faktorTotal,bezPauseFaellig,bezPauseNichtErhalten,
+         nettoTotal,faktorTotal,bezPauseFaellig,bezPauseNichtErhalten,bezPauseAutoCount,
          ausserhalbTage,drinnenTage,activeDays:active.length,partial,
          warn60h,ruheWarn,dayWarns};
 }
@@ -1027,8 +1027,9 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
   statsItems.push('<span class="'+nettoClass+'">'+wr.nettoTotal.toFixed(1)+' h netto'+(wr.warn60h?' ⚠ Über 60h/Woche!':'')+' </span>');
   if(wr.ausserhalbTage>0)statsItems.push('<span>'+wr.ausserhalbTage+' Arbeitstag'+(wr.ausserhalbTage>1?'e':'')+' außerhalb (Diät)</span>');
   if(wr.drinnenTage>0)statsItems.push('<span>'+wr.drinnenTage+' innerhalb</span>');
+  if(wr.bezPauseAutoCount)statsItems.push('<span class="ok">'+wr.bezPauseAutoCount+'× Bez. Pause ✓ (auto)</span>');
   if(wr.bezPauseNichtErhalten>0)statsItems.push('<span class="warn">'+wr.bezPauseNichtErhalten+'× bez. Pause nicht erhalten (§5 Abs. 4)</span>');
-  else if(wr.bezPauseFaellig>0)statsItems.push('<span class="ok">'+wr.bezPauseFaellig+'× bez. Pause ✓</span>');
+  else if(wr.bezPauseFaellig>0&&!wr.bezPauseAutoCount)statsItems.push('<span class="ok">'+wr.bezPauseFaellig+'× bez. Pause ✓</span>');
   if(wr.warn60h?wr.warn60h:false){}
   // Ruhezeit-Warnungen aus globalem ruheVerletzt (wird in weekHTML übergeben)
   var ruheWarnDays=days.filter(function(d){return ruheVerletzt&&ruheVerletzt[d.ds];});
@@ -1333,7 +1334,7 @@ function exportCSV(){
       var zChips=res?res.s.map(function(x){return x.l+': '+x.b}).join(' | '):'';
       row([wk,d.ds,TNAME[dow],typ,t.von||'',t.bis||'',t.pause||0,t.pauseVon||'',
            plLabel,String(nH).replace('.',','),String(nightH).replace('.',','),String(fkH).replace('.',','),
-           bezFaellig?'Ja':'Nein',bezFaellig?(t.bezPause?'Ja':'Nein'):'n/a',
+           bezFaellig?'Ja':'Nein',bezFaellig?(state.meta.bezPauseAuto?'Ja (auto)':t.bezPause?'Ja':'Nein'):'n/a',
            t.ausserhalb?'Ja':'Nein',
            zChips,
            t.notiz||'',
@@ -1398,7 +1399,10 @@ function exportEingabenXLSX(){
     rows.push(['Gagentabelle:',GR.YEARS[m.jahrIndex]||'']);
     rows.push(['Wochenpauschalgage (€):',m.pauschalgage||'']);
     rows.push(['KV-Basis:',m.kvBasis==='mindest'?'KV-Mindestgage':'Vereinbarte Gage']);
-    rows.push(['Wochenmodell:',m.wochenmodell===6?'6-Tage':'5-Tage']);
+    var wmVals3=Object.values(state.wochen).map(function(w){return w.wmod;}).filter(Boolean);
+    var wmLabel3=wmVals3.length&&wmVals3.every(function(v){return v===wmVals3[0]})?wmVals3[0]+'-Tage (einheitlich)':'wechselnd – siehe Kalenderwochen';
+    rows.push(['Wochenmodell:',wmLabel3]);
+    rows.push(['Bez. Pause in Mittagspause eingerechnet:',m.bezPauseAuto?'Ja':'Nein']);
     rows.push(['Faktor ÜSt über Limit:',m.faktor||1.5]);
     rows.push(['Diät (€/Tag):',m.diaet||15.40]);
     rows.push([]);
@@ -1410,7 +1414,14 @@ function exportEingabenXLSX(){
       var t=getTag(ds);
       rows.push([ds,DAYS2[d.getDay()],t.von||'',t.bis||'',t.pause||'',t.pauseVon||'',
         t.ausserhalb?'j':'n',t.notiz||'',
-        t.bezPause===true?'j':t.bezPause===false?'n':'']);
+        (function(){
+          if(state.meta.bezPauseAuto&&t.von&&t.bis){
+            var vv2=pt(t.von),bb2=pt(t.bis);if(bb2!==null&&vv2!==null){if(bb2<=vv2)bb2+=1440;
+              var nh2=Math.max(0,bb2-vv2-(+t.pause||0))/60;if(nh2>9)return 'j (auto)';}
+          }
+          return t.bezPause===true?'j':t.bezPause===false?'n':'';
+        }())]);
+
     }
     var ws=XLSX.utils.aoa_to_sheet(rows);
     ws['!cols']=[{wch:14},{wch:7},{wch:7},{wch:7},{wch:13},{wch:20},{wch:16},{wch:32},{wch:24}];
@@ -1446,9 +1457,10 @@ function importFromXLSX(file){
         if(ji>=0)state.meta.jahrIndex=ji;
         var gage=parseFloat(cell(9,1));if(!isNaN(gage))state.meta.pauschalgage=gage;
         state.meta.kvBasis=cell(10,1).includes('Mindest')?'mindest':'vereinbart';
-        state.meta.wochenmodell=cell(11,1).includes('6')?6:5;
-        var fak=parseFloat(cell(12,1));if(!isNaN(fak))state.meta.faktor=fak;
-        var dv=parseFloat(cell(13,1));if(!isNaN(dv))state.meta.diaet=dv;
+        // state.meta.wochenmodell als Fallback
+        var bpCell=cell(12,1);state.meta.bezPauseAuto=bpCell.toLowerCase().includes('ja');
+        var fak=parseFloat(cell(13,1));if(!isNaN(fak))state.meta.faktor=fak;
+        var dv=parseFloat(cell(14,1));if(!isNaN(dv))state.meta.diaet=dv;
         state.tage={};
         for(var i=16;i<rows.length;i++){
           var ds2=cell(i,0);
@@ -1456,7 +1468,7 @@ function importFromXLSX(file){
           var pm2=rows[i][4];var bp2=cell(i,8).toLowerCase();
           state.tage[ds2]={von:cell(i,2),bis:cell(i,3),pause:pm2!==''?+pm2:0,pauseVon:cell(i,5),
             ausserhalb:cell(i,6).toLowerCase()==='j',notiz:cell(i,7),
-            bezPause:bp2===''?null:bp2==='j'};
+            bezPause:bp2===''?null:bp2.startsWith('j')};
         }
         // Wochen-Sheet einlesen wenn vorhanden
         if(wb.SheetNames.length>1){
