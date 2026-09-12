@@ -113,6 +113,8 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 /* Placeholder */
 #placeholder{text-align:center;padding:50px 20px;border:2px dashed var(--rand);border-radius:8px;color:var(--grau);margin-top:20px}
 #placeholder strong{display:block;font-size:1.05rem;margin-bottom:6px;color:var(--dunkel)}
+
+/* Print */
 /* Print */
 @media print{
   .export-bar,.btn,button{display:none!important}
@@ -167,12 +169,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
       </div>
       <div class="gage-unter-kv" id="gage-unter-kv"></div>
     </div>
-    <div class="fld"><label for="s-wmodell">Wochenmodell</label>
-      <select id="s-wmodell">
-        <option value="5">5-Tage-Woche (ÜSt-Limit 12h/Tag)</option>
-        <option value="6">6-Tage-Woche inkl. Samstag (ÜSt-Limit 10h/Tag)</option>
-      </select>
-    </div>
+
   </div>
   <div class="grid3" style="margin-top:4px">
     <div class="fld">
@@ -280,7 +277,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
     <p style="font-size:.85rem;color:var(--grau);margin-bottom:20px">Alle berechneten Werte — Zuschläge, Stunden, Summen — werden exportiert.</p>
     <div style="display:flex;gap:12px;flex-wrap:wrap">
       <button class="btn btn-prim" id="btn-ergebnis-xlsx" style="flex:1">Excel (.xlsx)</button>
-      <button class="btn btn-sec" id="btn-ergebnis-pdf" style="flex:1">PDF drucken</button>
+      <button class="btn btn-sec" id="btn-ergebnis-pdf" style="flex:1">PDF anzeigen</button>
     </div>
     <button class="btn btn-ghost" id="btn-modal-close" style="width:100%;margin-top:10px">Abbrechen</button>
   </div>
@@ -746,11 +743,15 @@ function getTag(ds){
 }
 function getWoche(wk){
   if(!state.wochen[wk])state.wochen[wk]={};
-  // wmod pro Woche: Default = Projekt-Wochenmodell
-  if(!state.wochen[wk].wmod)state.wochen[wk].wmod=+state.meta.wochenmodell||5;
-  // teilwocheArt folgt dem Wochenmodell, wenn nicht explizit gesetzt
-  if(!state.wochen[wk].teilwocheArt)
-    state.wochen[wk].teilwocheArt=(+state.wochen[wk].wmod===6)?'sechstel':'fuenftel';
+  if(!state.wochen[wk].wmod){
+    // Neue Woche erbt Modell der zuletzt bekannten Woche, sonst 5 als Fallback
+    var known=Object.keys(state.wochen).filter(function(k){return k!==wk&&state.wochen[k].wmod;});
+    known.sort();
+    var prevWk=known.length?known[known.length-1]:null;
+    state.wochen[wk].wmod=prevWk?+state.wochen[prevWk].wmod:5;
+  }
+  // teilwocheArt folgt dem Wochenmodell automatisch
+  state.wochen[wk].teilwocheArt=(+state.wochen[wk].wmod===6)?'sechstel':'fuenftel';
   return state.wochen[wk];
 }
 
@@ -908,12 +909,10 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
 
   var teilBar='';
   if(partial){
+    var teilD=wmod===6?6:5;
     teilBar='<div class="teilwoche-bar">'+
-      '<span>Teilwoche – '+wr.activeDays+' Projektkalendertag'+(wr.activeDays!==1?'e':'')+' </span>'+
-      '<select data-tw="'+wk+'">'+
-        '<option value="fuenftel"'+(wst.teilwocheArt==='fuenftel'?' selected':'')+'>÷5 (5-Tage-Woche)</option>'+
-        '<option value="sechstel"'+(wst.teilwocheArt==='sechstel'?' selected':'')+'>÷6 (6-Tage-Woche)</option>'+
-      '</select>'+
+      '<span>Teilwoche – '+wr.activeDays+' Projektkalendertag'+(wr.activeDays!==1?'e':'')+
+        ' ÷'+teilD+' ('+wmod+'-Tage-Woche)</span>'+
       '<span><strong>'+fe(wr.wochenbasis)+'</strong></span>'+
     '</div>';
   }
@@ -1047,14 +1046,15 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
   '</div>';
 }
 
+
+
 function attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
   var header=el.querySelector('.woche-header');
   if(header){header.addEventListener('click',function(ev){
     if(['INPUT','SELECT','BUTTON','LABEL'].includes(ev.target.tagName))return;
     var b=el.querySelector('.woche-body');if(b)b.style.display=b.style.display==='none'?'':'none';
   })}
-  var tw=el.querySelector('[data-tw]');
-  if(tw){tw.addEventListener('change',function(){state.wochen[wk].teilwocheArt=this.value;save();renderAll();})}
+  // kein Teilwoche-Dropdown mehr (folgt automatisch dem Wochenmodell)
   var wmodSel=el.querySelector('[data-wmod]');
   if(wmodSel){wmodSel.addEventListener('change',function(){
     if(!state.wochen[wk])state.wochen[wk]={};
@@ -1064,20 +1064,23 @@ function attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
     save();renderAll();
   });}
   el.querySelectorAll('[data-date]').forEach(function(inp){
-    var ev=inp.type==='checkbox'?'change':'change';
-    inp.addEventListener(ev,function(){
-      var ds=this.dataset.date,f=this.dataset.field;
+    function sv(){
+      var ds=inp.dataset.date,f=inp.dataset.field;
       if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:false,notiz:''};
-      state.tage[ds][f]=this.type==='checkbox'?this.checked:(f==='pause'?+this.value:this.value);
-      save();renderAll();
-    });
-    if(inp.type==='time'||inp.type==='text'){
-      inp.addEventListener('input',function(){
-        var ds=this.dataset.date,f=this.dataset.field;
-        if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:false,notiz:''};
-        state.tage[ds][f]=this.value;
-        save();renderAll();
-      });
+      state.tage[ds][f]=inp.type==='checkbox'?inp.checked:(f==='pause'?+inp.value:inp.value);
+      save();
+    }
+    if(inp.type==='time'){
+      // Zeitfelder: speichern sofort, rendern erst nach blur
+      // → nativer Browser-Picker (Maus, Touch, Tastatur) bleibt ungestört offen
+      inp.addEventListener('change',sv);
+      inp.addEventListener('input', sv);
+      inp.addEventListener('blur',  function(){sv();renderAll();});
+    } else if(inp.type==='checkbox'||inp.type==='number'){
+      inp.addEventListener('change',function(){sv();renderAll();});
+    } else {
+      inp.addEventListener('input', sv);
+      inp.addEventListener('blur',  function(){sv();renderAll();});
     }
   });
 }
@@ -1141,7 +1144,6 @@ function syncUIFromState(){
   if(el('s-beruf')&&m.berufIndex>=0)el('s-beruf').value=m.berufIndex;
   if(el('s-jahr'))el('s-jahr').value=m.jahrIndex>=0?m.jahrIndex:2;
   if(el('s-gage'))el('s-gage').value=m.pauschalgage||'';
-  if(el('s-wmodell'))el('s-wmodell').value=m.wochenmodell||5;
   if(el('s-faktor'))el('s-faktor').value=m.faktor||1.5;
   if(el('s-diaet'))el('s-diaet').value=m.diaet||15.40;
   var rb=document.querySelector('input[name="kv-basis"][value="'+(m.kvBasis||'vereinbart')+'"]');
@@ -1161,7 +1163,6 @@ function initSetup(){
   if(state.meta.berufIndex>=0)sb.value=state.meta.berufIndex;
   sj.value=state.meta.jahrIndex>=0?state.meta.jahrIndex:2;
   document.getElementById('s-gage').value=state.meta.pauschalgage||'';
-  document.getElementById('s-wmodell').value=state.meta.wochenmodell||5;
   document.getElementById('s-faktor').value=state.meta.faktor||1.5;
   document.getElementById('s-diaet').value=state.meta.diaet||15.40;
   var rb=document.querySelector('input[name="kv-basis"][value="'+(state.meta.kvBasis||'vereinbart')+'"]');
@@ -1206,14 +1207,13 @@ function initSetup(){
       }
     }
     state.meta.pauschalgage=newGage;
-    state.meta.wochenmodell=+document.getElementById('s-wmodell').value||5;
     state.meta.faktor=+document.getElementById('s-faktor').value||1.5;
     state.meta.diaet=+document.getElementById('s-diaet').value||15.40;
     var rb2=document.querySelector('input[name="kv-basis"]:checked');
     state.meta.kvBasis=rb2?rb2.value:'vereinbart';
     save();renderAll();
   }
-  ['s-person-name','s-svnr','s-name','s-start','s-end','s-gage','s-wmodell','s-faktor','s-diaet'].forEach(function(id){
+  ['s-person-name','s-svnr','s-name','s-start','s-end','s-gage','s-faktor','s-diaet'].forEach(function(id){
     document.getElementById(id).addEventListener('change',onMeta);
     document.getElementById(id).addEventListener('input',onMeta);
   });
@@ -1550,7 +1550,7 @@ function exportErgebnissePDF(){
   }
   html+='<tr class="gtot"><td colspan="8"><b>GESAMTSUMME</b></td><td><b>'+fe3(gT)+'</b></td></tr></table>';
   html+='<p style="font-size:9px;color:#888;margin-top:8px">Orientierungswerte. KV Filmschaffende ab 1.7.2026. Erstellt: '+new Date().toLocaleDateString('de-AT')+'</p>';
-  html+='<script>window.onload=function(){window.print();}<\/script></body></html>';
+  html+='</body></html>';
   var w=window.open('','_blank','width=1100,height=750');
   if(w){w.document.write(html);w.document.close();}
   else{alert('Bitte Pop-ups für diese Seite erlauben.');}
