@@ -791,6 +791,7 @@ function fh(h){var g=Math.abs(h),hh=Math.floor(g),mm=Math.round((g-hh)*60);retur
 function weeksFor(s,e){
   var w=[],seen=new Set(),c=new Date(s);
   while(c<=e){var k=isoWk(c);if(!seen.has(k)){seen.add(k);w.push(k)}c.setDate(c.getDate()+1)}
+  w.sort(); // aufsteigend chronologisch (YYYY-Www-Format sortiert lexikografisch korrekt)
   return w;
 }
 function daysInWeek(wk,s,e){

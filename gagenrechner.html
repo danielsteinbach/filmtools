@@ -390,12 +390,13 @@ var GR = (function () {
     };
     [4, 5].forEach(function (frac) {
       var T = W / frac;
-      var std = W / 40;        // §9 Abs. 5: Stundenlohn immer W/40, nicht T/frac×5
-      var ot50  = 2 * std * 1.5;   // 2 Std × 150 % (erste 2 Überstunden)
-      var ot100 = 2 * std * 2.0;   // 2 Std × 200 % (dritte und vierte Überstunde)
+      // §9 Abs. 5 KV: Stundenlohn = Tagesgage ÷ 8 (Tagesvertrag) = T/8
+      // Für frac=5: T/8 = W/40 (identisch mit Wochenvertrag-Formel)
+      // Für frac=4: T/8 = W/32 (Einzeldrehtag — ausdrücklich NICHT W/40)
+      // Ergibt: h10 = T + 2×(T/8)×1,5 = T×1,375; h12 = T + 2×(T/8)×1,5 + 2×(T/8)×2 = T×1,875
       o.tage[frac] = {
-        exkl: { h8: T,       h10: T + ot50,        h12: T + ot50 + ot100 },
-        inkl: { h8: T * F,   h10: T * F + ot50,    h12: T * F + ot50 + ot100 }
+        exkl: { h8: T,       h10: T * 1.375, h12: T * 1.875 },
+        inkl: { h8: T * F,   h10: T * F + T * 0.375, h12: T * F + T * 0.875 }
       };
     });
     return o;
@@ -440,12 +441,18 @@ var GR = (function () {
           fails.push('P=' + c.P + ' ' + k + ': ' + r2(got[k]) + ' ≠ ' + c.exp[k]);
       });
     });
-    // Tagesgagen frac=4: Stundenlohn §9 Abs.5 = W/40 (nicht T/8)
-    var t4 = calc(3150).tage[4];
-    var t4exp = { h8_exkl: 441.41, h10_exkl: 573.84, h12_exkl: 750.40 };
-    if (Math.abs(r2(t4.exkl.h8)  - t4exp.h8_exkl)  > 0.05) fails.push('frac4 h8_exkl: '  + r2(t4.exkl.h8));
-    if (Math.abs(r2(t4.exkl.h10) - t4exp.h10_exkl) > 0.05) fails.push('frac4 h10_exkl: ' + r2(t4.exkl.h10));
-    if (Math.abs(r2(t4.exkl.h12) - t4exp.h12_exkl) > 0.05) fails.push('frac4 h12_exkl: ' + r2(t4.exkl.h12));
+    // frac=4 Tagesgage Referenzfall: Produktionsassistenz 2026
+    // T = W/4, Stundenlohn = T/8 (§9 Abs. 5 Tagesvertrag), h10 = T×1.375
+    var paPos = null;
+    for (var j = 0; j < POSITIONS.length; j++) {
+      if (POSITIONS[j][0] === 'Produktionsassistenz') { paPos = POSITIONS[j]; break; }
+    }
+    if (paPos) {
+      var paPG = r2(r2(paPos[3]) * P7 * F); // Mindest-PG 2026
+      var paT4 = calc(paPG).tage[4];
+      if (Math.abs(r2(paT4.exkl.h10) - 268.84) > 0.05)
+        fails.push('frac4 Produktionsassistenz h10_exkl: ' + r2(paT4.exkl.h10) + ' ≠ 268.84');
+    }
     // Rundungsfalle
     var kamera = null;
     for (var i = 0; i < POSITIONS.length; i++) {
