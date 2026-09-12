@@ -181,6 +181,21 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
       <label for="s-diaet">Diäten außerhalb Firmensitz (>3h, §17)</label>
       <input type="number" id="s-diaet" value="15.40" min="0" step="0.10">
     </div>
+    <div class="fld" style="grid-column:1/-1">
+      <div class="toggle-box" style="padding:10px 14px">
+        <label style="display:flex;align-items:flex-start;gap:10px;font-weight:400;cursor:pointer">
+          <input type="checkbox" id="s-bezpause-auto" style="margin-top:3px;width:auto;flex-shrink:0">
+          <span>
+            <strong>Bezahlte Pause (§5 Abs.&nbsp;4) in Mittagspause eingerechnet</strong><br>
+            <span style="font-size:.78rem;color:var(--grau);line-height:1.5">
+              Bei Arbeitstagen mit &gt;&thinsp;9h netto wird die bezahlte Halbstundenpause automatisch als erhalten markiert.
+              Der Arbeitstag endet entsprechend früher — bitte die tatsächliche Biszeit eintragen.
+              Kein Zuschlag, keine separate Pause nötig.
+            </span>
+          </span>
+        </label>
+      </div>
+    </div>
     <div class="fld">
       <div class="toggle-box">
         <p style="font-size:.76rem;margin-bottom:6px"><strong>Zuschlagsbasis §10/§11</strong> — KV 2026 enthält einen Widerspruch zwischen §10 Abs. 1 und §10 Abs. 6. Bitte Lesart wählen:</p>
@@ -277,7 +292,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
     <p style="font-size:.85rem;color:var(--grau);margin-bottom:20px">Alle berechneten Werte — Zuschläge, Stunden, Summen — werden exportiert.</p>
     <div style="display:flex;gap:12px;flex-wrap:wrap">
       <button class="btn btn-prim" id="btn-ergebnis-xlsx" style="flex:1">Excel (.xlsx)</button>
-      <button class="btn btn-sec" id="btn-ergebnis-pdf" style="flex:1">PDF anzeigen</button>
+      <button class="btn btn-sec" id="btn-ergebnis-pdf" style="flex:1">PDF herunterladen</button>
     </div>
     <button class="btn btn-ghost" id="btn-modal-close" style="width:100%;margin-top:10px">Abbrechen</button>
   </div>
@@ -548,6 +563,12 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
   if(vv===null||bb===null)return{s:[],total:0,nH:0,nightH:0,fh:0,thr:12,warns:[]};
   if(bb<=vv)bb+=1440;
   var pm0=pm||0;
+  // bezPauseAuto: bezahlte Pflichtpause (30 Min.) ist in der Mittagspause enthalten
+  // → 30 Min. der Mittagspause werden als bezahlte Arbeitszeit gewertet (nicht abgezogen)
+  if(state.meta.bezPauseAuto){
+    var nH_raw=Math.max(0,bb-vv-pm0)/60;
+    if(nH_raw>9)pm0=Math.max(0,pm0-30); // bezahlte 30 Min. herausrechnen
+  }
   var pvMin=pt(pauseVon);if(pvMin!==null&&pvMin<vv)pvMin+=1440;
 
   var nM=Math.max(0,bb-vv-pm0),nH=nM/60;
@@ -707,8 +728,10 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
             b:GR.r2(olRegVal*faktor),typ:'faktor'});
   }
 
-  // 5. Bezahlte Pflichtpause nicht erhalten
-  if(nH>9&&bezPauseErhalten===false)
+  // 5. Bezahlte Pflichtpause
+  // bezPauseAuto: in Mittagspause eingerechnet → immer als erhalten
+  var _bezP = state.meta.bezPauseAuto ? true : bezPauseErhalten;
+  if(nH>9&&_bezP===false)
     s.push({l:'Bez. Pause nicht erhalten \u2013 Anspr. \u00a75 Abs.\u00a04 (0,5h)',b:GR.r2(vstd*0.5),typ:'warn'});
 
   // 6. Warnungen
@@ -726,14 +749,14 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
 var KEY='gr-stunden-v1';
 var state={
   meta:{personName:'',svnr:'',projektname:'',startDatum:'',endDatum:'',berufIndex:-1,jahrIndex:2,
-        pauschalgage:0,wochenmodell:5,kvBasis:'vereinbart',faktor:1.5,diaet:15.40},
+        pauschalgage:0,wochenmodell:5,kvBasis:'vereinbart',faktor:1.5,diaet:15.40,bezPauseAuto:false},
   wochen:{},
   tage:{}
 };
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 function load(){try{var s=localStorage.getItem(KEY);if(s)state=JSON.parse(s)}catch(e){}}
 function getTag(ds){
-  if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:false,notiz:''};
+  if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:true,notiz:''};
   var t=state.tage[ds];
   // Migration: alte Datensätze ohne neue Felder
   if(t.pauseVon===undefined)t.pauseVon='';
@@ -944,7 +967,10 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
     var bezPauseFaellig=nH>9;
     var bezPauseCell='';
     if(d.inRange){
-      if(bezPauseFaellig){
+      if(state.meta.bezPauseAuto&&nH>9){
+        // Projektweite Option aktiv: immer als erhalten markiert
+        bezPauseCell='<span style="font-size:.68rem;color:var(--gruen)" title="Bezahlte Pause in Mittagspause eingerechnet (Projektoption)">✓ auto</span>';
+      } else if(bezPauseFaellig){
         bezPauseCell='<label style="display:flex;align-items:center;gap:3px;cursor:pointer" title="§5 Abs. 4: Bei mehr als 1h Überstunden nach NAZ-Ende ist eine bezahlte 30-min-Pause vorgeschrieben.">'+
           '<input type="checkbox" class="bezpause" data-date="'+d.ds+'" data-field="bezPause"'+(t.bezPause?' checked':'')+' '+(dis?'disabled':'')+'>'+
           '<span style="font-size:.68rem;color:'+(t.bezPause?'var(--gruen)':'var(--rot)')+'">'+
@@ -1048,6 +1074,34 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
 
 
 
+/* Letzter gedrückter Key (für Tab-Erkennung) */
+var _lastKey='';
+document.addEventListener('keydown',function(e){_lastKey=e.key;},true);
+
+/* Nach renderAll Fokus wiederherstellen wenn mit Tab navigiert wurde */
+function focusAfterRender(ds,field){
+  if(_lastKey!=='Tab')return;
+  var all=Array.from(document.querySelectorAll('input[type="time"][data-date]:not([disabled])'));
+  var idx=all.findIndex(function(el){return el.dataset.date===ds&&el.dataset.field===field;});
+  if(idx>=0&&all[idx+1])setTimeout(function(){all[idx+1].focus();},0);
+}
+
+/* Bei Fokus auf leeres Zeitfeld: Wert aus nächster ausgefüllter Zeile darüber vorschlagen */
+document.addEventListener('focusin',function(e){
+  var inp=e.target;
+  if(inp.type!=='time'||inp.value||inp.disabled)return;
+  var f=inp.dataset.field;
+  if(f!=='von'&&f!=='bis'&&f!=='pauseVon')return;
+  var ds=inp.dataset.date;
+  var d0=new Date(ds+'T12:00:00');
+  for(var i=1;i<=14;i++){
+    var prev=new Date(d0);prev.setDate(d0.getDate()-i);
+    var pds=prev.toISOString().slice(0,10);
+    var t=state.tage[pds];
+    if(t&&t[f]){inp.value=t[f];break;}
+  }
+},true);
+
 function attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
   var header=el.querySelector('.woche-header');
   if(header){header.addEventListener('click',function(ev){
@@ -1066,7 +1120,7 @@ function attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
   el.querySelectorAll('[data-date]').forEach(function(inp){
     function sv(){
       var ds=inp.dataset.date,f=inp.dataset.field;
-      if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:false,notiz:''};
+      if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:true,notiz:''};
       state.tage[ds][f]=inp.type==='checkbox'?inp.checked:(f==='pause'?+inp.value:inp.value);
       save();
     }
@@ -1075,7 +1129,10 @@ function attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
       // → nativer Browser-Picker (Maus, Touch, Tastatur) bleibt ungestört offen
       inp.addEventListener('change',sv);
       inp.addEventListener('input', sv);
-      inp.addEventListener('blur',  function(){sv();renderAll();});
+      inp.addEventListener('blur',  function(){
+        var ds=inp.dataset.date,f=inp.dataset.field;
+        sv();renderAll();focusAfterRender(ds,f);
+      });
     } else if(inp.type==='checkbox'||inp.type==='number'){
       inp.addEventListener('change',function(){sv();renderAll();});
     } else {
@@ -1146,6 +1203,7 @@ function syncUIFromState(){
   if(el('s-gage'))el('s-gage').value=m.pauschalgage||'';
   if(el('s-faktor'))el('s-faktor').value=m.faktor||1.5;
   if(el('s-diaet'))el('s-diaet').value=m.diaet||15.40;
+  if(el('s-bezpause-auto'))el('s-bezpause-auto').checked=!!m.bezPauseAuto;
   var rb=document.querySelector('input[name="kv-basis"][value="'+(m.kvBasis||'vereinbart')+'"]');
   if(rb)rb.checked=true;
 }
@@ -1209,6 +1267,8 @@ function initSetup(){
     state.meta.pauschalgage=newGage;
     state.meta.faktor=+document.getElementById('s-faktor').value||1.5;
     state.meta.diaet=+document.getElementById('s-diaet').value||15.40;
+    var bpa=document.getElementById('s-bezpause-auto');
+    if(bpa)state.meta.bezPauseAuto=bpa.checked;
     var rb2=document.querySelector('input[name="kv-basis"]:checked');
     state.meta.kvBasis=rb2?rb2.value:'vereinbart';
     save();renderAll();
@@ -1218,6 +1278,7 @@ function initSetup(){
     document.getElementById(id).addEventListener('input',onMeta);
   });
   document.querySelectorAll('input[name="kv-basis"]').forEach(function(r){r.addEventListener('change',onMeta)});
+  var bpaEl=document.getElementById('s-bezpause-auto');if(bpaEl)bpaEl.addEventListener('change',onMeta);
 }
 
 /* ====================================================
@@ -1304,6 +1365,15 @@ function exportCSV(){
 /* ====================================================
  * XLSX IMPORT / EXPORT
  * ==================================================== */
+function loadHtml2Pdf(cb){
+  if(window.html2pdf){cb();return;}
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+  s.onload=cb;
+  s.onerror=function(){alert('html2pdf-Bibliothek nicht ladbar. Bitte Internetverbindung prüfen.');};
+  document.head.appendChild(s);
+}
+
 function loadXLSX(cb){
   if(window.XLSX){cb();return;}
   var s=document.createElement('script');
@@ -1551,9 +1621,24 @@ function exportErgebnissePDF(){
   html+='<tr class="gtot"><td colspan="8"><b>GESAMTSUMME</b></td><td><b>'+fe3(gT)+'</b></td></tr></table>';
   html+='<p style="font-size:9px;color:#888;margin-top:8px">Orientierungswerte. KV Filmschaffende ab 1.7.2026. Erstellt: '+new Date().toLocaleDateString('de-AT')+'</p>';
   html+='</body></html>';
-  var w=window.open('','_blank','width=1100,height=750');
-  if(w){w.document.write(html);w.document.close();}
-  else{alert('Bitte Pop-ups für diese Seite erlauben.');}
+  // html2pdf.js: erzeugt PDF-Datei direkt im Browser (kein Druckdialog)
+  loadHtml2Pdf(function(){
+    var wrap=document.createElement('div');
+    wrap.style.cssText='position:fixed;left:-9999px;top:0;width:297mm';
+    // Nur den Body-Inhalt extrahieren
+    var tmp=document.createElement('div');
+    tmp.innerHTML=html;
+    var body=tmp.querySelector('body');
+    wrap.innerHTML=body?body.innerHTML:html;
+    document.body.appendChild(wrap);
+    var fname=(m.projektname||'Stundenliste').replace(/[\\/:*?"<>|]/g,'_')+'_Abrechnung.pdf';
+    html2pdf().set({
+      margin:[10,10,10,10],
+      filename:fname,
+      html2canvas:{scale:1.5,useCORS:true,logging:false},
+      jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}
+    }).from(wrap).save().then(function(){document.body.removeChild(wrap);});
+  });
 }
 
 document.addEventListener('DOMContentLoaded',function(){
