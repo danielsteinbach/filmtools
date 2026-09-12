@@ -1279,7 +1279,10 @@ function exportCSV(){
   });
   row([]);
   row(['PROJEKT-GESAMT']);
-  row(['Arbeitstage gesamt',totAusserh+(wks.reduce(function(x,wk){return x+calcWeek(wk,daysInWeek(wk,s,e),pg,wmod,faktor,basis,pi,yi,isPartial(wk,s,e,wmod),getWoche(wk)).drinnenTage},0))]);
+  row(['Arbeitstage gesamt',totAusserh+(wks.reduce(function(x,wk){
+    var wstA=getWoche(wk),wmA=+wstA.wmod||wmod;
+    return x+calcWeek(wk,daysInWeek(wk,s,e),pg,wmA,faktor,basis,pi,yi,isPartial(wk,s,e,wmA),wstA).drinnenTage;
+  },0))]);
   row(['Davon außerhalb Firmensitz (>3h)',totAusserh]);
   row(['Diäten außerhalb',String(GR.r2(totAusserh*diaet)).replace('.',',')]);
   row(['Bez. Pause nicht erhalten (§5 Abs. 4)',totBPN]);
@@ -1431,7 +1434,7 @@ function exportErgebnisseXLSX(){
       var wst=getWoche(wk);
       var wmod_wk=+wst.wmod||wmod;
       var days=daysInWeek(wk,sDate,eDate);
-      var partial=days.some(function(d){return !d.inRange;})&&days.some(function(d){return d.inRange;});
+      var partial=isPartial(wk,sDate,eDate,wmod_wk);
       var wr=calcWeek(wk,days,pg,wmod_wk,faktor,basis,pi,yi,partial,wst);
 
       // Monat dieser Woche (aus erstem aktiven Tag)
@@ -1507,7 +1510,7 @@ function exportErgebnissePDF(){
     var wst=getWoche(wk);
     var wmod_wk=+wst.wmod||wmod;
     var days=daysInWeek(wk,sDate3,eDate3);
-    var partial=days.some(function(d){return !d.inRange;})&&days.some(function(d){return d.inRange;});
+    var partial=isPartial(wk,sDate3,eDate3,wmod_wk);
     var wr=calcWeek(wk,days,pg,wmod_wk,faktor,basis,pi,yi,partial,wst);
     var firstDay=days.find(function(d){return d.inRange;});
     var thisMonth=firstDay?firstDay.ds.slice(0,7):'';
