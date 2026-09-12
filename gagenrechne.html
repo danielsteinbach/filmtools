@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gagenrechner – Filmschaffende (KV §7)</title>
+<style>
+  :root {
+    --rot: #b00d23; --dunkel: #1a1a1a; --grau: #6e6e6e;
+    --feld: #f5f7f5; --rand: #cfd6cf; --gruen: #1e7b34;
+    --warnbg: #fdecee; --infobg: #eef4fb; --infobord: #9bbcd8;
+    --minbg: #f0f7f1; --minbord: #a3c9aa;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system,"Segoe UI",Roboto,Arial,sans-serif; color: var(--dunkel); margin: 0; background: #fff; }
+  .gr-wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 60px; }
+  h1 { color: var(--rot); text-align: center; font-size: 2.6rem; margin: 12px 0 24px; }
+  .gr-intro { font-size: .95rem; line-height: 1.5; margin-bottom: 28px; }
+  .gr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 40px; }
+  .gr-grid .voll { grid-column: 1 / -1; }
+  @media (max-width: 720px) { .gr-grid { grid-template-columns: 1fr; } }
+  label, .gr-label { display: block; font-weight: 600; font-size: .92rem; margin: 16px 0 6px; }
+  input[type=number], select {
+    width: 100%; padding: 10px 12px; font-size: 1rem;
+    border: 1px solid var(--rand); border-radius: 4px; background: #fff;
+  }
+  input[type=number]:focus, select:focus { outline: 2px solid var(--rot); border-color: var(--rot); }
+  .gr-wert {
+    background: var(--feld); border: 1px solid var(--rand); border-radius: 4px;
+    padding: 10px 12px; font-size: 1rem; min-height: 42px;
+  }
+  .gr-fussnote { font-size: .74rem; font-style: italic; color: var(--grau); margin: 4px 0 0; line-height: 1.4; }
+  .gr-fussnote.rot { color: var(--rot); }
+  h2 {
+    font-size: 1.05rem; text-transform: uppercase; letter-spacing: .02em;
+    border-left: 5px solid var(--rot); padding-left: 10px; margin: 34px 0 4px;
+  }
+  .gr-status { border-radius: 4px; padding: 12px 14px; margin: 14px 0 4px; font-weight: 600; display: none; }
+  .gr-status.ok   { display: block; background: #eef7f0; color: var(--gruen); }
+  .gr-status.warn { display: block; background: var(--warnbg); color: var(--rot); }
+  .gr-status.frei { display: block; background: #f2f2f2; color: var(--grau); }
+  .gr-status .pct { float: right; font-variant-numeric: tabular-nums; }
+  .gr-status small { display: block; font-weight: 400; margin-top: 4px; }
+  table.gr-tage { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  table.gr-tage th, table.gr-tage td { border: 1px solid var(--rand); padding: 8px 10px; font-size: .9rem; text-align: right; }
+  table.gr-tage th { background: #f2f2f2; text-align: center; font-size: .82rem; }
+  table.gr-tage td:first-child, table.gr-tage th:first-child { text-align: left; font-size: .82rem; }
+  .gr-h3 { font-size: 1.15rem; font-weight: 700; margin: 26px 0 2px; }
+  .gr-quellen { margin-top: 40px; font-size: .74rem; color: var(--grau); line-height: 1.5; }
+
+  /* Eingabe-Block mit Mindest-Badge */
+  .gage-eingabe-wrap { position: relative; }
+  .gage-eingabe-wrap input { padding-right: 130px; }
+  .min-badge {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: var(--minbg); border: 1px solid var(--minbord);
+    border-radius: 3px; padding: 3px 8px; font-size: .72rem; font-weight: 600;
+    color: var(--gruen); cursor: pointer; white-space: nowrap; display: none;
+    font-style: normal;
+  }
+  .min-badge:hover { background: var(--minbord); }
+  .min-badge.sichtbar { display: block; }
+
+  /* Noch kein Beruf Platzhalter */
+  .gr-placeholder {
+    background: var(--feld); border: 1px dashed var(--rand); border-radius: 6px;
+    padding: 36px 24px; text-align: center; color: var(--grau);
+    font-size: .95rem; margin-top: 8px;
+  }
+  .gr-placeholder strong { display: block; font-size: 1.1rem; margin-bottom: 6px; color: var(--dunkel); }
+
+  /* §10/§11 Toggle */
+  .kv-toggle-box {
+    background: var(--infobg); border: 1px solid var(--infobord);
+    border-radius: 6px; padding: 14px 16px; margin: 14px 0 10px;
+  }
+  .kv-toggle-box p { margin: 0 0 10px; font-size: .85rem; line-height: 1.5; }
+  .kv-toggle-box .toggle-label { font-weight: 600; font-size: .88rem; display: block; margin-bottom: 8px; }
+  .kv-toggle-options { display: flex; flex-wrap: wrap; gap: 10px; }
+  .kv-toggle-options label {
+    display: flex; align-items: flex-start; gap: 7px;
+    font-weight: 400; font-size: .86rem; cursor: pointer; margin: 0; line-height: 1.4;
+  }
+  .kv-toggle-options input[type=radio] { margin-top: 3px; accent-color: var(--rot); flex-shrink: 0; }
+  .kv-hinweis {
+    background: var(--warnbg); border-left: 4px solid var(--rot);
+    padding: 10px 14px; margin: 8px 0 4px; font-size: .82rem; line-height: 1.5;
+    border-radius: 0 4px 4px 0; display: none;
+  }
+  .kv-hinweis.sichtbar { display: block; }
+</style>
+</head>
+<body>
+<div class="gr-wrap">
+  <h1>Gagenrechner</h1>
+  <p class="gr-intro">Wähle zuerst deinen Beruf &ndash; der Rechner schlägt dann automatisch deine
+  KV-Mindestgage nach §7 vor. Du kannst den Betrag jederzeit anpassen, um zu sehen,
+  wie weit deine tatsächliche Gage über oder unter dem Minimum liegt.</p>
+
+  <!-- 1. Schritt: Beruf & Tabelle -->
+  <div class="gr-grid">
+    <div class="voll">
+      <label for="gr-pos">Berufsgruppe</label>
+      <select id="gr-pos"><option value="">&ndash; bitte wählen &ndash;</option></select>
+      <p class="gr-fussnote">Nach der Auswahl wird deine KV-Mindestpauschalgage automatisch eingetragen.</p>
+    </div>
+    <div>
+      <label for="gr-jahr">Gagentabelle (Stand)</label>
+      <select id="gr-jahr"></select>
+      <p class="gr-fussnote">Aktuell gültige Tabelle vorausgewählt.</p>
+    </div>
+    <div>
+      <label for="gr-p">Wochenpauschalgage inkl. SZ/UEL</label>
+      <div class="gage-eingabe-wrap">
+        <input type="number" id="gr-p" min="0" step="0.01" inputmode="decimal" placeholder="Beruf wählen …">
+        <span class="min-badge" id="min-badge" title="Auf KV-Minimum zurücksetzen">↺ KV-Minimum</span>
+      </div>
+      <p class="gr-fussnote" id="fn-gage">Deine Wochenpauschalgage nach §7 (inkl. Sonderzahlungen &amp; UEL).</p>
+    </div>
+  </div>
+
+  <!-- Platzhalter solange kein Beruf gewählt -->
+  <div class="gr-placeholder" id="gr-placeholder">
+    <strong>Bitte oben einen Beruf auswählen.</strong>
+    Alle Werte werden nach der Auswahl automatisch berechnet.
+  </div>
+
+  <!-- Ergebnisse (zunächst versteckt) -->
+  <div id="gr-ergebnis" style="display:none">
+
+    <div class="gr-status" id="w-status" role="status" aria-live="polite" style="margin-top:18px"></div>
+
+    <h2>Bestandteile deiner Wochenpauschalgage</h2>
+    <div class="gr-grid">
+      <div>
+        <span class="gr-label">Wochengrundgage für 40h</span>
+        <div class="gr-wert" id="w-grund">&ndash;</div>
+        <p class="gr-fussnote">Pauschalgage ÷ 1,2881166 (SZ/UEL) ÷ 1,385 (§7)</p>
+      </div>
+      <div>
+        <span class="gr-label">KV-Mindestgage für 40h</span>
+        <div class="gr-wert" id="w-min">&ndash;</div>
+        <p class="gr-fussnote">Deine vereinbarte Wochengrundgage muss darüber liegen.</p>
+      </div>
+      <div class="voll">
+        <span class="gr-label">Überstundenpauschale</span>
+        <div class="gr-wert" id="w-uep">&ndash;</div>
+        <p class="gr-fussnote">38,5 % der Wochengrundgage (10 Überstunden + 10 Bereitschaftsstunden, §7 Abs. 2)</p>
+      </div>
+      <div class="voll">
+        <span class="gr-label">Sonderzahlungen gesamt</span>
+        <div class="gr-wert" id="w-sz">&ndash;</div>
+        <p class="gr-fussnote">Urlaubsgeld + Weihnachtsremuneration + Urlaubsersatzleistung</p>
+      </div>
+      <div>
+        <span class="gr-label">Urlaubsgeld &amp; Weihnachtsremuneration</span>
+        <div class="gr-wert" id="w-uzwr">&ndash;</div>
+        <p class="gr-fussnote">1/6 der Gage inkl. Überstundenpauschale (§12 Abs. 3)</p>
+      </div>
+      <div>
+        <span class="gr-label">Urlaubsersatzleistung</span>
+        <div class="gr-wert" id="w-uel">&ndash;</div>
+        <p class="gr-fussnote">10,41 % von Gage inkl. SZ (§16 Abs. 1)</p>
+      </div>
+    </div>
+
+    <h2>Grundgagen</h2>
+    <p class="gr-fussnote rot">Die Grundgagen dienen zur Berechnung der Zuschläge, nicht als tatsächliche Auszahlung.</p>
+    <div class="gr-grid">
+      <div>
+        <span class="gr-label">Grund-Tagesgage</span>
+        <div class="gr-wert" id="w-tg">&ndash;</div>
+        <p class="gr-fussnote">1/5 der Wochengage (40h)</p>
+      </div>
+      <div>
+        <span class="gr-label">Grund-Stundengage</span>
+        <div class="gr-wert" id="w-std">&ndash;</div>
+        <p class="gr-fussnote">Wochengage (40h) ÷ 40 = §9 Abs. 5 (Wochenvertrag); bei Tagesverträgen gilt Tagesgage ÷ 8</p>
+      </div>
+    </div>
+
+    <h2>Zuschläge</h2>
+
+    <p class="gr-fussnote" style="margin-bottom:4px">
+      <strong>§9 Überstundenzuschläge</strong> &ndash;
+      Basis: vereinbarte Wochengrundgage ÷ 40 (§9 Abs. 5)
+    </p>
+    <div class="gr-grid">
+      <div>
+        <span class="gr-label">50 % Überstundenzuschlag</span>
+        <div class="gr-wert" id="w-z50">&ndash;</div>
+        <p class="gr-fussnote">Erste 2 Stunden nach der täglichen Normalarbeitszeit (§9 Abs. 4)</p>
+      </div>
+      <div>
+        <span class="gr-label">100 % Überstundenzuschlag</span>
+        <div class="gr-wert" id="w-z100">&ndash;</div>
+        <p class="gr-fussnote">Ab der 3. Überstunde nach der täglichen Normalarbeitszeit (§9 Abs. 4)</p>
+      </div>
+    </div>
+
+    <!-- §10/§11 Toggle -->
+    <div class="kv-toggle-box" style="margin-top:22px">
+      <span class="toggle-label">§10/§11 Sa/So/Feiertag- und Nachtarbeitszuschläge &ndash; Berechnungsbasis</span>
+      <p>
+        Mit dem KV ab 1.7.2026 entstand ein <strong>Widerspruch im KV-Text</strong>:
+        §10 Abs. 1 verweist auf den Stundenlohn gemäß <strong>§9 Abs. 5</strong>
+        (= vereinbarte Wochengage ÷ 40), während das neu eingefügte <strong>§10 Abs. 6</strong>
+        (ebenso §11 Abs. 6) ausdrücklich den <em>Mindestgagentarif × 4,33 ÷ 173</em>
+        als Berechnungsgrundlage vorschreibt. Eine Klärung durch die Schiedskommission steht aus.
+      </p>
+      <div class="kv-toggle-options" role="radiogroup" aria-label="Berechnungsbasis §10/§11">
+        <label>
+          <input type="radio" name="kv-basis" value="vereinbart" checked>
+          <span><strong>Vereinbarte Wochengage (§9 Abs. 5)</strong><br>
+          Stundenlohn = vereinbarte Wochengrundgage ÷ 40</span>
+        </label>
+        <label>
+          <input type="radio" name="kv-basis" value="mindest">
+          <span><strong>KV-Mindestgagen-Stundenlohn (§10/§11 Abs. 6)</strong><br>
+          Stundenlohn = Mindestgagentarif × 4,33 ÷ 173</span>
+        </label>
+      </div>
+      <div class="kv-hinweis sichtbar" id="kv-hinweis-pos" style="display:none"></div>
+    </div>
+
+    <div class="gr-grid">
+      <div>
+        <span class="gr-label">50 % Nachtarbeitszuschlag (Normalarbeitszeit)</span>
+        <div class="gr-wert" id="w-nacht50">&ndash;</div>
+        <p class="gr-fussnote" id="fn-nacht50">§11 Abs. 2</p>
+      </div>
+      <div>
+        <span class="gr-label">100 % Samstagsarbeit (ab 5h / ab 15 Uhr)</span>
+        <div class="gr-wert" id="w-sa100">&ndash;</div>
+        <p class="gr-fussnote" id="fn-sa100">§10 Abs. 1</p>
+      </div>
+      <div>
+        <span class="gr-label">Sa/So-Zuschlag bei verschobener Arbeitswoche</span>
+        <div class="gr-wert" id="w-saso">&ndash;</div>
+        <p class="gr-fussnote" id="fn-saso">§10 Abs. 5</p>
+      </div>
+      <div>
+        <span class="gr-label">Feiertags- und Sonntagszuschlag</span>
+        <div class="gr-wert" id="w-ft">&ndash;</div>
+        <p class="gr-fussnote" id="fn-ft">§10 Abs. 2</p>
+      </div>
+    </div>
+
+    <h2>Tagesgagen</h2>
+    <p class="gr-fussnote rot">Tagesgagen werden anders berechnet als die §7-Pauschalgage.
+    Basis: 8h Normalarbeitszeit + Überstunden nach §9. Die Überstunden sind bei den
+    Tagesgagen inkl. SZ nicht Bestandteil der Sonderzahlungen.</p>
+    <p class="gr-fussnote" style="margin-bottom:8px">
+      <strong>Stundenlohn für Überstunden nach §9 Abs. 5:</strong>
+      Bei Tagesverträgen (1/4-Gage, Einzeldrehtag) gilt Tagesgage ÷ 8 = T/8.
+      Bei Mehrtagsverträgen (1/5-Gage) gilt Wochengage ÷ 40 = W/40 —
+      da T = W/5 ist T/8 = W/40, beide Formeln sind hier identisch.
+    </p>
+    <div class="gr-grid">
+      <div>
+        <div class="gr-h3">1/4 der Wochengage</div>
+        <p class="gr-fussnote">Ein einzelner Tag</p>
+        <table class="gr-tage">
+          <thead><tr><th></th><th>Inkl. SZ/UEL</th><th>Exkl. SZ/UEL</th></tr></thead>
+          <tbody>
+            <tr><td>8 Stunden &ndash; Basis</td><td id="t4i8">&ndash;</td><td id="t4e8">&ndash;</td></tr>
+            <tr><td>10 Stunden (8h + 2×50% ÜH)</td><td id="t4i10">&ndash;</td><td id="t4e10">&ndash;</td></tr>
+            <tr><td>12 Stunden (8h + 2×50% + 2×100% ÜH)</td><td id="t4i12">&ndash;</td><td id="t4e12">&ndash;</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="gr-h3">1/5 der Wochengage</div>
+        <p class="gr-fussnote">Mehr als ein Tag, weniger als eine Woche</p>
+        <table class="gr-tage">
+          <thead><tr><th></th><th>Inkl. SZ/UEL</th><th>Exkl. SZ/UEL</th></tr></thead>
+          <tbody>
+            <tr><td>8 Stunden &ndash; Basis</td><td id="t5i8">&ndash;</td><td id="t5e8">&ndash;</td></tr>
+            <tr><td>10 Stunden (8h + 2×50% ÜH)</td><td id="t5i10">&ndash;</td><td id="t5e10">&ndash;</td></tr>
+            <tr><td>12 Stunden (8h + 2×50% + 2×100% ÜH)</td><td id="t5i12">&ndash;</td><td id="t5e12">&ndash;</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="gr-quellen">
+      <strong>Quellen &amp; Rechenweg:</strong> Kollektivvertrag Filmschaffende §§ 5, 7, 8, 9, 10, 11, 12, 16
+      (wko.at, gültig ab 1.7.2026) · Mindestgagentarife 2024/2025/ab 1.7.2026 ·
+      Alle Berechnungen mit voller Präzision (keine Kaskadenrundung); gerundet wird nur die Anzeige.
+      Mindestgagen-Vergleich centgerundet. Zum §10/§11-Toggle: §10 Abs. 1 verweist auf §9 Abs. 5
+      (vereinbarte Wochengage ÷ 40), §10 Abs. 6 und §11 Abs. 6 schreiben den Mindestgagentarif × 4,33 ÷ 173
+      vor &ndash; ein Widerspruch im KV-Text ab 1.7.2026, der durch die Schiedskommission zu klären wäre.
+      Ohne Gewähr; maßgeblich ist der Kollektivvertrag.
+    </p>
+  </div><!-- /gr-ergebnis -->
+</div><!-- /gr-wrap -->
+
+<script>
+/* ==================================================================
+ * Gagenrechner-Kern – Kollektivvertrag Filmschaffende (Österreich)
+ * Volle Präzision intern; gerundet wird NUR die Anzeige.
+ * ================================================================== */
+var GR = (function () {
+  'use strict';
+  var F  = 1.2881166;   // (1 + 1/6) × 1,1041
+  var P7 = 1.385;       // §7-Faktor
+  var YEARS = ['ab 1.1.2024', 'ab 1.1.2025', 'ab 1.7.2026'];
+
+  // [Berufsgruppe, Wochengage 40h exkl. SZ/UEL: 2024 | 2025 | ab 1.7.2026]
+  var POSITIONS = [
+    ["Regie (freie Vereinbarung)", 0, 0, 0],
+    ["Regieassistenz", 1222.57, 1269.031895, 1293.778017],
+    ["Herstellungsleitung I 1)", 2017.39, 2094.046927, 2134.880842],
+    ["Herstellungsleitung II 2)", 1267.33, 1315.489044, 1341.141081],
+    ["Produktionsleitung I 1)", 1924.89, 1998.03823, 2036.999976],
+    ["Produktionsleitung II 2)", 1247.64, 1295.046077, 1320.299475],
+    ["1. Aufnahmeleitung I 1)", 1162.74, 1206.92628, 1230.461342],
+    ["1. Aufnahmeleitung II 2)", 1055.52, 1095.625538, 1116.990236],
+    ["2. Aufnahmeleitung (Set Aufnahmeleitung)", 939.85, 975.560077, 994.583498],
+    ["Musikaufnahmeleitung", 1139.37, 1182.665016, 1205.726984],
+    ["TV-Producer (freie Vereinbarung)", 0, 0, 0],
+    ["Filmgeschäftsführung", 1214.42, 1260.564958, 1285.145975],
+    ["Produktionsassistenz", 737.13, 767.13, 782.089035],
+    ["Continuity/Script (Script Supervisor)", 886.36, 920.045998, 937.986895],
+    ["Synchronregie", 1999.7, 2075.688243, 2116.164164],
+    ["Kamera I 1)", 2764.54, 2869.595802, 2925.55292],
+    ["Kamera II 2)", 2049.94, 2127.842754, 2169.335688],
+    ["Kamera III 3)", 1579.44, 1639.459249, 1671.428704],
+    ["Kamera im Verbund", 1191.04, 1236.303695, 1260.411617],
+    ["1. Kameraassistenz", 1162.74, 1206.92628, 1230.461342],
+    ["2. Kameraassistenz", 885.37, 919.01, 936.930695],
+    ["Schwenker (Operator)", 1191.04, 1236.303695, 1260.411617],
+    ["Teamassistenz (ENG-Team)", 1074.83, 1115.668508, 1137.424044],
+    ["Produktionskoordination", 864.32, 897.16, 914.65462],
+    ["Postproduktionskoordination", 1037.77, 1077.206413, 1098.211938],
+    ["Digital Image Technician (DIT)", 1037.77, 1077.206413, 1098.211938],
+    ["Data Wrangler", 728.1, 758.1, 772.88295],
+    ["Editor (Schnitt)", 1267.33, 1315.485787, 1341.137759],
+    ["Schnittassistenz", 827.2, 858.63, 875.373285],
+    ["Tonschnitt", 950.49, 986.613421, 1005.852383],
+    ["Sound Design", 1267.33, 1315.485787, 1341.137759],
+    ["Außenrequisite", 1039.19, 1078.674985, 1099.709147],
+    ["Innenrequisite", 962.78, 999.364743, 1018.852356],
+    ["Kostümbild", 1366.3, 1418.221819, 1445.877145],
+    ["Kostümbildassistenz", 947.5, 983.501844, 1002.68013],
+    ["Garderobe", 855.8, 888.32, 905.64224],
+    ["Chefmaskenbildner:in 5)", 1366.3, 1418.221819, 1445.877145],
+    ["Maskenbild, Frisur", 1267.33, 1315.485787, 1341.137759],
+    ["Garderobe-, Maskenbild- u. Requisitehilfe", 638.06, 668.06, 681.08717],
+    ["Originaltonmeister:in I", 1739.55, 1805.652811, 1840.863041],
+    ["Originaltonmeister:in II", 1409.11, 1462.66036, 1491.182237],
+    ["Tonassistenz, Videotechnik, Primärtontechnik", 1112.29, 1154.557303, 1177.071171],
+    ["Filmarchitektur (Szenenbild)", 1425.26, 1479.422507, 1508.271246],
+    ["Filmarchitektassistenz (Szenenbildassistenz)", 1069.86, 1110.519674, 1132.174807],
+    ["Bühnenmeister, Oberbeleuchter", 1130.88, 1173.852377, 1196.742498],
+    ["Bühne, Licht", 855.8, 888.32, 905.64224],
+    ["Produktionsfahrer", 550.16, 580.158336, 591.471424],
+    ["Medienfachkraft 4)", 808.56, 839.29, 855.656155],
+    ["Filmaushilfskraft", 499.99, 518.986101, 529.106329],
+    ["Werkstattprojekt (§ 19 KV)", 564.12, 594.11667, 605.701945],
+    ["Motivaufnahmeleitung", 885.2, 918.83, 936.747185],
+    ["Motivaufnahmeleitung Assistenz", 677.54, 707.541788, 721.338853],
+    ["Setassistenz", 563.58, 593.584637, 605.159537],
+    ["2. Regieassistenz", 708.33, 738.334827, 752.732356],
+    ["Mischtonmeister:in", 1665.89, 1729.191257, 1762.910487],
+    ["2. Tonassistenz", 769.93, 799.92916, 815.527779],
+    ["Requisitenfahrer:in", 646.74, 676.742558, 689.939038],
+    ["Set Requisite Assistenz", 646.74, 676.742558, 689.939038],
+    ["Set Kostüm Assistenz", 646.74, 676.742558, 689.939038],
+    ["Junior Maskenbild", 646.74, 676.742558, 689.939038],
+    ["Best Boy/Girl", 985.5, 1022.952253, 1042.899822],
+    ["Jungbeleuchter:in", 646.74, 676.742558, 689.939038],
+    ["1. Kamerabühne", 1016.3, 1054.921854, 1075.49283],
+    ["2. Kamerabühne", 862.32, 895.08, 912.53406],
+    ["Kamerabühne Helfer:in", 646.74, 676.742558, 689.939038]
+  ];
+
+  function r2(x) { return Math.round((x + Number.EPSILON) * 100) / 100; }
+
+  function calc(P) {
+    var wexkl = P / F;
+    var W     = wexkl / P7;
+    var uzwr  = wexkl / 6;
+    var uel   = (wexkl + uzwr) * 0.1041;
+    var o = {
+      grundgage: W,
+      ueberstundenpauschale: W * (P7 - 1),
+      sonderzahlungen: uzwr + uel,
+      uzwr: uzwr, uel: uel,
+      tagesgage: W / 5,
+      stundengage: W / 40,
+      z50: W / 40 * 0.5, z100: W / 40,
+      nacht50_vb: W / 40 * 0.5, sa100_vb: W / 40,
+      saso_vb: W / 5 * 0.25, feiertag_vb: W / 5,
+      tage: {}
+    };
+    [4, 5].forEach(function (frac) {
+      var T = W / frac;
+      // §9 Abs. 5 KV: Stundenlohn = Tagesgage ÷ 8 (Tagesvertrag) = T/8
+      // Für frac=5: T/8 = W/40 (identisch mit Wochenvertrag-Formel)
+      // Für frac=4: T/8 = W/32 (Einzeldrehtag — ausdrücklich NICHT W/40)
+      // Ergibt: h10 = T + 2×(T/8)×1,5 = T×1,375; h12 = T + 2×(T/8)×1,5 + 2×(T/8)×2 = T×1,875
+      o.tage[frac] = {
+        exkl: { h8: T,       h10: T * 1.375, h12: T * 1.875 },
+        inkl: { h8: T * F,   h10: T * F + T * 0.375, h12: T * F + T * 0.875 }
+      };
+    });
+    return o;
+  }
+
+  /* §10/§11 Abs. 6: Stundenlohn = Mindestgagentarif × 4,33 ÷ 173 */
+  function calcMindestZuschlaege(minW) {
+    if (!minW || minW === 0) return null;
+    var std = minW * 4.33 / 173;
+    var tg  = minW / 5;
+    return { nacht50: std * 0.5, sa100: std, saso: tg * 0.25, feiertag: tg };
+  }
+
+  /* Mindest-Pauschalgage (inkl. SZ/UEL) für das gewählte Jahr */
+  function mindestPauschalgage(posIndex, yearIndex) {
+    var minW = POSITIONS[posIndex][1 + yearIndex];
+    if (!minW) return 0;
+    return r2(minW * P7 * F);
+  }
+
+  function check(W, minimum) {
+    if (minimum === 0) return { status: 'frei', pct: null };
+    var ok = r2(W) >= r2(minimum);
+    return { status: ok ? 'ok' : 'unter', pct: r2(W) / r2(minimum) - 1 };
+  }
+
+  function minimumFor(posIndex, yearIndex) { return POSITIONS[posIndex][1 + yearIndex]; }
+
+  function selfTest() {
+    var cases = [
+      { P: 3150, exp: { grundgage: 1765.65, ueberstundenpauschale: 679.78,
+        uzwr: 407.57, uel: 297.00, sonderzahlungen: 704.57,
+        tagesgage: 353.13, stundengage: 44.14, z50: 22.07, z100: 44.14 } },
+      { P: 2000, exp: { grundgage: 1121.05, sonderzahlungen: 447.35 } },
+      { P: 325,  exp: { grundgage: 182.17,  sonderzahlungen: 72.69  } }
+    ];
+    var fails = [];
+    cases.forEach(function (c) {
+      var got = calc(c.P);
+      Object.keys(c.exp).forEach(function (k) {
+        if (Math.abs(r2(got[k]) - c.exp[k]) > 0.005)
+          fails.push('P=' + c.P + ' ' + k + ': ' + r2(got[k]) + ' ≠ ' + c.exp[k]);
+      });
+    });
+    // frac=4 Tagesgage Referenzfall: Produktionsassistenz 2026
+    // T = W/4, Stundenlohn = T/8 (§9 Abs. 5 Tagesvertrag), h10 = T×1.375
+    var paPos = null;
+    for (var j = 0; j < POSITIONS.length; j++) {
+      if (POSITIONS[j][0] === 'Produktionsassistenz') { paPos = POSITIONS[j]; break; }
+    }
+    if (paPos) {
+      var paPG = r2(r2(paPos[3]) * P7 * F); // Mindest-PG 2026
+      var paT4 = calc(paPG).tage[4];
+      if (Math.abs(r2(paT4.exkl.h10) - 268.84) > 0.05)
+        fails.push('frac4 Produktionsassistenz h10_exkl: ' + r2(paT4.exkl.h10) + ' ≠ 268.84');
+    }
+    // Rundungsfalle
+    var kamera = null;
+    for (var i = 0; i < POSITIONS.length; i++) {
+      if (POSITIONS[i][0].indexOf('Kamera I') === 0) { kamera = POSITIONS[i]; break; }
+    }
+    var minWPG = r2(r2(kamera[1]) * P7 * F);
+    var res = check(calc(minWPG).grundgage, kamera[1]);
+    if (res.status !== 'ok') fails.push('Rundungsfalle');
+    return { passed: fails.length === 0, fails: fails };
+  }
+
+  return { calc: calc, calcMindestZuschlaege: calcMindestZuschlaege,
+           mindestPauschalgage: mindestPauschalgage,
+           check: check, r2: r2, minimumFor: minimumFor,
+           POSITIONS: POSITIONS, YEARS: YEARS, F: F, P7: P7, selfTest: selfTest };
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+  var eur  = new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' });
+  var pctF = new Intl.NumberFormat('de-AT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  function $(id) { return document.getElementById(id); }
+  function fmt(x) { return eur.format(GR.r2(x)); }
+
+  var selJahr   = $('gr-jahr');
+  var selPos    = $('gr-pos');
+  var inpP      = $('gr-p');
+  var badge     = $('min-badge');
+  var ergebnis  = $('gr-ergebnis');
+  var platzh    = $('gr-placeholder');
+
+  // Dropdowns befüllen
+  GR.YEARS.forEach(function (y, i) {
+    var o = document.createElement('option');
+    o.value = i; o.textContent = y;
+    selJahr.appendChild(o);
+  });
+  selJahr.value = String(GR.YEARS.length - 1);
+
+  GR.POSITIONS.forEach(function (p, i) {
+    var o = document.createElement('option');
+    o.value = i; o.textContent = p[0];
+    selPos.appendChild(o);
+  });
+
+  /* Mindest-Pauschalgage für aktuelle Auswahl */
+  function getMinPauschalgage() {
+    if (selPos.value === '') return 0;
+    return GR.mindestPauschalgage(Number(selPos.value), Number(selJahr.value));
+  }
+
+  /* Badge aktualisieren */
+  function updateBadge() {
+    var mp = getMinPauschalgage();
+    if (mp > 0) {
+      badge.classList.add('sichtbar');
+      badge.title = 'Auf KV-Minimum zurücksetzen: ' + fmt(mp);
+    } else {
+      badge.classList.remove('sichtbar');
+    }
+  }
+
+  /* Gage-Feld auf Minimum setzen */
+  function setzeMinimum() {
+    var mp = getMinPauschalgage();
+    if (mp > 0) { inpP.value = GR.r2(mp).toFixed(2); render(); }
+  }
+
+  /* Berufsauswahl → Minimum vorschlagen */
+  selPos.addEventListener('change', function () {
+    var mp = getMinPauschalgage();
+    if (mp > 0) {
+      inpP.value = GR.r2(mp).toFixed(2);
+      $('fn-gage').textContent = 'KV-Mindestpauschalgage vorgeschlagen – du kannst den Betrag anpassen.';
+    } else if (selPos.value !== '') {
+      inpP.value = '';
+      $('fn-gage').textContent = 'Freie Vereinbarung – gib deine tatsächliche Gage ein.';
+    }
+    updateBadge();
+    render();
+  });
+
+  selJahr.addEventListener('change', function () {
+    // Wenn Feld leer oder noch auf dem alten Minimum: neu vorschlagen
+    var mp = getMinPauschalgage();
+    if (mp > 0 && selPos.value !== '') {
+      inpP.value = GR.r2(mp).toFixed(2);
+    }
+    updateBadge();
+    render();
+  });
+
+  badge.addEventListener('click', setzeMinimum);
+  inpP.addEventListener('input', render);
+  document.querySelectorAll('input[name="kv-basis"]').forEach(function (r) {
+    r.addEventListener('change', render);
+  });
+
+  function getBasis() {
+    var radios = document.querySelectorAll('input[name="kv-basis"]');
+    for (var i = 0; i < radios.length; i++) { if (radios[i].checked) return radios[i].value; }
+    return 'vereinbart';
+  }
+
+  function render() {
+    var P = parseFloat(String(inpP.value).replace(',', '.'));
+    var hasBeruf = (selPos.value !== '');
+
+    // Ergebnis-Block zeigen/verbergen
+    if (!hasBeruf || !isFinite(P) || P <= 0) {
+      ergebnis.style.display = 'none';
+      platzh.style.display   = hasBeruf ? 'none' : '';
+      if (hasBeruf && (!isFinite(P) || P <= 0)) {
+        platzh.style.display = 'block';
+        platzh.innerHTML = '<strong>Bitte einen Betrag eingeben.</strong>';
+      }
+      return;
+    }
+    ergebnis.style.display = 'block';
+    platzh.style.display   = 'none';
+
+    var o   = GR.calc(P);
+    var minW = GR.minimumFor(Number(selPos.value), Number(selJahr.value));
+
+    // Hauptwerte
+    $('w-grund').textContent = fmt(o.grundgage);
+    $('w-uep').textContent   = fmt(o.ueberstundenpauschale);
+    $('w-sz').textContent    = fmt(o.sonderzahlungen);
+    $('w-uzwr').textContent  = fmt(o.uzwr);
+    $('w-uel').textContent   = fmt(o.uel);
+    $('w-tg').textContent    = fmt(o.tagesgage);
+    $('w-std').textContent   = fmt(o.stundengage);
+    $('w-z50').textContent   = fmt(o.z50);
+    $('w-z100').textContent  = fmt(o.z100);
+
+    // Tagesgagen
+    [4, 5].forEach(function (frac) {
+      ['8','10','12'].forEach(function (h) {
+        $('t' + frac + 'i' + h).textContent = fmt(o.tage[frac].inkl['h' + h]);
+        $('t' + frac + 'e' + h).textContent = fmt(o.tage[frac].exkl['h' + h]);
+      });
+    });
+
+    // §10/§11 Zuschläge
+    var basis  = getBasis();
+    var hinweis = $('kv-hinweis-pos');
+    if (basis === 'mindest') {
+      if (!minW || minW === 0) {
+        hinweis.style.display = 'block';
+        hinweis.textContent = '⚠ Für die §10/§11-Mindestgagen-Basis bitte eine Berufsgruppe auswählen.';
+        ['w-nacht50','w-sa100','w-saso','w-ft'].forEach(function(id){ $(id).innerHTML='&ndash;'; });
+      } else {
+        hinweis.style.display = 'none';
+        var mz = GR.calcMindestZuschlaege(minW);
+        $('w-nacht50').textContent = fmt(mz.nacht50);
+        $('w-sa100').textContent   = fmt(mz.sa100);
+        $('w-saso').textContent    = fmt(mz.saso);
+        $('w-ft').textContent      = fmt(mz.feiertag);
+      }
+    } else {
+      hinweis.style.display = 'none';
+      $('w-nacht50').textContent = fmt(o.nacht50_vb);
+      $('w-sa100').textContent   = fmt(o.sa100_vb);
+      $('w-saso').textContent    = fmt(o.saso_vb);
+      $('w-ft').textContent      = fmt(o.feiertag_vb);
+    }
+
+    var bT = basis === 'mindest'
+      ? 'Mindestgagen-Stundenlohn (§10/§11 Abs. 6): Mindestgagentarif × 4,33 ÷ 173'
+      : 'Vereinbarte Wochengrundgage ÷ 40 (§9 Abs. 5)';
+    $('fn-nacht50').textContent = '§11 Abs. 2: 50 % des Stundenlohns für Nachtstunden (22–6 Uhr) in der NAZ — ' + bT;
+    $('fn-sa100').textContent   = '§10 Abs. 1: 100 % des Stundenlohns ab der 5. Sa-Stunde / ab 15:00 — ' + bT;
+    $('fn-saso').textContent    = '§10 Abs. 5: 25 % der Tagesgage (Sa/So bei verschobener Arbeitswoche) — ' + bT.replace('Stundenlohn','Tagesgage');
+    $('fn-ft').textContent      = '§10 Abs. 2: 100 % der Tagesgage (Sonn-/Feiertag; Sonntagszuschlag nur ohne Verschiebung) — ' + bT.replace('Stundenlohn','Tagesgage');
+
+    // Mindestgagen-Check & Status
+    $('w-min').textContent = minW === 0 ? 'freie Vereinbarung' : fmt(minW);
+    var res = GR.check(o.grundgage, minW);
+    var status = $('w-status');
+    if (res.status === 'frei') {
+      status.className = 'gr-status frei';
+      status.innerHTML = 'Freie Vereinbarung &ndash; für diese Berufsgruppe ist im KV keine Mindestgage festgelegt.';
+    } else {
+      var pct = (res.pct >= 0 ? '+' : '−') + pctF.format(Math.abs(res.pct * 100)) + '\u202f%';
+      if (res.status === 'ok') {
+        status.className = 'gr-status ok';
+        status.innerHTML = '✓ Deine Wochengrundgage liegt über der KV-Mindestgage.'
+          + '<span class="pct">' + pct + '</span>';
+      } else {
+        status.className = 'gr-status warn';
+        status.innerHTML = '⚠ ZU GERINGE GAGE <span class="pct">' + pct + '</span>'
+          + '<small>Deine vereinbarte Gage liegt unter dem KV-Minimum. Bitte Kontakt aufnehmen!</small>';
+      }
+    }
+  }
+
+  var t = GR.selfTest();
+  if (!t.passed) { console.error('Gagenrechner-Selbsttest FEHLGESCHLAGEN:', t.fails); }
+  else { console.info('Gagenrechner-Selbsttest: alle Referenzfälle bestanden.'); }
+})();
+</script>
+</body>
+</html>

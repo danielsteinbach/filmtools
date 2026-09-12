@@ -186,11 +186,17 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
         <label style="display:flex;align-items:flex-start;gap:10px;font-weight:400;cursor:pointer">
           <input type="checkbox" id="s-bezpause-auto" style="margin-top:3px;width:auto;flex-shrink:0">
           <span>
-            <strong>Bezahlte Pause (§5 Abs.&nbsp;4) in Mittagspause eingerechnet</strong><br>
-            <span style="font-size:.78rem;color:var(--grau);line-height:1.5">
-              Bei Arbeitstagen mit &gt;&thinsp;9h netto wird die bezahlte Halbstundenpause automatisch als erhalten markiert.
-              Der Arbeitstag endet entsprechend früher — bitte die tatsächliche Biszeit eintragen.
-              Kein Zuschlag, keine separate Pause nötig.
+            <strong>Bezahlte Pflichtpause wird nicht gesondert konsumiert</strong><br>
+            <span style="font-size:.78rem;color:var(--grau);line-height:1.6">
+              Bei aktivierter Option werden 30 Minuten der eingetragenen Mittagspause als bezahlte Arbeitszeit gewertet
+              und nicht von der Anwesenheitszeit abgezogen. Beispiel: 08:00–20:00 mit 60 Minuten Mittagspause ergibt
+              12 Stunden.<br>
+              Es wird kein Anspruch wegen nicht erhaltener Pflichtpause ausgewiesen, weil die 30 Minuten bereits als
+              Arbeitszeit gerechnet werden.<br>
+              <strong>Achtung:</strong> Diese Option bildet eine in der Filmproduktion vorkommende Abrechnungspraxis ab.
+              Sie ersetzt nicht die nach §5 Abs.&thinsp;4 KV vorgeschriebene Pflichtpause; der Verzicht auf die
+              tatsächliche Pausengewährung kann arbeitszeitrechtlich unzulässig sein.
+              Gilt bei 8h täglicher Normalarbeitszeit; bei abweichend vereinbarter NAZ manuell prüfen.
             </span>
           </span>
         </label>
@@ -273,7 +279,6 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
   <div style="display:flex;flex-direction:column;align-items:flex-start;margin-right:20px;margin-bottom:10px">
     <span style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--grau);margin-bottom:5px">Sonstiges</span>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-ghost" id="btn-csv" title="Tabellenblatt als CSV exportieren">CSV</button>
       <button class="btn btn-ghost" id="btn-clear" style="color:var(--rot)">Daten löschen</button>
     </div>
   </div>
@@ -334,7 +339,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 
     <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
       <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Teilwochenberechnung (§8 KV)</strong>
-      Gezählt werden Arbeitstage im Projektzeitraum × ÷5 oder ÷6. Unterschiede zu vertraglichen Regelungen manuell prüfen.
+      Gezählt werden Arbeitstage (ohne arbeitsfreie Tage) im Projektzeitraum ÷ 5 oder ÷ 6. Unterschiede zu vertraglichen Regelungen (§8 KV) manuell prüfen. manuell prüfen.
     </div>
 
     <div style="background:var(--infobg);border:1px solid var(--infobord);border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
@@ -927,8 +932,8 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
 
   // Wochenmodell-Selektor (pro Woche)
   var wmodSel='<select data-wmod="'+wk+'" style="font-size:.74rem;padding:2px 4px;border-radius:3px;margin-left:6px" title="Wochenmodell dieser Woche">'+
-    '<option value="5"'+(wmod===5?' selected':'')+'>5-Tage-Woche (12h-Tag)</option>'+
-    '<option value="6"'+(wmod===6?' selected':'')+'>6-Tage-Woche (10h-Tag)</option>'+
+    '<option value="5"'+(wmod===5?' selected':'')+'>5-Tage-Modell – Faktorgrenze 12 h</option>'+
+    '<option value="6"'+(wmod===6?' selected':'')+'>6-Tage-Modell – Faktorgrenze 10 h</option>'+
   '</select>';
 
   var teilBar='';
@@ -1286,81 +1291,6 @@ function initSetup(){
 /* ====================================================
  * CSV EXPORT
  * ==================================================== */
-function exportCSV(){
-  var s=pd(state.meta.startDatum),e=pd(state.meta.endDatum);
-  if(!s||!e)return;
-  var pg=+state.meta.pauschalgage||0,wmod=+state.meta.wochenmodell||5;
-  var faktor=+state.meta.faktor||1.5,basis=state.meta.kvBasis||'vereinbart';
-  var pi=+state.meta.berufIndex,yi=+state.meta.jahrIndex||2;
-  var diaet=+state.meta.diaet||15.40;
-  var sep=';',L=[];
-  function row(a){L.push(a.map(function(x){return String(x==null?'':x).replace(/;/g,',')}).join(sep))}
-  row(['Stundenliste',state.meta.projektname||'']);
-  row(['Zeitraum',state.meta.startDatum+' bis '+state.meta.endDatum]);
-  row(['Beruf',pi>=0?GR.POS[pi][0]:'']);
-  row(['Wochenpauschalgage (§7)',String(pg).replace('.',',')]);
-  var wmodLabelCSV=(function(){
-    var vals=Object.values(state.wochen).map(function(w){return w.wmod;}).filter(Boolean);
-    return vals.length&&vals.every(function(v){return v===vals[0]})?vals[0]+'-Tage':'wechselnd';
-  })();
-  row(['Wochenmodell',wmodLabelCSV]);
-  row(['Faktor Überstunden',String(faktor).replace('.',',')]);
-  row(['Diäten außerhalb',String(diaet).replace('.',',')]);
-  row([]);
-  row(['Woche','Datum','Wochentag','Typ','Von','Bis','Pause (Min)','Pause ab (Uhr)',
-       'Pausenlage','Netto (h)','Nacht (h)','Faktor-ÜSt (h)',
-       'Bez. Pause fällig','Bez. Pause erhalten',
-       'Außerhalb (>3h)','Zuschläge (€)','Notiz','Tages-Zuschlag (€)']);
-  var wks=weeksFor(s,e);
-  var totAusserh=0,totBPN=0;
-  wks.forEach(function(wk){
-    var wst=getWoche(wk);
-    var wmod_wk=+wst.wmod||wmod; // pro Woche: individuelles Wochenmodell
-    var days=daysInWeek(wk,s,e);
-    var partial=isPartial(wk,s,e,wmod_wk);
-    var wr=calcWeek(wk,days,pg,wmod_wk,faktor,basis,pi,yi,partial,wst);
-    totAusserh+=wr.ausserhalbTage;totBPN+=wr.bezPauseNichtErhalten;
-    days.forEach(function(d){
-      if(!d.inRange)return;
-      var t=getTag(d.ds);
-      var typ=dayType(d.ds);
-      var dow=new Date(d.ds+'T12:00:00').getDay();
-      var res=(t.von&&t.bis)?daySurcharges(d.ds,t.von,t.bis,+t.pause||0,t.pauseVon||'',pg,pi,yi,basis,wmod_wk,faktor,t.bezPause):null;
-      var nH=res?GR.r2(res.nH):0;
-      var nightH=res?GR.r2(res.nightH||0):0;
-      var fkH=res?GR.r2(res.fh||0):0;
-      var pl=res?pauseLage(t.von,t.pauseVon,nH,+t.pause||0):'na';
-      var plLabel=pl==='ok'?'OK':pl==='spaet'?'Zu spät':pl==='fehlt'?'Fehlt':'n/a';
-      var bezFaellig=nH>9;
-      var zChips=res?res.s.map(function(x){return x.l+': '+x.b}).join(' | '):'';
-      row([wk,d.ds,TNAME[dow],typ,t.von||'',t.bis||'',t.pause||0,t.pauseVon||'',
-           plLabel,String(nH).replace('.',','),String(nightH).replace('.',','),String(fkH).replace('.',','),
-           bezFaellig?'Ja':'Nein',bezFaellig?(state.meta.bezPauseAuto?'Ja (auto)':t.bezPause?'Ja':'Nein'):'n/a',
-           t.ausserhalb?'Ja':'Nein',
-           zChips,
-           t.notiz||'',
-           String(res?GR.r2(res.total):0).replace('.',',')]);
-    });
-    row([wk,'','','WOCHE GESAMT','','','','','','','','','','','',
-         '','',String(wr.total).replace('.',',')]);
-    row([]);
-  });
-  row([]);
-  row(['PROJEKT-GESAMT']);
-  row(['Arbeitstage gesamt',totAusserh+(wks.reduce(function(x,wk){
-    var wstA=getWoche(wk),wmA=+wstA.wmod||wmod;
-    return x+calcWeek(wk,daysInWeek(wk,s,e),pg,wmA,faktor,basis,pi,yi,isPartial(wk,s,e,wmA),wstA).drinnenTage;
-  },0))]);
-  row(['Davon außerhalb Firmensitz (>3h)',totAusserh]);
-  row(['Diäten außerhalb',String(GR.r2(totAusserh*diaet)).replace('.',',')]);
-  row(['Bez. Pause nicht erhalten (§5 Abs. 4)',totBPN]);
-  var blob=new Blob(['\uFEFF'+L.join('\n')],{type:'text/csv;charset=utf-8'});
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='stundenliste_'+(state.meta.projektname||'export').replace(/\s+/g,'_')+'.csv';
-  a.click();
-}
-
 /* ====================================================
  * INIT
  * ==================================================== */
@@ -1656,7 +1586,6 @@ function exportErgebnissePDF(){
 
 document.addEventListener('DOMContentLoaded',function(){
   load();initSetup();renderAll();
-  document.getElementById('btn-csv').addEventListener('click',exportCSV);
   document.getElementById('btn-xlsx-export').addEventListener('click',exportEingabenXLSX);
   document.getElementById('inp-xlsx-import').addEventListener('change',function(e){
     if(e.target.files[0])importFromXLSX(e.target.files[0]);
