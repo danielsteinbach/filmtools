@@ -4,91 +4,176 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Filmtools – Werkzeuge für österreichische Filmschaffende</title>
-<meta name="description" content="Kostenlose Online-Tools für österreichische Filmschaffende: Gagenrechner, Stundenliste, CO₂-Rechner und Set-Displays nach KV §7.">
+<meta name="description" content="Kostenlose Online-Tools für österreichische Filmschaffende: Gagenrechner, Stundenliste, CO₂-Rechner und Trackingflächen nach KV §7.">
+<meta name="theme-color" content="#ab0f1f">
 <style>
+/* ------------------------------------------------------------------
+   Filmtools – Übersicht
+   Farbklima angelehnt an das Corporate Design younion:
+   CD-Rot #ab0f1f, Grau #b7bab6, Schwarz, Weiß.
+   Keine externen Schriften, Skripte oder Dienste – die Seite lädt
+   vollständig aus sich selbst.
+------------------------------------------------------------------- */
 :root{
-  --rot:#b00d23;--dunkel:#1a1a1a;--grau:#6e6e6e;--hellgrau:#f0f0f0;
-  --rand:#cdd4cd;--feld:#f5f7f5;--gruen:#1e7b34;
+  --rot:#ab0f1f;          /* younion CD-Rot, RGB 171/15/31 */
+  --rot-dunkel:#8a0c19;
+  --rot-hell:#fbeaec;
+  --schwarz:#141414;
+  --dunkel:#22242a;
+  --text:#1d1f24;
+  --grau:#5f6369;
+  --grau-hell:#8d9299;
+  --linie:#dcdfdc;        /* aus CD-Grau #b7bab6 aufgehellt */
+  --linie-stark:#b7bab6;
+  --feld:#f5f6f5;
+  --weiss:#fff;
+  --breite:1120px;
+  --radius:10px;
+  --schatten:0 1px 2px rgba(20,20,20,.05), 0 8px 24px -14px rgba(20,20,20,.28);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--dunkel);background:#fff;line-height:1.6}
+html{scroll-behavior:smooth;scroll-padding-top:64px;-webkit-text-size-adjust:100%}
+body{
+  font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif;
+  color:var(--text);background:var(--weiss);line-height:1.62;
+  font-size:16px;-webkit-font-smoothing:antialiased;
+}
 a{color:var(--rot);text-decoration:none}
 a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--rot);outline-offset:2px;border-radius:2px}
+.huelle{max-width:var(--breite);margin:0 auto;padding:0 22px}
 
-/* Header */
-header{background:var(--dunkel);color:#fff;padding:0}
-.header-inner{max-width:1080px;margin:0 auto;padding:32px 20px 28px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px}
-.site-title{font-size:2.4rem;font-weight:800;letter-spacing:-.02em}
-.site-title span{color:var(--rot)}
-.site-subtitle{font-size:.95rem;color:#aaa;margin-top:4px;font-weight:400}
-.header-kv{font-size:.75rem;color:#888;align-self:flex-end;text-align:right;line-height:1.5}
+/* Sprungmarke für Tastaturbedienung */
+.skip{position:absolute;left:-9999px;top:0;background:var(--rot);color:#fff;padding:10px 16px;z-index:50}
+.skip:focus{left:0}
 
-/* Nav */
-nav{background:#111;border-bottom:2px solid var(--rot)}
-.nav-inner{max-width:1080px;margin:0 auto;padding:0 20px;display:flex;gap:0;overflow-x:auto}
-nav a{display:block;padding:12px 16px;color:#ccc;font-size:.82rem;font-weight:600;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-2px}
-nav a:hover,nav a:focus{color:#fff;border-bottom-color:var(--rot);text-decoration:none}
+/* ---------- Kopf ---------- */
+.cd-balken{height:5px;background:var(--rot)}
+header{background:var(--weiss);border-bottom:1px solid var(--linie)}
+.kopf{display:flex;align-items:flex-end;justify-content:space-between;
+      flex-wrap:wrap;gap:18px;padding:30px 0 26px}
+.wortmarke{font-size:2.45rem;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--schwarz)}
+.wortmarke span{color:var(--rot)}
+.wortmarke-unter{font-size:.95rem;color:var(--grau);margin-top:8px;font-weight:400}
+.kopf-kv{font-size:.76rem;color:var(--grau-hell);text-align:right;line-height:1.6;
+         border-left:3px solid var(--linie-stark);padding-left:12px}
+.kopf-kv b{color:var(--grau);font-weight:600}
 
-/* Hero */
-.hero{background:var(--feld);border-bottom:1px solid var(--rand);padding:36px 20px}
-.hero-inner{max-width:1080px;margin:0 auto}
-.hero h1{font-size:1.45rem;font-weight:700;margin-bottom:10px}
-.hero p{font-size:.95rem;color:var(--grau);max-width:680px;line-height:1.7}
+/* ---------- Navigation ---------- */
+nav{background:var(--schwarz);position:sticky;top:0;z-index:40}
+.nav-inner{max-width:var(--breite);margin:0 auto;padding:0 22px;display:flex;
+           gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav-inner::-webkit-scrollbar{display:none}
+nav a{display:block;padding:13px 15px;color:#c9ccd1;font-size:.8rem;font-weight:600;
+      white-space:nowrap;letter-spacing:.015em;border-bottom:3px solid transparent}
+nav a:hover,nav a:focus{color:#fff;border-bottom-color:var(--rot);text-decoration:none;background:#1f1f1f}
 
-/* Main */
-main{max-width:1080px;margin:0 auto;padding:40px 20px 60px}
+/* ---------- Hero ---------- */
+.hero{background:var(--feld);border-bottom:1px solid var(--linie);padding:40px 0 38px}
+.hero h1{font-size:1.62rem;font-weight:700;letter-spacing:-.015em;margin-bottom:12px;max-width:24ch}
+.hero p{font-size:1rem;color:var(--grau);max-width:70ch;line-height:1.75}
+.hero-marken{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.marke{font-size:.74rem;font-weight:600;color:var(--grau);background:var(--weiss);
+       border:1px solid var(--linie-stark);border-radius:999px;padding:5px 13px}
 
-/* Section */
-section{margin-bottom:52px}
-section h2{font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-left:4px solid var(--rot);padding-left:10px;margin-bottom:20px;color:var(--dunkel)}
+/* ---------- Abschnitte ---------- */
+main{padding:48px 0 10px}
+section{margin-bottom:58px;scroll-margin-top:64px}
+section>h2{font-size:.94rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;
+           color:var(--schwarz);border-left:5px solid var(--rot);padding-left:12px;margin-bottom:8px}
+.abschnitt-unter{color:var(--grau);font-size:.9rem;margin:0 0 24px 17px}
 
-/* Tool Cards */
-.tool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
-.tool-card{border:1px solid var(--rand);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s}
-.tool-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.1)}
-.tool-card-header{background:var(--dunkel);color:#fff;padding:18px 20px 14px}
-.tool-card-header h3{font-size:1.05rem;margin-bottom:4px}
-.tool-card-header .kv-ref{font-size:.72rem;color:#aaa}
-.tool-card-body{padding:16px 20px;flex:1;font-size:.88rem;color:var(--grau);line-height:1.6}
-.tool-card-body ul{padding-left:16px;margin-top:8px}
-.tool-card-body li{margin-bottom:4px}
-.tool-card-footer{padding:14px 20px;border-top:1px solid var(--hellgrau);display:flex;gap:10px;flex-wrap:wrap}
-.btn{display:inline-block;padding:8px 16px;border-radius:4px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none}
-.btn:hover{opacity:.85;text-decoration:none}
+/* ---------- Tool-Karten: 2 × 2, nie 3 + 1 ---------- */
+.tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.tool-card{
+  background:var(--weiss);border:1px solid var(--linie);border-radius:var(--radius);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:border-color .15s, box-shadow .15s, transform .15s;
+}
+.tool-card:hover{border-color:var(--linie-stark);box-shadow:var(--schatten);transform:translateY(-2px)}
+.tool-kopf{background:var(--dunkel);color:#fff;padding:17px 22px 15px;border-bottom:3px solid var(--rot)}
+.tool-kopf h3{font-size:1.12rem;font-weight:700;letter-spacing:-.01em;margin-bottom:3px}
+.tool-kopf .kv-ref{font-size:.72rem;color:#9aa0a8;letter-spacing:.02em}
+.tool-body{padding:18px 22px 4px;flex:1;font-size:.9rem;color:var(--grau);line-height:1.65}
+.tool-body>p{margin-bottom:12px;color:var(--text)}
+.tool-body ul{list-style:none;margin:0}
+.tool-body li{position:relative;padding-left:15px;margin-bottom:5px}
+.tool-body li::before{content:"";position:absolute;left:0;top:.62em;
+                      width:5px;height:5px;border-radius:50%;background:var(--rot)}
+.marken-reihe{display:flex;flex-wrap:wrap;gap:6px;padding:14px 22px 0}
+.tag{font-size:.7rem;font-weight:600;color:var(--grau);background:var(--feld);
+     border:1px solid var(--linie);border-radius:3px;padding:3px 8px}
+.tool-fuss{padding:16px 22px 18px;margin-top:14px;border-top:1px solid var(--linie)}
+.btn{display:inline-block;padding:10px 18px;border-radius:5px;font-size:.84rem;
+     font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.01em}
+.btn:hover{text-decoration:none}
 .btn-prim{background:var(--rot);color:#fff}
-.btn-sec{background:var(--feld);color:var(--dunkel);border:1px solid var(--rand)}
-.tag{display:inline-block;background:var(--feld);border:1px solid var(--rand);border-radius:3px;padding:2px 7px;font-size:.7rem;color:var(--grau);font-weight:600;margin:2px}
+.btn-prim:hover{background:var(--rot-dunkel)}
+.extern::after{content:" ↗";font-weight:400}
 
-/* Info boxes */
-.info-box{background:var(--feld);border:1px solid var(--rand);border-radius:6px;padding:20px 24px;margin-bottom:16px;font-size:.88rem;line-height:1.7}
-.info-box h3{font-size:.95rem;font-weight:700;margin-bottom:8px}
-.info-box p+p{margin-top:8px}
-.warn-box{background:#fdecee;border:1px solid #e8b4bc;border-radius:6px;padding:16px 20px;margin-bottom:16px;font-size:.85rem;line-height:1.6}
+/* ---------- Infoflächen ---------- */
+.two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.info-box{background:var(--weiss);border:1px solid var(--linie);border-radius:var(--radius);
+          padding:22px 24px;font-size:.89rem;line-height:1.72;color:var(--grau)}
+.info-box h3{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:9px}
+.info-box p+p{margin-top:10px}
+.warn-box{background:var(--rot-hell);border:1px solid #e8bfc4;border-left:5px solid var(--rot);
+          border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;
+          font-size:.89rem;line-height:1.7;color:#4a2026}
 .warn-box strong{color:var(--rot)}
 
-/* Zweispaltig */
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-@media(max-width:640px){.two-col{grid-template-columns:1fr}}
+/* ---------- Fuß ---------- */
+footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
+       border-top:5px solid var(--rot);margin-top:44px;padding:36px 0 26px}
+.fuss-inner{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px}
+.fuss-col h4{color:#fff;font-size:.76rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:11px}
+.fuss-col a{color:#9aa0a8;display:block;margin-bottom:5px}
+.fuss-col a:hover{color:#fff}
+.fuss-unten{margin-top:26px;padding-top:16px;border-top:1px solid #2c2c2c;
+            font-size:.74rem;color:#70757c;line-height:1.7}
+.fuss-unten a{color:#9aa0a8}
 
-/* Footer */
-footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;margin-top:40px}
-.footer-inner{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between}
-.footer-col h4{color:#fff;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
-.footer-col a{color:#aaa;display:block;margin-bottom:4px}
-.footer-col a:hover{color:#fff}
-.footer-bottom{max-width:1080px;margin:20px auto 0;padding-top:16px;border-top:1px solid #333;font-size:.72rem;color:#666}
+/* ---------- Schmale Geräte ---------- */
+@media(max-width:860px){
+  .tool-grid,.two-col{grid-template-columns:1fr}
+  .fuss-inner{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wortmarke{font-size:2.1rem}
+  .kopf-kv{text-align:left;border-left-width:3px}
+}
+@media(max-width:520px){
+  .fuss-inner{grid-template-columns:1fr}
+  .hero{padding:30px 0 28px}
+  main{padding-top:36px}
+  section{margin-bottom:44px}
+}
+
+/* ---------- Druck ---------- */
+@media print{
+  nav,.hero-marken,.btn{display:none}
+  body{font-size:11pt}
+  .tool-card,.info-box{break-inside:avoid;box-shadow:none}
+  .tool-grid,.two-col{grid-template-columns:1fr 1fr}
+  footer{background:none;color:#000;border-top:2px solid #000}
+}
 </style>
 </head>
 <body>
 
+<a class="skip" href="#inhalt">Zum Inhalt springen</a>
+
+<div class="cd-balken"></div>
+
 <header>
-  <div class="header-inner">
+  <div class="huelle kopf">
     <div>
-      <div class="site-title">Film<span>tools</span></div>
-      <div class="site-subtitle">Werkzeuge für österreichische Filmschaffende</div>
+      <div class="wortmarke">Film<span>tools</span></div>
+      <div class="wortmarke-unter">Werkzeuge für österreichische Filmschaffende</div>
     </div>
-    <div class="header-kv">Kollektivvertrag Filmschaffende<br>KV §7 Wochenpauschalgage · Österreich</div>
+    <div class="kopf-kv">
+      <b>Kollektivvertrag Filmschaffende</b><br>
+      Tarife 2024 · 2025 · ab 1.7.2026<br>
+      WKO / younion · Österreich
+    </div>
   </div>
 </header>
 
@@ -98,154 +183,160 @@ footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;ma
     <a href="#gagenrechner">Gagenrechner</a>
     <a href="#stundenrechner">Stundenliste</a>
     <a href="#co2">CO₂-Rechner</a>
-    <a href="#screens">green-blue-grey-screens</a>
+    <a href="#screens">Green · Blue · Grey</a>
     <a href="#haftung">Haftungsausschluss</a>
     <a href="#kontakt">Kontakt</a>
   </div>
 </nav>
 
 <div class="hero">
-  <div class="hero-inner">
+  <div class="huelle">
     <h1>Praxistools für den österreichischen Filmbetrieb</h1>
-    <p>Diese Tools unterstützen Filmschaffende bei der Überprüfung von Gagen, der Dokumentation von Arbeitszeiten, der Nachhaltigkeitsbewertung von Materialien und bei Set-Displays. Alle Berechnungen basieren auf dem aktuellen Kollektivvertrag Filmschaffende (KV, gültig ab 1.7.2026). Die Nutzung ist kostenlos, ohne Registrierung und ohne Datenweitergabe.</p>
+    <p>Gagen prüfen, Arbeitszeiten dokumentieren, Materialien nach ihrem CO₂-Fußabdruck vergleichen und Trackingflächen aufs Set bringen. Alle Berechnungen beruhen auf dem Kollektivvertrag Filmschaffende in der jeweils angegebenen Fassung.</p>
+    <div class="hero-marken">
+      <span class="marke">Kostenlos</span>
+      <span class="marke">Ohne Registrierung</span>
+      <span class="marke">Keine Cookies, keine Tracker</span>
+      <span class="marke">Rechnet im Browser</span>
+    </div>
   </div>
 </div>
 
-<main>
+<main class="huelle" id="inhalt">
 
-  <!-- Tools -->
+  <!-- ================= Tools ================= -->
   <section id="tools">
     <h2>Alle Tools</h2>
+    <p class="abschnitt-unter">Vier Werkzeuge, jedes für sich benutzbar — nichts davon braucht ein Konto.</p>
+
     <div class="tool-grid">
 
       <!-- Gagenrechner -->
-      <div class="tool-card" id="gagenrechner">
-        <div class="tool-card-header">
+      <article class="tool-card" id="gagenrechner">
+        <div class="tool-kopf">
           <h3>Gagenrechner</h3>
           <div class="kv-ref">KV §7 · §8 · §9 · §10 · §11 · §12 · §16</div>
         </div>
-        <div class="tool-card-body">
-          Überprüft, ob deine vereinbarte Wochenpauschalgage dem KV-Minimum entspricht, und zeigt alle Bestandteile auf einen Blick.
+        <div class="tool-body">
+          <p>Prüft, ob die vereinbarte Wochenpauschalgage dem KV-Minimum entspricht, und zeigt alle Bestandteile auf einen Blick.</p>
           <ul>
-            <li>65 Berufsgruppen mit Tarifen 2024/2025/ab 1.7.2026</li>
+            <li>65 Berufsgruppen mit Tarifen 2024, 2025 und ab 1.7.2026</li>
             <li>Überstundenpauschale, SZ, UEL, Tages- und Stundengagen</li>
-            <li>Zuschläge §9–§11 mit KV-2026-Toggle (Widerspruch §10 Abs. 6)</li>
+            <li>Zuschläge §9–§11 mit KV-2026-Umschalter (Widerspruch §10 Abs. 6)</li>
             <li>Selbsttest prüft Referenzfälle bei jedem Aufruf</li>
           </ul>
-          <div style="margin-top:10px">
-            <span class="tag">Keine Datenspeicherung</span>
-            <span class="tag">Offline-fähig</span>
-          </div>
         </div>
-        <div class="tool-card-footer">
+        <div class="marken-reihe">
+          <span class="tag">Keine Datenspeicherung</span>
+          <span class="tag">Offline-fähig</span>
+        </div>
+        <div class="tool-fuss">
           <a class="btn btn-prim" href="gagenrechner.html">Zum Gagenrechner →</a>
         </div>
-      </div>
+      </article>
 
-      <!-- Stundenrechner -->
-      <div class="tool-card" id="stundenrechner">
-        <div class="tool-card-header">
+      <!-- Stundenliste -->
+      <article class="tool-card" id="stundenrechner">
+        <div class="tool-kopf">
           <h3>Stundenliste</h3>
           <div class="kv-ref">KV §5 · §7 · §8 · §10 · §11 · §17</div>
         </div>
-        <div class="tool-card-body">
-          Erfassung und Auswertung von Arbeitszeiten über einen Projektzeitraum nach KV §7 Wochenpauschalgage.
+        <div class="tool-body">
+          <p>Erfassung und Auswertung von Arbeitszeiten über einen ganzen Projektzeitraum nach KV §7 Wochenpauschalgage.</p>
           <ul>
             <li>Projektzeitraum mit automatischer Wochenstruktur</li>
-            <li>Mittagspause mit Lagekontrolle (≤ 6h nach Arbeitsbeginn)</li>
-            <li>Nacht-, Samstags- und Feiertagszuschläge zeitgenau</li>
-            <li>Faktor-Überstunden ab 12h/Tag (5T) bzw. 10h/Tag (6T) — pro Woche einstellbar</li>
-            <li>Bezahlte Pflichtpause §5 Abs. 4 und Abrechnungspraxis dokumentierbar</li>
-            <li>Außerhalb-Checkbox für Diäten §17</li>
-            <li>Excel-Sicherung (Eingaben) und Excel/PDF-Ergebnisexport</li>
-            <li>Import gesicherter Excel-Daten</li>
+            <li>Mittagspause mit Lagekontrolle (spätestens 6 h nach Arbeitsbeginn)</li>
+            <li>Bezahlte Pflichtpause §5 Abs. 4 ab 9 h netto dokumentierbar</li>
+            <li>Außerhalb-Kennzeichnung für Diäten §17</li>
+            <li>Faktor-Überstunden ab 12 h/Tag (5-Tage) bzw. 10 h/Tag (6-Tage)</li>
+            <li>Export als CSV und PDF</li>
           </ul>
-          <div style="margin-top:10px">
-            <span class="tag">Lokal gespeichert</span>
-            <span class="tag">Excel Import/Export</span>
-            <span class="tag">PDF-Download</span>
-          </div>
         </div>
-        <div class="tool-card-footer">
+        <div class="marken-reihe">
+          <span class="tag">Lokal gespeichert</span>
+          <span class="tag">CSV-Export</span>
+          <span class="tag">PDF-Druck</span>
+        </div>
+        <div class="tool-fuss">
           <a class="btn btn-prim" href="stundenrechner.html">Zur Stundenliste →</a>
         </div>
-      </div>
+      </article>
 
       <!-- CO2-Rechner -->
-      <div class="tool-card" id="co2">
-        <div class="tool-card-header">
+      <article class="tool-card" id="co2">
+        <div class="tool-kopf">
           <h3>CO₂-Rechner</h3>
           <div class="kv-ref">Szenenbild · Nachhaltigkeit · Materialvergleich</div>
         </div>
-        <div class="tool-card-body">
-          Vergleicht den CO₂-Fußabdruck und die Kosten von 17 Plattenwerkstoffen für Schilder und Kulissenelemente im Szenenbild.
+        <div class="tool-body">
+          <p>Vergleicht CO₂-Fußabdruck und Kosten von 17 Plattenwerkstoffen für Schilder und Kulissenelemente.</p>
           <ul>
-            <li>17 Materialien: Holz, Kunststoff, Metall, Karton u.v.m.</li>
-            <li>CO₂-Äquivalente pro m² und kg nach Lebenszyklus</li>
-            <li>Kostenvergleich und Nachhaltigkeitsrating</li>
-            <li>Für Set-Designer und Art-Departments</li>
+            <li>17 Materialien: Holz, Kunststoff, Metall, Karton und mehr</li>
+            <li>CO₂-Äquivalente je m² und kg über den Lebenszyklus</li>
+            <li>Kostenvergleich und Nachhaltigkeitsbewertung</li>
+            <li>Für Szenenbild und Art Department</li>
           </ul>
-          <div style="margin-top:10px">
-            <span class="tag">Keine Datenspeicherung</span>
-            <span class="tag">Offline-fähig</span>
-          </div>
         </div>
-        <div class="tool-card-footer">
-          <a class="btn btn-prim" href="https://danielsteinbach.github.io/CO2-Rechner/" target="_blank" rel="noopener">Zum CO₂-Rechner →</a>
+        <div class="marken-reihe">
+          <span class="tag">Keine Datenspeicherung</span>
+          <span class="tag">Offline-fähig</span>
         </div>
-      </div>
+        <div class="tool-fuss">
+          <a class="btn btn-prim extern" href="https://danielsteinbach.github.io/CO2-Rechner/" target="_blank" rel="noopener">Zum CO₂-Rechner</a>
+        </div>
+      </article>
 
-      <!-- Screens -->
-      <div class="tool-card" id="screens">
-        <div class="tool-card-header">
-          <h3>green-blue-grey-screens</h3>
-          <div class="kv-ref">Prop Screens · HTML · Szenenbild</div>
+      <!-- Green Blue Grey -->
+      <article class="tool-card" id="screens">
+        <div class="tool-kopf">
+          <h3>Green · Blue · Grey</h3>
+          <div class="kv-ref">Trackingflächen · VFX · Szenenbild</div>
         </div>
-        <div class="tool-card-body">
-          Farbkalibrierte Set-Displays für den Set-Einsatz: täuschend echte Bildschirminhalte in den Farbbereichen Green, Blue und Grey – direkt im Browser am Set.
+        <div class="tool-body">
+          <p>Formatfüllende einfarbige Flächen mit Trackingpoints, direkt im Browser. Macht aus Handy, Tablet oder Monitor eine Greenscreen-Fläche, die sich der Bildschirmgröße des Geräts anpasst.</p>
           <ul>
-            <li>Chat-Verläufe, Wetterkamera, Zeitungsseiten</li>
-            <li>Tierbilder und Flächenübersichten</li>
-            <li>Vollbild-optimiert für Tablets und Monitore</li>
-            <li>Keine Installation, keine App</li>
+            <li>Grün, Blau und Grau, dazu freie Farbwahl und Helligkeit</li>
+            <li>Fünf Punktformen, Marker in Schwarz, Weiß oder Magenta</li>
+            <li>Eckmarken und Bildmitte zuschaltbar</li>
+            <li>Als Bild sichern: PNG in voller Geräteauflösung</li>
           </ul>
-          <div style="margin-top:10px">
-            <span class="tag">Offline-fähig</span>
-            <span class="tag">Vollbild</span>
-          </div>
         </div>
-        <div class="tool-card-footer">
-          <a class="btn btn-prim" href="https://danielsteinbach.github.io/Screens/flaechen/" target="_blank" rel="noopener">Zu den Screens →</a>
+        <div class="marken-reihe">
+          <span class="tag">Offline-fähig</span>
+          <span class="tag">Keine Dateien nötig</span>
         </div>
-      </div>
+        <div class="tool-fuss">
+          <a class="btn btn-prim extern" href="https://danielsteinbach.github.io/Screens/flaechen/" target="_blank" rel="noopener">Zu den Flächen</a>
+        </div>
+      </article>
 
     </div>
   </section>
 
-  <!-- Haftungsausschluss -->
+  <!-- ================= Haftung ================= -->
   <section id="haftung">
     <h2>Haftungsausschluss</h2>
+    <p class="abschnitt-unter">Was diese Tools leisten — und was nicht.</p>
 
     <div class="warn-box">
-      <strong>Kein Ersatz für Rechtsberatung.</strong> Diese Tools wurden mit großer Sorgfalt auf Basis des Kollektivvertrags Filmschaffende erstellt, ersetzen jedoch keine rechtliche oder steuerliche Beratung. Für verbindliche Auskünfte wende dich an younion – Die Younion, die WKO Fachgruppe Film- und Musikwirtschaft oder einen Rechtsanwalt.
+      <strong>Kein Ersatz für Rechtsberatung.</strong> Diese Tools wurden mit großer Sorgfalt auf Basis des Kollektivvertrags Filmschaffende erstellt, ersetzen jedoch keine rechtliche oder steuerliche Beratung. Für verbindliche Auskünfte wende dich an younion – Die Daseinsgewerkschaft, die WKO Fachgruppe Film- und Musikwirtschaft oder eine Rechtsanwältin bzw. einen Rechtsanwalt.
     </div>
 
     <div class="two-col">
       <div class="info-box">
         <h3>Richtigkeit der Berechnungen</h3>
-        <p>Alle Berechnungen basieren auf dem Kollektivvertrag Filmschaffende in der jeweils angegebenen Fassung. Die Mindestgagentarife wurden aus den offiziellen Tabellen der WKO und younion entnommen. Trotz sorgfältiger Erstellung wird keine Gewähr für die Richtigkeit, Vollständigkeit oder Aktualität der Ergebnisse übernommen.</p>
-        <p>Insbesondere zum Widerspruch in §10 Abs. 1 und §10 Abs. 6 KV ab 1.7.2026 (Berechnungsbasis Sa/So/Feiertag-Zuschläge) steht eine Klärung durch die Schiedskommission aus. Der Rechner zeigt beide Lesarten.</p>
+        <p>Alle Berechnungen beruhen auf dem Kollektivvertrag Filmschaffende in der jeweils angegebenen Fassung. Die Mindestgagentarife stammen aus den offiziellen Tabellen von WKO und younion. Trotz sorgfältiger Erstellung wird keine Gewähr für Richtigkeit, Vollständigkeit oder Aktualität der Ergebnisse übernommen.</p>
+        <p>Insbesondere zum Widerspruch zwischen §10 Abs. 1 und §10 Abs. 6 KV ab 1.7.2026 (Berechnungsbasis der Sa/So/Feiertags-Zuschläge) steht eine Klärung durch die Schiedskommission aus. Der Rechner zeigt beide Lesarten.</p>
       </div>
       <div class="info-box">
         <h3>Aktualität</h3>
-        <p>Die eingebetteten Tarifdaten gelten für die Gagenjahre 2024, 2025 und ab 1.7.2026. Bei Tarifänderungen oder neuen KV-Fassungen werden die Tools aktualisiert, soweit möglich. Das Datum der letzten Aktualisierung ist im jeweiligen Tool vermerkt.</p>
-        <p>Österreichische gesetzliche Feiertage sind für die Jahre 2024–2030 hinterlegt (Berechnung auf Basis des Gaußschen Algorithmus für Ostern).</p>
+        <p>Die hinterlegten Tarifdaten gelten für die Gagenjahre 2024, 2025 und ab 1.7.2026. Bei Tarifänderungen oder neuen KV-Fassungen werden die Tools aktualisiert, soweit möglich. Das Datum der letzten Aktualisierung ist im jeweiligen Tool vermerkt.</p>
+        <p>Die österreichischen gesetzlichen Feiertage sind für die Jahre 2024 bis 2030 hinterlegt (Osterberechnung nach dem Gaußschen Algorithmus).</p>
       </div>
       <div class="info-box">
         <h3>Datenschutz</h3>
-        <p>Diese Seite verwendet keine Cookies, keine Tracker und keine externen Dienste. Der Gagenrechner und der CO₂-Rechner speichern keinerlei Daten. Die Stundenliste speichert Eingaben ausschließlich lokal im Browser (localStorage) des jeweiligen Geräts – kein Server, keine Weitergabe.</p>
-        <p>Für Excel- und PDF-Export in der Stundenliste werden die Bibliotheken SheetJS und html2pdf.js bei Bedarf von <a href="https://cdnjs.cloudflare.com" target="_blank" rel="noopener">cdnjs.cloudflare.com</a> geladen (nur beim ersten Klick, nur wenn Internetverbindung vorhanden). Es werden dabei keine Nutzerdaten übertragen.</p>
-        <p>Die Seite wird über GitHub Pages bereitgestellt. Es gelten die <a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener">Datenschutzbestimmungen von GitHub</a>.</p>
+        <p>Diese Seite verwendet keine Cookies, keine Tracker und keine externen Dienste. Gagenrechner und CO₂-Rechner speichern keinerlei Daten. Die Stundenliste speichert Eingaben ausschließlich lokal im Browser des jeweiligen Geräts — kein Server, keine Weitergabe.</p>
+        <p>Bereitgestellt wird die Seite über GitHub Pages. Es gelten die <a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener">Datenschutzbestimmungen von GitHub</a>.</p>
       </div>
       <div class="info-box">
         <h3>Urheberrecht</h3>
@@ -255,16 +346,18 @@ footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;ma
     </div>
   </section>
 
-  <!-- Kontakt -->
+  <!-- ================= Kontakt ================= -->
   <section id="kontakt">
-    <h2>Kontakt &amp; Über diese Seite</h2>
+    <h2>Kontakt &amp; über diese Seite</h2>
+    <p class="abschnitt-unter">Hinweise auf Fehler und Tarifänderungen sind willkommen.</p>
+
     <div class="two-col">
       <div class="info-box">
         <h3>Autor</h3>
-        <p><strong>Daniel Steinbach</strong><br>
+        <p><strong style="color:var(--text)">Daniel Steinbach</strong><br>
         Szenenbildner (Filmarchitektur)<br>
         A-2391 Kaltenleutgeben, Österreich</p>
-        <p style="margin-top:12px">
+        <p>
           <a href="mailto:danielsteinbach@gmx.net">danielsteinbach@gmx.net</a><br>
           <a href="tel:+436644217082">+43&nbsp;664&nbsp;421&nbsp;70&nbsp;82</a><br>
           <a href="https://github.com/danielsteinbach" target="_blank" rel="noopener">github.com/danielsteinbach</a>
@@ -272,9 +365,9 @@ footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;ma
       </div>
       <div class="info-box">
         <h3>Quellen &amp; Grundlagen</h3>
-        <p>Kollektivvertrag für DienstnehmerInnen in österreichischen Filmproduktionsunternehmen (Filmschaffende), gültig ab 1.7.2026 — WKO Fachgruppe Film- und Musikwirtschaft / younion – Die Younion.</p>
-        <p style="margin-top:8px">Mindestgagentarife 2024, 2025 und ab 1.7.2026 gemäß den publizierten Tabellen der Kollektivvertragsparteien.</p>
-        <p style="margin-top:8px">
+        <p>Kollektivvertrag für DienstnehmerInnen in österreichischen Filmproduktionsunternehmen (Filmschaffende), gültig ab 1.7.2026 — WKO Fachgruppe Film- und Musikwirtschaft / younion – Die Daseinsgewerkschaft.</p>
+        <p>Mindestgagentarife 2024, 2025 und ab 1.7.2026 gemäß den veröffentlichten Tabellen der Kollektivvertragsparteien.</p>
+        <p>
           <a href="https://www.wko.at/kollektivvertrag" target="_blank" rel="noopener">wko.at/kollektivvertrag</a><br>
           <a href="https://www.younionfilm.at" target="_blank" rel="noopener">younionfilm.at</a>
         </p>
@@ -285,29 +378,32 @@ footer{background:var(--dunkel);color:#aaa;padding:32px 20px;font-size:.78rem;ma
 </main>
 
 <footer>
-  <div class="footer-inner">
-    <div class="footer-col">
-      <h4>Filmtools</h4>
-      <a href="#gagenrechner">Gagenrechner</a>
-      <a href="#stundenrechner">Stundenliste</a>
-      <a href="#co2">CO₂-Rechner</a>
-      <a href="#screens">green-blue-grey-screens</a>
+  <div class="huelle">
+    <div class="fuss-inner">
+      <div class="fuss-col">
+        <h4>Filmtools</h4>
+        <a href="#gagenrechner">Gagenrechner</a>
+        <a href="#stundenrechner">Stundenliste</a>
+        <a href="#co2">CO₂-Rechner</a>
+        <a href="#screens">Green · Blue · Grey</a>
+      </div>
+      <div class="fuss-col">
+        <h4>Rechtliches</h4>
+        <a href="#haftung">Haftungsausschluss</a>
+        <a href="#haftung">Datenschutz</a>
+        <a href="#kontakt">Impressum</a>
+      </div>
+      <div class="fuss-col">
+        <h4>Externe Links</h4>
+        <a href="https://www.wko.at/kollektivvertrag" target="_blank" rel="noopener">WKO Kollektivverträge</a>
+        <a href="https://www.younionfilm.at" target="_blank" rel="noopener">younion Film</a>
+        <a href="https://github.com/danielsteinbach" target="_blank" rel="noopener">GitHub</a>
+      </div>
     </div>
-    <div class="footer-col">
-      <h4>Rechtliches</h4>
-      <a href="#haftung">Haftungsausschluss</a>
-      <a href="#haftung">Datenschutz</a>
-      <a href="#kontakt">Impressum</a>
+    <div class="fuss-unten">
+      © Daniel Steinbach · A-2391 Kaltenleutgeben · <a href="mailto:danielsteinbach@gmx.net">danielsteinbach@gmx.net</a><br>
+      Ohne Gewähr · Kollektivvertrag Filmschaffende ab 1.7.2026 · Diese Seite ist kein Angebot der Kollektivvertragsparteien.
     </div>
-    <div class="footer-col">
-      <h4>Externe Links</h4>
-      <a href="https://www.wko.at/kollektivvertrag" target="_blank" rel="noopener">WKO Kollektivverträge</a>
-      <a href="https://www.younionfilm.at" target="_blank" rel="noopener">younion Film</a>
-      <a href="https://github.com/danielsteinbach" target="_blank" rel="noopener">GitHub</a>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    © Daniel Steinbach · A-2391 Kaltenleutgeben · <a href="mailto:danielsteinbach@gmx.net" style="color:#888">danielsteinbach@gmx.net</a> · Ohne Gewähr · KV Filmschaffende ab 1.7.2026
   </div>
 </footer>
 
