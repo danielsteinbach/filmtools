@@ -72,16 +72,12 @@ nav a:hover,nav a:focus{color:#fff;border-bottom-color:var(--rot);text-decoratio
 .hero{background:var(--feld);border-bottom:1px solid var(--linie);padding:40px 0 38px}
 .hero h1{font-size:1.62rem;font-weight:700;letter-spacing:-.015em;margin-bottom:12px;max-width:24ch}
 .hero p{font-size:1rem;color:var(--grau);max-width:70ch;line-height:1.75}
-.hero-marken{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
-.marke{font-size:.74rem;font-weight:600;color:var(--grau);background:var(--weiss);
-       border:1px solid var(--linie-stark);border-radius:999px;padding:5px 13px}
 
 /* ---------- Abschnitte ---------- */
 main{padding:48px 0 10px}
 section{margin-bottom:58px;scroll-margin-top:64px}
 section>h2{font-size:.94rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;
            color:var(--schwarz);border-left:5px solid var(--rot);padding-left:12px;margin-bottom:8px}
-.abschnitt-unter{color:var(--grau);font-size:.9rem;margin:0 0 24px 17px}
 
 /* ---------- Tool-Karten: 2 × 2, nie 3 + 1 ---------- */
 .tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
@@ -155,7 +151,7 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
 
 /* ---------- Druck ---------- */
 @media print{
-  nav,.hero-marken,.btn{display:none}
+  nav,.btn{display:none}
   body{font-size:11pt}
   .tool-card,.info-box{break-inside:avoid;box-shadow:none}
   .tool-grid,.two-col{grid-template-columns:1fr 1fr}
@@ -177,8 +173,7 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
     </div>
     <div class="kopf-kv">
       <b>Kollektivvertrag Filmschaffende</b><br>
-      Tarife 2024 · 2025 · ab 1.7.2026<br>
-      WKO / younion · Österreich
+      KV §7 Wochenpauschalgage · Österreich
     </div>
   </div>
 </header>
@@ -199,13 +194,7 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
 <div class="hero">
   <div class="huelle">
     <h1>Praxistools für den österreichischen Filmbetrieb</h1>
-    <p>Gagen prüfen, Arbeitszeiten dokumentieren, Materialien nach ihrem CO₂-Fußabdruck vergleichen und Trackingflächen aufs Set bringen. Alle Berechnungen beruhen auf dem Kollektivvertrag Filmschaffende in der jeweils angegebenen Fassung.</p>
-    <div class="hero-marken">
-      <span class="marke">Kostenlos</span>
-      <span class="marke">Ohne Registrierung</span>
-      <span class="marke">Keine Cookies, keine Tracker</span>
-      <span class="marke">Rechnet im Browser</span>
-    </div>
+    <p>Diese Tools unterstützen Filmschaffende bei der Überprüfung von Gagen, der Dokumentation von Arbeitszeiten, der Nachhaltigkeitsbewertung von Materialien und bei Set-Displays. Alle Berechnungen basieren auf dem aktuellen Kollektivvertrag Filmschaffende (KV, gültig ab 1.7.2026). Die Nutzung ist kostenlos, ohne Registrierung und ohne Datenweitergabe.</p>
   </div>
 </div>
 
@@ -214,7 +203,6 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
   <!-- ================= Tools ================= -->
   <section id="tools">
     <h2>Alle Tools</h2>
-    <p class="abschnitt-unter">Fünf Werkzeuge, jedes für sich benutzbar — nichts davon braucht ein Konto.</p>
 
     <div class="tool-grid">
 
@@ -225,11 +213,11 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
           <div class="kv-ref">KV §7 · §8 · §9 · §10 · §11 · §12 · §16</div>
         </div>
         <div class="tool-body">
-          <p>Prüft, ob die vereinbarte Wochenpauschalgage dem KV-Minimum entspricht, und zeigt alle Bestandteile auf einen Blick.</p>
+          <p>Überprüft, ob deine vereinbarte Wochenpauschalgage dem KV-Minimum entspricht, und zeigt alle Bestandteile auf einen Blick.</p>
           <ul>
-            <li>65 Berufsgruppen mit Tarifen 2024, 2025 und ab 1.7.2026</li>
+            <li>65 Berufsgruppen mit Tarifen 2024/2025/ab 1.7.2026</li>
             <li>Überstundenpauschale, SZ, UEL, Tages- und Stundengagen</li>
-            <li>Zuschläge §9–§11 mit KV-2026-Umschalter (Widerspruch §10 Abs. 6)</li>
+            <li>Zuschläge §9–§11 mit KV-2026-Toggle (Widerspruch §10 Abs. 6)</li>
             <li>Selbsttest prüft Referenzfälle bei jedem Aufruf</li>
           </ul>
         </div>
@@ -249,20 +237,22 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
           <div class="kv-ref">KV §5 · §7 · §8 · §10 · §11 · §17</div>
         </div>
         <div class="tool-body">
-          <p>Erfassung und Auswertung von Arbeitszeiten über einen ganzen Projektzeitraum nach KV §7 Wochenpauschalgage.</p>
+          <p>Erfassung und Auswertung von Arbeitszeiten über einen Projektzeitraum nach KV §7 Wochenpauschalgage.</p>
           <ul>
             <li>Projektzeitraum mit automatischer Wochenstruktur</li>
-            <li>Mittagspause mit Lagekontrolle (spätestens 6 h nach Arbeitsbeginn)</li>
-            <li>Bezahlte Pflichtpause §5 Abs. 4 ab 9 h netto dokumentierbar</li>
-            <li>Außerhalb-Kennzeichnung für Diäten §17</li>
-            <li>Faktor-Überstunden ab 12 h/Tag (5-Tage) bzw. 10 h/Tag (6-Tage)</li>
-            <li>Export als CSV und PDF</li>
+            <li>Mittagspause mit Lagekontrolle (≤ 6h nach Arbeitsbeginn)</li>
+            <li>Nacht-, Samstags- und Feiertagszuschläge zeitgenau</li>
+            <li>Faktor-Überstunden ab 12h/Tag (5T) bzw. 10h/Tag (6T) — pro Woche einstellbar</li>
+            <li>Bezahlte Pflichtpause §5 Abs. 4 und Abrechnungspraxis dokumentierbar</li>
+            <li>Außerhalb-Checkbox für Diäten §17</li>
+            <li>Excel-Sicherung (Eingaben) und Excel/PDF-Ergebnisexport</li>
+            <li>Import gesicherter Excel-Daten</li>
           </ul>
         </div>
         <div class="marken-reihe">
           <span class="tag">Lokal gespeichert</span>
-          <span class="tag">CSV-Export</span>
-          <span class="tag">PDF-Druck</span>
+          <span class="tag">Excel Import/Export</span>
+          <span class="tag">PDF-Download</span>
         </div>
         <div class="tool-fuss">
           <a class="btn btn-prim" href="stundenrechner.html">Zur Stundenliste →</a>
@@ -301,12 +291,12 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
           <div class="kv-ref">Szenenbild · Nachhaltigkeit · Materialvergleich</div>
         </div>
         <div class="tool-body">
-          <p>Vergleicht CO₂-Fußabdruck und Kosten von 17 Plattenwerkstoffen für Schilder und Kulissenelemente.</p>
+          <p>Vergleicht den CO₂-Fußabdruck und die Kosten von 17 Plattenwerkstoffen für Schilder und Kulissenelemente im Szenenbild.</p>
           <ul>
-            <li>17 Materialien: Holz, Kunststoff, Metall, Karton und mehr</li>
-            <li>CO₂-Äquivalente je m² und kg über den Lebenszyklus</li>
-            <li>Kostenvergleich und Nachhaltigkeitsbewertung</li>
-            <li>Für Szenenbild und Art Department</li>
+            <li>17 Materialien: Holz, Kunststoff, Metall, Karton u.v.m.</li>
+            <li>CO₂-Äquivalente pro m² und kg nach Lebenszyklus</li>
+            <li>Kostenvergleich und Nachhaltigkeitsrating</li>
+            <li>Für Set-Designer und Art-Departments</li>
           </ul>
         </div>
         <div class="marken-reihe">
@@ -348,27 +338,27 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
   <!-- ================= Haftung ================= -->
   <section id="haftung">
     <h2>Haftungsausschluss</h2>
-    <p class="abschnitt-unter">Was diese Tools leisten — und was nicht.</p>
 
     <div class="warn-box">
-      <strong>Kein Ersatz für Rechtsberatung.</strong> Diese Tools wurden mit großer Sorgfalt auf Basis des Kollektivvertrags Filmschaffende erstellt, ersetzen jedoch keine rechtliche oder steuerliche Beratung. Für verbindliche Auskünfte wende dich an younion – Die Daseinsgewerkschaft, die WKO Fachgruppe Film- und Musikwirtschaft oder eine Rechtsanwältin bzw. einen Rechtsanwalt.
+      <strong>Kein Ersatz für Rechtsberatung.</strong> Diese Tools wurden mit großer Sorgfalt auf Basis des Kollektivvertrags Filmschaffende erstellt, ersetzen jedoch keine rechtliche oder steuerliche Beratung. Für verbindliche Auskünfte wende dich an younion – Die Younion, die WKO Fachgruppe Film- und Musikwirtschaft oder einen Rechtsanwalt.
     </div>
 
     <div class="two-col">
       <div class="info-box">
         <h3>Richtigkeit der Berechnungen</h3>
-        <p>Alle Berechnungen beruhen auf dem Kollektivvertrag Filmschaffende in der jeweils angegebenen Fassung. Die Mindestgagentarife stammen aus den offiziellen Tabellen von WKO und younion. Trotz sorgfältiger Erstellung wird keine Gewähr für Richtigkeit, Vollständigkeit oder Aktualität der Ergebnisse übernommen.</p>
-        <p>Insbesondere zum Widerspruch zwischen §10 Abs. 1 und §10 Abs. 6 KV ab 1.7.2026 (Berechnungsbasis der Sa/So/Feiertags-Zuschläge) steht eine Klärung durch die Schiedskommission aus. Der Rechner zeigt beide Lesarten.</p>
+        <p>Alle Berechnungen basieren auf dem Kollektivvertrag Filmschaffende in der jeweils angegebenen Fassung. Die Mindestgagentarife wurden aus den offiziellen Tabellen der WKO und younion entnommen. Trotz sorgfältiger Erstellung wird keine Gewähr für die Richtigkeit, Vollständigkeit oder Aktualität der Ergebnisse übernommen.</p>
+        <p>Insbesondere zum Widerspruch in §10 Abs. 1 und §10 Abs. 6 KV ab 1.7.2026 (Berechnungsbasis Sa/So/Feiertag-Zuschläge) steht eine Klärung durch die Schiedskommission aus. Der Rechner zeigt beide Lesarten.</p>
       </div>
       <div class="info-box">
         <h3>Aktualität</h3>
-        <p>Die hinterlegten Tarifdaten gelten für die Gagenjahre 2024, 2025 und ab 1.7.2026. Bei Tarifänderungen oder neuen KV-Fassungen werden die Tools aktualisiert, soweit möglich. Das Datum der letzten Aktualisierung ist im jeweiligen Tool vermerkt.</p>
-        <p>Die österreichischen gesetzlichen Feiertage sind für die Jahre 2024 bis 2030 hinterlegt (Osterberechnung nach dem Gaußschen Algorithmus).</p>
+        <p>Die eingebetteten Tarifdaten gelten für die Gagenjahre 2024, 2025 und ab 1.7.2026. Bei Tarifänderungen oder neuen KV-Fassungen werden die Tools aktualisiert, soweit möglich. Das Datum der letzten Aktualisierung ist im jeweiligen Tool vermerkt.</p>
+        <p>Österreichische gesetzliche Feiertage sind für die Jahre 2024–2030 hinterlegt (Berechnung auf Basis des Gaußschen Algorithmus für Ostern).</p>
       </div>
       <div class="info-box">
         <h3>Datenschutz</h3>
-        <p>Diese Seite verwendet keine Cookies, keine Tracker und keine externen Dienste. Gagenrechner und CO₂-Rechner speichern keinerlei Daten. Die Stundenliste speichert Eingaben ausschließlich lokal im Browser des jeweiligen Geräts — kein Server, keine Weitergabe.</p>
-        <p>Bereitgestellt wird die Seite über GitHub Pages. Es gelten die <a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener">Datenschutzbestimmungen von GitHub</a>.</p>
+        <p>Diese Seite verwendet keine Cookies, keine Tracker und keine externen Dienste. Der Gagenrechner und der CO₂-Rechner speichern keinerlei Daten. Die Stundenliste speichert Eingaben ausschließlich lokal im Browser (localStorage) des jeweiligen Geräts – kein Server, keine Weitergabe.</p>
+        <p>Für Excel- und PDF-Export in der Stundenliste werden die Bibliotheken SheetJS und html2pdf.js bei Bedarf von <a href="https://cdnjs.cloudflare.com" target="_blank" rel="noopener">cdnjs.cloudflare.com</a> geladen (nur beim ersten Klick, nur wenn Internetverbindung vorhanden). Es werden dabei keine Nutzerdaten übertragen.</p>
+        <p>Die Seite wird über GitHub Pages bereitgestellt. Es gelten die <a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener">Datenschutzbestimmungen von GitHub</a>.</p>
       </div>
       <div class="info-box">
         <h3>Urheberrecht</h3>
@@ -380,8 +370,7 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
 
   <!-- ================= Kontakt ================= -->
   <section id="kontakt">
-    <h2>Kontakt &amp; über diese Seite</h2>
-    <p class="abschnitt-unter">Hinweise auf Fehler und Tarifänderungen sind willkommen.</p>
+    <h2>Kontakt &amp; Über diese Seite</h2>
 
     <div class="two-col">
       <div class="info-box">
@@ -397,8 +386,8 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
       </div>
       <div class="info-box">
         <h3>Quellen &amp; Grundlagen</h3>
-        <p>Kollektivvertrag für DienstnehmerInnen in österreichischen Filmproduktionsunternehmen (Filmschaffende), gültig ab 1.7.2026 — WKO Fachgruppe Film- und Musikwirtschaft / younion – Die Daseinsgewerkschaft.</p>
-        <p>Mindestgagentarife 2024, 2025 und ab 1.7.2026 gemäß den veröffentlichten Tabellen der Kollektivvertragsparteien.</p>
+        <p>Kollektivvertrag für DienstnehmerInnen in österreichischen Filmproduktionsunternehmen (Filmschaffende), gültig ab 1.7.2026 — WKO Fachgruppe Film- und Musikwirtschaft / younion – Die Younion.</p>
+        <p>Mindestgagentarife 2024, 2025 und ab 1.7.2026 gemäß den publizierten Tabellen der Kollektivvertragsparteien.</p>
         <p>
           <a href="https://www.wko.at/kollektivvertrag" target="_blank" rel="noopener">wko.at/kollektivvertrag</a><br>
           <a href="https://www.younionfilm.at" target="_blank" rel="noopener">younionfilm.at</a>
@@ -434,8 +423,7 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
       </div>
     </div>
     <div class="fuss-unten">
-      © Daniel Steinbach · A-2391 Kaltenleutgeben · <a href="mailto:danielsteinbach@gmx.net">danielsteinbach@gmx.net</a><br>
-      Ohne Gewähr · Kollektivvertrag Filmschaffende ab 1.7.2026 · Diese Seite ist kein Angebot der Kollektivvertragsparteien.
+      © Daniel Steinbach · A-2391 Kaltenleutgeben · <a href="mailto:danielsteinbach@gmx.net">danielsteinbach@gmx.net</a> · Ohne Gewähr · KV Filmschaffende ab 1.7.2026
     </div>
   </div>
 </footer>
