@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Überstundenfaktorrechner</title>
+<style>
+:root{
+  --rot:#b00d23;--rotdunkel:#7a0016;--rotblass:#fdecea;
+  --gruen:#1a6e2e;--gruenblass:#eef7f0;
+  --gelb:#7a4500;--gelbblass:#fff8e1;--gelbbord:#e8c84a;
+  --grau:#5a5a5a;--hellgrau:#f2f4f2;--rand:#d0d8d0;
+  --dunkel:#1a1a1a;--weiss:#fff;
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:var(--font);color:var(--dunkel);background:#fafbfa;min-height:100vh}
+
+/* Layout */
+.page{max-width:1080px;margin:0 auto;padding:40px 20px 80px}
+
+/* Header */
+.header{margin-bottom:36px}
+.header h1{font-size:1.75rem;font-weight:800;line-height:1.2;color:var(--rotdunkel);margin-bottom:6px}
+.header p{color:var(--grau);font-size:.95rem;line-height:1.6;max-width:640px}
+
+/* Eingabe-Panel */
+.panel{background:var(--weiss);border:1px solid var(--rand);border-radius:10px;padding:24px 28px;margin-bottom:28px}
+.panel h2{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--grau);margin-bottom:18px}
+.felder{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:14px 20px}
+@media(max-width:700px){.felder{grid-template-columns:1fr 1fr}}
+.feld label{display:block;font-size:.78rem;font-weight:600;color:var(--grau);margin-bottom:5px}
+.feld select,.feld input{width:100%;padding:10px 12px;font-size:.9rem;border:1px solid var(--rand);border-radius:6px;background:var(--weiss);color:var(--dunkel);font-family:var(--font)}
+.feld select:focus,.feld input:focus{outline:2px solid var(--rot);border-color:var(--rot)}
+.feld .hint{font-size:.72rem;color:var(--grau);margin-top:4px;line-height:1.4}
+.warn-gage{font-size:.78rem;color:var(--rot);font-weight:600;margin-top:5px;display:none}
+.warn-gage.sichtbar{display:block}
+
+/* Basis-Box */
+.basis{background:var(--hellgrau);border:1px solid var(--rand);border-radius:10px;padding:20px 24px;margin-bottom:28px}
+.basis h2{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--grau);margin-bottom:14px}
+.basis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 28px}
+.bitem{line-height:1.5}
+.bitem .wert{font-size:1.3rem;font-weight:800;color:var(--dunkel)}
+.bitem .name{font-size:.8rem;font-weight:700;color:var(--dunkel);margin-top:2px}
+.bitem .erkl{font-size:.74rem;color:var(--grau);line-height:1.4;margin-top:2px}
+.bitem.ref-a .wert{color:#1a5276}
+.bitem.ref-b .wert{color:#6e2f0a}
+
+/* Glühbirne Hinweis */
+.insight{background:var(--rotblass);border-left:3px solid var(--rot);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:28px;font-size:.85rem;line-height:1.7}
+.insight strong{font-size:.9rem;display:block;margin-bottom:4px;color:var(--rotdunkel)}
+
+/* Tabellen */
+.tabel-wrap{margin-bottom:32px}
+.tabel-wrap h3{font-size:1rem;font-weight:700;margin-bottom:4px}
+.tabel-wrap .sub{font-size:.8rem;color:var(--grau);margin-bottom:12px;line-height:1.5}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead th{background:var(--dunkel);color:var(--weiss);padding:10px 12px;text-align:left;font-size:.75rem;font-weight:600;line-height:1.3;white-space:nowrap}
+thead th.r{text-align:right}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--rand);vertical-align:top;line-height:1.4}
+tbody td.r{text-align:right;font-variant-numeric:tabular-nums;font-family:monospace;font-size:.85rem;white-space:nowrap}
+tr.row-falle td{background:var(--gelbblass)}
+tr.row-gut td{background:var(--gruenblass)}
+tr.row-ref td{background:var(--hellgrau);font-size:.76rem;color:var(--grau);font-style:italic}
+tr.row-schlecht td{background:#fff0f0}
+
+.badge{display:inline-block;border-radius:4px;padding:2px 7px;font-size:.7rem;font-weight:700;white-space:nowrap;margin-bottom:3px}
+.bg-rot{background:var(--rotblass);color:var(--rot)}
+.bg-gelb{background:var(--gelbblass);color:var(--gelb)}
+.bg-gruen{background:var(--gruenblass);color:var(--gruen)}
+.interp-name{font-weight:700;display:block;margin-bottom:2px}
+.interp-note{font-size:.74rem;color:var(--grau);line-height:1.4}
+.big-num{font-size:1rem;font-weight:800}
+.sub-num{font-size:.72rem;color:var(--grau);display:block}
+.verlust{color:var(--rot);font-weight:700}
+.gewinn{color:var(--gruen);font-weight:700}
+
+/* Verlust-Box */
+.verlust-box{background:var(--dunkel);color:var(--weiss);border-radius:10px;padding:24px 28px;margin-top:28px}
+.verlust-box h3{font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:#ffcc44;margin-bottom:14px}
+.verlust-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.vitem .zahl{font-size:1.8rem;font-weight:900;color:#ff6b6b;line-height:1}
+.vitem .label{font-size:.78rem;color:#aaa;margin-top:4px;line-height:1.4}
+.vitem .note{font-size:.72rem;color:#888;margin-top:2px}
+
+/* Definitionen */
+.defs{margin-top:36px;border-top:1px solid var(--rand);padding-top:24px}
+.defs h3{font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;color:var(--grau);font-weight:700;margin-bottom:14px}
+.def-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.def{background:var(--weiss);border:1px solid var(--rand);border-radius:8px;padding:14px 16px}
+.def .term{font-size:.88rem;font-weight:800;color:var(--dunkel);margin-bottom:4px}
+.def .formel{font-size:.78rem;font-family:monospace;background:var(--hellgrau);padding:3px 8px;border-radius:3px;display:inline-block;margin-bottom:6px;color:var(--rotdunkel)}
+.def .text{font-size:.78rem;color:var(--grau);line-height:1.5}
+
+footer{margin-top:40px;font-size:.72rem;color:var(--grau);border-top:1px solid var(--rand);padding-top:14px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <h1>Was bedeutet „wir zahlen 150 % pro Stunde nach der 12. Arbeitsstunde"?</h1>
+  <p class="range-line" id="range-line" style="display:none;font-size:1.05rem;font-weight:700;color:var(--rotdunkel);margin-bottom:8px;line-height:1.4">
+    Beim gleichen Wortlaut ist eine Spanne von <span id="range-min">–</span> bis <span id="range-max">–</span> des normalen Stundensatzes möglich!
+  </p>
+  <p>Dieselbe Formulierung kann je nach Auslegung das Doppelte oder nur den normalen Stundensatz bedeuten.
+  Wähle Berufsgruppe und tatsächliche Gage — die Tabelle zeigt, wieviel du in jedem Szenario bekommst.</p>
+</div>
+
+<!-- Eingabe -->
+<div class="panel">
+  <h2>Eingaben</h2>
+  <div class="felder">
+    <div class="feld">
+      <label for="sel-beruf">Berufsgruppe</label>
+      <select id="sel-beruf"><option value="">— bitte wählen —</option></select>
+      <div class="hint">Wähle deinen Beruf für die KV-Mindestgage als Vorschlag.</div>
+    </div>
+    <div class="feld">
+      <label for="sel-jahr">Gagentabelle</label>
+      <select id="sel-jahr"></select>
+    </div>
+    <div class="feld">
+      <label for="inp-gage">Tatsächliche Wochenpauschalgage (€)</label>
+      <input type="number" id="inp-gage" min="0" step="0.01" placeholder="z.B. 3500">
+      <div class="warn-gage" id="warn-gage">⚠ Liegt unter dem KV-Minimum!</div>
+      <div class="hint">Die mit dem Produzenten vereinbarte Pauschalgage nach §7 KV.</div>
+    </div>
+    <div class="feld">
+      <label for="inp-faktor">Ausgemachter Faktor</label>
+      <input type="number" id="inp-faktor" value="1.5" min="1" max="5" step="0.1">
+      <div class="hint">Der vereinbarte Multiplikator. Standard: 1,5.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Basis-Zahlen -->
+<div class="basis" id="basis-box" style="display:none">
+  <h2>Deine Basiszahlen</h2>
+  <div class="basis-grid">
+    <div class="bitem">
+      <div class="wert" id="b-P">–</div>
+      <div class="name">Wochenpauschalgage P</div>
+      <div class="erkl">Die vereinbarte Summe pro Woche. Enthält Grundgehalt, Überstunden-Pauschale, Urlaubs- und Weihnachtsgeld (SZ/UEL).</div>
+    </div>
+    <div class="bitem">
+      <div class="wert" id="b-W">–</div>
+      <div class="name">Wochengrundgage W</div>
+      <div class="erkl">P bereinigt um SZ/UEL und Überstunden-Pauschale — das „Netto"-Grundgehalt für 40 Stunden.</div>
+    </div>
+    <div class="bitem ref-b">
+      <div class="wert" id="b-std">–</div>
+      <div class="name">Grundstundenlohn <span style="background:#6e2f0a;color:#fff;border-radius:3px;padding:1px 5px;font-size:.7rem">Ref. B</span></div>
+      <div class="erkl">W ÷ 40 nach §9 Abs. 5 KV. Das ist die Basis für alle Überstunden- und Zuschlagsberechnungen im KV.</div>
+    </div>
+    <div class="bitem ref-a">
+      <div class="wert" id="b-P60">–</div>
+      <div class="name">Pauschalstunde bei 12h-Tag <span style="background:#1a5276;color:#fff;border-radius:3px;padding:1px 5px;font-size:.7rem">Ref. A</span></div>
+      <div class="erkl">P ÷ 5 Tage ÷ 12 Stunden = P ÷ 60. Was du „effektiv pro Stunde" verdienst, wenn du die ganze Pauschalgage auf einen 12h-Maximaltag umrechnest.</div>
+    </div>
+    <div class="bitem">
+      <div class="wert" id="b-P40">–</div>
+      <div class="name">Pauschalgage ÷ 40</div>
+      <div class="erkl">P ÷ 40 = der Stundensatz der vollen Pauschalgage auf 40 Stunden verteilt. <strong>Identisch mit „150 % von P÷60"</strong> — der häufigste Trick.</div>
+    </div>
+    <div class="bitem">
+      <div class="wert" id="b-min">–</div>
+      <div class="name">KV-Minimum</div>
+      <div class="erkl">Die kollektivvertragliche Mindestpauschalgage für die gewählte Berufsgruppe und das gewählte Jahr.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Insight -->
+<div class="insight" id="insight-box" style="display:none">
+  <strong>⚠ Die Zahl 150 % allein sagt nichts</strong>
+  <span id="insight-text"></span>
+</div>
+
+<!-- Tabelle 1: Werktag -->
+<div class="tabel-wrap" id="tab1-wrap" style="display:none">
+  <h3>Fünf Auslegungen von „<span id="t1-faktor">1,5</span>× Überstunden" — werktags, ohne Zulagen</h3>
+  <p class="sub">Was eine einzige Stunde über dem täglichen Limit einbringt, je nach Formulierung der Vereinbarung.</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:38%">Interpretation<br><span style="font-weight:400;font-size:.72rem">Wie der Produzent rechnet — und was das bedeutet</span></th>
+        <th class="r">Berechnungs-<br>grundlage</th>
+        <th class="r">Basis<br>€/h</th>
+        <th class="r">× <span class="t1f">1,5</span><br>= €/h</th>
+        <th class="r">% vom<br>Grundstunden-<br>lohn<br><span style="font-weight:400;font-size:.7rem">(Ref. B)</span></th>
+        <th class="r">% von<br>Pauschal-<br>stunde<br><span style="font-weight:400;font-size:.7rem">(Ref. A)</span></th>
+      </tr>
+    </thead>
+    <tbody id="tab1-body"></tbody>
+  </table>
+</div>
+
+<!-- Tabelle 2: Sa-Nacht -->
+<div class="tabel-wrap" id="tab2-wrap" style="display:none">
+  <h3>Maximalszenario: Samstagnacht-Überstunde</h3>
+  <p class="sub">Dieselbe illegale Überstunde, aber Samstag nach 22 Uhr: drei KV-Zuschläge gleichzeitig (Überstunden 100 % + Samstag 100 % + Nacht 50 %). Der Unterschied zwischen den Auslegungen wird hier am größten.</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:38%">Interpretation</th>
+        <th class="r">Bestandteile</th>
+        <th class="r">€/h</th>
+        <th class="r">% Grundstunden-<br>lohn (Ref. B)</th>
+        <th class="r">% Pauschal-<br>stunde (Ref. A)</th>
+        <th class="r">vs. Auslegung ③</th>
+      </tr>
+    </thead>
+    <tbody id="tab2-body"></tbody>
+  </table>
+</div>
+
+<!-- Verlust-Box -->
+<div class="verlust-box" id="verlust-wrap" style="display:none">
+  <h3>Was der Unterschied in der Praxis kostet</h3>
+  <div class="verlust-grid">
+    <div class="vitem">
+      <div class="zahl" id="v-pro-std">–</div>
+      <div class="label">Verlust pro Samstagnacht-Überstunde<br>Auslegung ③ vs. ⑤</div>
+    </div>
+    <div class="vitem">
+      <div class="zahl" id="v-4h">–</div>
+      <div class="label">Verlust an einem typischen 14h-Sa-Drehtag<br>4 Stunden über dem Limit (6T-Modell)</div>
+    </div>
+    <div class="vitem">
+      <div class="zahl" id="v-10d">–</div>
+      <div class="label">Verlust bei 10 solcher Drehtage<br>über die gesamte Produktion</div>
+    </div>
+  </div>
+</div>
+
+<!-- Definitionen -->
+<div class="defs">
+  <h3>Begriffe erklärt</h3>
+  <div class="def-grid">
+    <div class="def">
+      <div class="term">P — Wochenpauschalgage</div>
+      <div class="formel">z.B. 3.284 €/Woche</div>
+      <div class="text">Die mit dem Produzenten vereinbarte Gesamtsumme pro Woche nach KV §7. Enthält alles: Grundgehalt, eingebaute Überstunden-Pauschale, Urlaubsgeld, Weihnachtsremuneration, UEL.</div>
+    </div>
+    <div class="def">
+      <div class="term">W — Wochengrundgage</div>
+      <div class="formel">W = P ÷ 1,385 ÷ 1,2881</div>
+      <div class="text">P herausgerechnet um SZ/UEL (Faktor 1,2881) und Überstunden-Pauschale (Faktor 1,385). Reine Grundlohn-Basis für 40 Stunden, ohne Boni.</div>
+    </div>
+    <div class="def">
+      <div class="term" style="color:#6e2f0a">Ref. B — Grundstundenlohn = W ÷ 40</div>
+      <div class="formel">§9 Abs. 5 KV</div>
+      <div class="text">Der Stundenlohn, auf den sich alle KV-Zuschläge beziehen — Nacht, Samstag, Feiertag, Überstunden. <strong>Das ist die einzig korrekte Basis für Überstunden-Berechnungen.</strong></div>
+    </div>
+    <div class="def">
+      <div class="term" style="color:#1a5276">Ref. A — Pauschalstunde = P ÷ 60</div>
+      <div class="formel">P ÷ 5 Tage ÷ 12 Stunden</div>
+      <div class="text">Was die Pauschalgage effektiv pro Stunde ergibt, wenn man sie auf einen maximalen 12h-Tag verteilt. Oft als Basis für „150 %" missbraucht — ergibt dann genau P ÷ 40 ohne jeden Aufschlag.</div>
+    </div>
+    <div class="def">
+      <div class="term">P ÷ 40 — der versteckte Normalstundensatz</div>
+      <div class="formel">= Ref. A × 1,5 !</div>
+      <div class="text">150 % von P÷60 ergibt mathematisch exakt P÷40. Das klingt nach Überstundenzuschlag, ist aber nur der Stundensatz der vollen Pauschalgage auf 40 Stunden — <strong>null Euro Aufschlag</strong>.</div>
+    </div>
+    <div class="def">
+      <div class="term">Korrekte Formel für Auslegung ④</div>
+      <div class="formel">W÷40 × (1 + 1,0) × Faktor</div>
+      <div class="text">Stundenlohn plus 100 % Überstundenzuschlag (3.+ Überstunde nach §9), dann mal dem vereinbarten Faktor. So rechnet der KV-Stundenrechner. Plus Zulagen für Nacht, Sa, Feiertag separat.</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  KV Filmschaffende (Österreich) · ab 1.7.2026 · §7 Wochenpauschalgage · §9 Abs. 5 Stundenlohn ·
+  §10 Sa/So/FT-Zuschläge · §11 Nachtzuschlag · Alle Beträge Orientierungswerte, kein Ersatz für Rechtsberatung.
+  younion Film: <a href="https://www.younionfilm.at">younionfilm.at</a>
+</footer>
+
+</div>
+
+<script>
+// KV-Daten
+const F=1.2881166,P7=1.385;
+const YEARS=['ab 1.1.2024','ab 1.1.2025','ab 1.7.2026'];
+const POS=[
+  ['Regie (freie Vereinbarung)',0,0,0],
+  ['Regieassistenz',1222.57,1269.031895,1293.778017],
+  ['Herstellungsleitung I',2017.39,2094.046927,2134.880842],
+  ['Herstellungsleitung II',1267.33,1315.489044,1341.141081],
+  ['Produktionsleitung I',1924.89,1998.03823,2036.999976],
+  ['Produktionsleitung II',1247.64,1295.046077,1320.299475],
+  ['1. Aufnahmeleitung I',1162.74,1206.92628,1230.461342],
+  ['1. Aufnahmeleitung II',1055.52,1095.625538,1116.990236],
+  ['2. Aufnahmeleitung',939.85,975.600077,994.583498],
+  ['Filmgeschäftsführung',1214.42,1260.564958,1285.145975],
+  ['Produktionsassistenz',737.13,767.13,782.089035],
+  ['Continuity/Script',886.36,920.045998,937.986895],
+  ['Kamera I',2764.54,2869.595802,2925.55292],
+  ['Kamera II',2049.94,2127.842754,2169.335688],
+  ['Kamera III',1579.44,1639.459249,1671.428704],
+  ['1. Kameraassistenz',1162.74,1206.92628,1230.461342],
+  ['2. Kameraassistenz',885.37,919.01,936.930695],
+  ['Schwenker (Operator)',1191.04,1236.303695,1260.411617],
+  ['DIT',1037.77,1077.206413,1098.211938],
+  ['Editor (Schnitt)',1267.33,1315.485787,1341.137759],
+  ['Schnittassistenz',827.2,858.63,875.373285],
+  ['Originaltonmeister:in I',1739.55,1805.652811,1840.863041],
+  ['Originaltonmeister:in II',1409.11,1462.660360,1491.182237],
+  ['Tonassistenz',1112.29,1154.557303,1177.071171],
+  ['Filmarchitektur (Szenenbild)',1425.26,1479.422507,1508.271246],
+  ['Filmarchitekturassistenz',1069.86,1110.519674,1132.174807],
+  ['Bühnemeister, Oberbeleuchter',1130.88,1173.852377,1196.742498],
+  ['Kostümbild',1366.3,1418.221819,1445.877145],
+  ['Kostümbildassistenz',947.5,983.501844,1002.680130],
+  ['Chefmaskenbildner:in',1366.3,1418.221819,1445.877145],
+  ['Maskenbildner:in, Frisur',1267.33,1315.485787,1341.137759],
+  ['Produktionsfahrer',550.16,580.158336,591.471424],
+  ['Medien-Fachkraft',808.56,839.29,855.656155],
+  ['Filmausbildungskraft',499.99,518.986101,529.106329],
+];
+
+const r2=x=>Math.round((x+Number.EPSILON)*100)/100;
+const fmt=x=>x.toLocaleString('de-AT',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmte=x=>x.toLocaleString('de-AT',{style:'currency',currency:'EUR'});
+const pct=(x,base)=>Math.round(x/base*100);
+
+function calc(P){
+  const wexkl=P/F, W=wexkl/P7, std=W/40;
+  const P60=P/60, P40=P/40;
+  return{P:r2(P),W:r2(W),std:r2(std),P60:r2(P60),P40:r2(P40)};
+}
+
+// Populate selects
+const sb=document.getElementById('sel-beruf');
+POS.forEach((p,i)=>{
+  const o=document.createElement('option');
+  o.value=i; o.textContent=p[0];
+  sb.appendChild(o);
+});
+const sj=document.getElementById('sel-jahr');
+YEARS.forEach((y,i)=>{
+  const o=document.createElement('option');
+  o.value=i; o.textContent=y;
+  if(i===2)o.selected=true;
+  sj.appendChild(o);
+});
+
+function update(){
+  const P=parseFloat(document.getElementById('inp-gage').value);
+  const faktor=parseFloat(document.getElementById('inp-faktor').value)||1.5;
+  if(!P||P<=0){
+    document.getElementById('basis-box').style.display='none';
+    document.getElementById('insight-box').style.display='none';
+    document.getElementById('tab1-wrap').style.display='none';
+    document.getElementById('tab2-wrap').style.display='none';
+    document.getElementById('verlust-wrap').style.display='none';
+    return;
+  }
+  const {W,std,P60,P40}=calc(P);
+
+  // KV-Minimum
+  const bi=+sb.value, yi=+sj.value;
+  let minW=0;
+  if(bi>=0&&bi<POS.length)minW=POS[bi][1+yi]||0;
+  const minP=minW?r2(r2(minW)*P7*F):0;
+  const unterKV=minP>0&&P<minP-0.01;
+  document.getElementById('warn-gage').classList.toggle('sichtbar',unterKV);
+
+  // Basis-Box
+  document.getElementById('basis-box').style.display='';
+  document.getElementById('b-P').textContent=fmte(P)+'/Woche';
+  document.getElementById('b-W').textContent=fmte(W)+'/Woche';
+  document.getElementById('b-std').textContent=fmt(std)+' €/h';
+  document.getElementById('b-P60').textContent=fmt(P60)+' €/h';
+  document.getElementById('b-P40').textContent=fmt(P40)+' €/h';
+  document.getElementById('b-min').textContent=minP?fmte(minP)+'/Woche':'—';
+
+  // Insight
+  document.getElementById('insight-box').style.display='';
+  document.getElementById('insight-text').innerHTML=
+    `„${faktor.toString().replace('.',',')}× von Pauschalstunde (P÷60)" ergibt <strong>${fmt(P60*faktor)} €/h</strong> — `+
+    `das ist exakt dasselbe wie P÷40 (${fmt(P40)} €/h). `+
+    `Der Grundstundenlohn nach §9 Abs. 5 beträgt ${fmt(std)} €/h. `+
+    `150 % davon wären <strong>${fmt(std*1.5)} €/h</strong> — ohne Zulagen. `+
+    `Die korrekte Überstunde (Stunde 11–12) wäre <strong>${fmt(std*2*faktor)} €/h</strong> (${faktor}× auf W÷40 inkl. 100 % ÜSt).`;
+
+  // Tabelle 1: Werktag
+  document.querySelectorAll('.t1f').forEach(el=>el.textContent=faktor.toString().replace('.',','));
+  document.getElementById('t1-faktor').textContent=faktor.toString().replace('.',',');
+  document.getElementById('tab1-wrap').style.display='';
+
+  const f=faktor;
+  const rows1=[
+    {
+      cls:'row-schlecht',badge:'bg-rot',blabel:'⚠ zu wenig',
+      name:'① Grundstundenlohn × '+fmt2(f)+' — keine Zulagen',
+      note:'Nur W÷40 × Faktor. Nacht, Samstag, Feiertag werden ignoriert.',
+      basis:'W ÷ 40',bval:std,res:r2(std*f)
+    },
+    {
+      cls:'',badge:'',blabel:'',
+      name:'② Grundstundenlohn × '+fmt2(f)+' + KV-Zulagen werden gezahlt',
+      note:'Wie ①, aber Nacht-/Sa-/FT-Zuschläge kommen laut KV dazu. (Hier: + Nacht 50 %)',
+      basis:'W ÷ 40',bval:std,
+      res:r2(std*f+std*0.5),
+      sub:'inkl. Nachtzuschlag 50 %'
+    },
+    {
+      cls:'row-falle',badge:'bg-gelb',blabel:'⚠ Falle!',
+      name:'③ Pauschalstunde × '+fmt2(f)+' (häufigster Trick)',
+      note:'Klingt nach '+fmt2(f*100)+' %, ergibt aber genau P÷40 = normaler Stundensatz, ohne einen Euro Aufschlag.',
+      basis:'P ÷ 60',bval:P60,
+      res:r2(P60*f),
+      sub:'= P ÷ 40 = 0 € Zuschlag!'
+    },
+    {
+      cls:'row-gut',badge:'bg-gruen',blabel:'✓ korrekt',
+      name:'④ Tatsächlicher ÜSt-Stundensatz × '+fmt2(f)+', ohne Zulagen',
+      note:'Basis = W÷40 + 100 % ÜSt (3.+ Überstunde §9). So rechnet der KV-Stundenrechner.',
+      basis:'W÷40 + 100 % ÜSt',bval:r2(std*2),res:r2(std*2*f)
+    },
+    {
+      cls:'row-gut',badge:'bg-gruen',blabel:'✓ korrekt + Zulagen',
+      name:'⑤ Tats. ÜSt-Stundensatz × '+fmt2(f)+' + KV-Zulagen',
+      note:'Wie ④, plus Nacht-, Sa- oder FT-Zuschlag. Maximum. (Hier: + Nacht 50 %)',
+      basis:'W÷40 + 100 % ÜSt<br>+ 50 % Nacht',bval:r2(std*2+std*0.5),
+      res:r2((std*2+std*0.5)*f),
+      sub:'inkl. Nachtzuschlag'
+    },
+  ];
+  const tb1=document.getElementById('tab1-body');
+  tb1.innerHTML='';
+  // Referenzzeilen
+  const refRows=[
+    {label:'Referenz: W÷40 = Grundstundenlohn (§9 Abs. 5)',val:std},
+    {label:'Referenz: P÷60 = Pauschalstunde bei 12h-Tag',val:P60},
+    {label:'Referenz: P÷40 = Pauschalgage pro Stunde (40h)',val:P40},
+  ];
+  refRows.forEach(rr=>{
+    const tr=document.createElement('tr');
+    tr.className='row-ref';
+    tr.innerHTML=`<td>${rr.label}</td><td class="r">—</td><td class="r">${fmt(rr.val)} €</td>`+
+      `<td class="r">—</td><td class="r">${pct(rr.val,std)} %</td><td class="r">${pct(rr.val,P60)} %</td>`;
+    tb1.appendChild(tr);
+  });
+  rows1.forEach(row=>{
+    const tr=document.createElement('tr');
+    tr.className=row.cls;
+    tr.innerHTML=`<td>`+
+      (row.badge?`<span class="badge ${row.badge}">${row.blabel}</span><br>`:'')+'<span class="interp-name">'+row.name+'</span>'+
+      `<span class="interp-note">${row.note}</span></td>`+
+      `<td class="r" style="font-size:.78rem">${row.basis}</td>`+
+      `<td class="r">${fmt(row.bval)} €</td>`+
+      `<td class="r"><span class="big-num">${fmt(row.res)} €</span>`+
+      (row.sub?`<span class="sub-num">${row.sub}</span>`:'')+`</td>`+
+      `<td class="r ${row.cls==='row-falle'?'verlust':row.cls==='row-gut'?'gewinn':''}">${pct(row.res,std)} %</td>`+
+      `<td class="r ${row.cls==='row-falle'?'verlust':row.cls==='row-gut'?'gewinn':''}">${pct(row.res,P60)} %</td>`;
+    tb1.appendChild(tr);
+  });
+
+  // Tabelle 2: Sa-Nacht
+  document.getElementById('tab2-wrap').style.display='';
+  const saNachtKorrekt=r2(std*3.5); // W/40 × (1+1+1+0.5)
+  const saNachtKorrektF=r2(saNachtKorrekt*f);
+  const trick=r2(P60*f);
+  const rows2=[
+    {cls:'row-falle',name:'③ Pauschalstunde × '+fmt2(f),
+      detail:'P÷60 × '+fmt2(f)+' (kein Zuschlag)',val:trick,vs:0},
+    {cls:'row-schlecht',name:'① Grundstundenlohn × '+fmt2(f)+', keine Zulagen',
+      detail:'W÷40 × '+fmt2(f),val:r2(std*f),vs:r2(r2(std*f)-trick)},
+    {cls:'',name:'② Grundstundenlohn × '+fmt2(f)+' + alle 3 Zulagen',
+      detail:'W÷40 × '+fmt2(f)+' + Sa 100 % + Nacht 50 %',
+      val:r2(std*f+std+std*0.5),vs:r2(r2(std*f+std+std*0.5)-trick)},
+    {cls:'row-gut',name:'④ ÜSt-Stundensatz × '+fmt2(f)+', ohne Zulagen',
+      detail:'(W÷40 + 100 % ÜSt) × '+fmt2(f),val:r2(std*2*f),vs:r2(r2(std*2*f)-trick)},
+    {cls:'row-gut',name:'⑤ ÜSt-Stundensatz × '+fmt2(f)+' + Sa + Nacht',
+      detail:'(W÷40 + 100 % ÜSt + 100 % Sa + 50 % Nacht) × '+fmt2(f),
+      val:saNachtKorrektF,vs:r2(saNachtKorrektF-trick)},
+  ];
+  const tb2=document.getElementById('tab2-body');
+  tb2.innerHTML='';
+  rows2.forEach(row=>{
+    const tr=document.createElement('tr');
+    tr.className=row.cls;
+    const vsText=row.vs===0?'— Referenz':
+      (row.vs>0?`<span class="gewinn">+${fmt(row.vs)} €</span>`:
+                `<span class="verlust">${fmt(row.vs)} €</span>`);
+    tr.innerHTML=`<td><span class="interp-name">${row.name}</span></td>`+
+      `<td class="r" style="font-size:.76rem">${row.detail}</td>`+
+      `<td class="r"><span class="big-num">${fmt(row.val)} €</span></td>`+
+      `<td class="r">${pct(row.val,std)} %</td>`+
+      `<td class="r">${pct(row.val,P60)} %</td>`+
+      `<td class="r">${vsText}</td>`;
+    tb2.appendChild(tr);
+  });
+
+  // Verlust-Box
+  const verlustH=r2(saNachtKorrektF-trick);
+  document.getElementById('verlust-wrap').style.display='';
+
+  // Dynamische Range-Zeile
+  const minPct=pct(r2(std*f),P60);   // Interpretation ①: schlechteste Auslegung
+  const maxPct=pct(r2(std*3.5*f),P60); // Interpretation ⑤: Samstagnacht, alle Zulagen
+  document.getElementById('range-line').style.display='';
+  document.getElementById('range-min').textContent=minPct+' %';
+  document.getElementById('range-max').textContent=maxPct+' %';
+  document.getElementById('v-pro-std').textContent=fmt(verlustH)+' €';
+  document.getElementById('v-4h').textContent=fmt(r2(verlustH*4))+' €';
+  document.getElementById('v-10d').textContent=fmt(r2(verlustH*4*10))+' €';
+}
+
+function fmt2(x){return x.toString().replace('.',',');}
+
+// Event-Listener
+sb.addEventListener('change',()=>{
+  const bi=+sb.value,yi=+sj.value;
+  if(bi>=0&&bi<POS.length){
+    const minW=POS[bi][1+yi]||0;
+    if(minW>0){
+      const minP=r2(r2(minW)*P7*F);
+      document.getElementById('inp-gage').value=minP.toFixed(2);
+    }
+  }
+  update();
+});
+sj.addEventListener('change',()=>{
+  const bi=+sb.value,yi=+sj.value;
+  if(bi>=0&&bi<POS.length){
+    const minW=POS[bi][1+yi]||0;
+    if(minW>0){
+      const minP=r2(r2(minW)*P7*F);
+      document.getElementById('inp-gage').value=minP.toFixed(2);
+    }
+  }
+  update();
+});
+document.getElementById('inp-gage').addEventListener('input',update);
+document.getElementById('inp-faktor').addEventListener('input',update);
+
+// Initialwert: Originaltonmeister:in I
+sb.value='21';
+sb.dispatchEvent(new Event('change'));
+</script>
+</body>
+</html>
