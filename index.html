@@ -86,11 +86,17 @@ section>h2{font-size:.94rem;font-weight:700;text-transform:uppercase;letter-spac
 /* ---------- Tool-Karten: 2 × 2, nie 3 + 1 ---------- */
 .tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
 .tool-card{
+  position:relative;cursor:pointer;
   background:var(--weiss);border:1px solid var(--linie);border-radius:var(--radius);
   display:flex;flex-direction:column;overflow:hidden;
   transition:border-color .15s, box-shadow .15s, transform .15s;
 }
 .tool-card:hover{border-color:var(--linie-stark);box-shadow:var(--schatten);transform:translateY(-2px)}
+/* Die ganze Karte ist anklickbar: der Knopf legt eine unsichtbare Fläche über
+   die gesamte Karte. Es bleibt genau ein Link — gut für Tastatur und Vorleseprogramme. */
+.tool-card .btn-prim::after{content:"";position:absolute;inset:0;z-index:1}
+.tool-card:hover .btn-prim{background:var(--rot-dunkel)}
+.tool-card:focus-within{border-color:var(--rot)}
 .tool-kopf{background:var(--dunkel);color:#fff;padding:17px 22px 15px;border-bottom:3px solid var(--rot)}
 .tool-kopf h3{font-size:1.12rem;font-weight:700;letter-spacing:-.01em;margin-bottom:3px}
 .tool-kopf .kv-ref{font-size:.72rem;color:#9aa0a8;letter-spacing:.02em}
