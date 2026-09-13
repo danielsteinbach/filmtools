@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stundenliste – KV §7 Filmschaffende</title>
+<meta name="description" content="Arbeitszeiten über einen Projektzeitraum erfassen und nach KV §7 Wochenpauschalgage auswerten — mit Pausenkontrolle, Diäten nach §17 und Export als CSV und PDF.">
 <style>
 :root{
   --rot:#b00d23;--dunkel:#1a1a1a;--grau:#6e6e6e;--hellgrau:#f0f0f0;
   --rand:#cdd4cd;--feld:#f5f7f5;--gruen:#1e7b34;--gelbhl:#fffbe6;
   --warnbg:#fdecee;--infobg:#eef4fb;--infobord:#9bbcd8;
-  --gelbhl:#fffbea;
+  --satbg:#f7f4ee;--sunbg:#fdf0f0;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--dunkel);background:#fff;font-size:15px}
@@ -98,13 +99,6 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 .report-box strong{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em;color:var(--grau);margin-bottom:4px}
 /* Buttons */
 .export-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
-/* Pflichtfelder */
-.pflicht label::after{content:' *';color:var(--rot);font-weight:700}
-/* Gage-Warnhinweis */
-.gage-hinweis{background:var(--gelbhl);border:1px solid #e8c84a;border-radius:4px;padding:6px 10px;font-size:.78rem;margin-top:5px;display:none}
-.gage-hinweis.sichtbar{display:block}
-.gage-unter-kv{background:var(--warnbg);border:1px solid #e8b4bc;border-radius:4px;padding:5px 10px;font-size:.78rem;margin-top:4px;color:var(--rot);display:none}
-.gage-unter-kv.sichtbar{display:block}
 .btn{padding:9px 18px;border:none;border-radius:4px;font-size:.86rem;font-weight:600;cursor:pointer;font-family:inherit}
 .btn:hover{opacity:.85}
 .btn-prim{background:var(--rot);color:#fff}
@@ -113,8 +107,6 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 /* Placeholder */
 #placeholder{text-align:center;padding:50px 20px;border:2px dashed var(--rand);border-radius:8px;color:var(--grau);margin-top:20px}
 #placeholder strong{display:block;font-size:1.05rem;margin-bottom:6px;color:var(--dunkel)}
-
-/* Print */
 /* Print */
 @media print{
   .export-bar,.btn,button{display:none!important}
@@ -130,6 +122,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 </style>
 </head>
 <body>
+<a href="index.html" style="display:block;max-width:1080px;margin:0 auto;padding:16px 20px 0;font:600 .82rem/1.4 system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#ab0f1f;text-decoration:none">&#8592;&#160;Alle Filmtools</a>
 <div class="wrap">
 <h1>Stundenliste</h1>
 <p style="text-align:center;font-size:.82rem;color:var(--grau);margin-bottom:20px">
@@ -138,76 +131,50 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 
 <!-- Setup -->
 <div class="card">
-  <h2>Projekt &amp; Person</h2>
+  <h2>Projekt</h2>
   <div class="grid2">
-    <div class="fld"><label for="s-person-name">Name (Filmschaffende/r)</label>
-      <input type="text" id="s-person-name" placeholder="Vor- und Nachname">
-    </div>
-    <div class="fld"><label for="s-svnr">Sozialversicherungsnummer</label>
-      <input type="text" id="s-svnr" placeholder="z.B. 1234 010180" maxlength="14">
-    </div>
     <div class="fld span2"><label for="s-name">Projektname / Produktion</label>
       <input type="text" id="s-name" placeholder="z.B. Serie XY Staffel 2, Block 1">
     </div>
-    <div class="fld pflicht"><label for="s-start">Projektbeginn</label>
+    <div class="fld"><label for="s-start">Projektbeginn</label>
       <input type="date" id="s-start">
     </div>
-    <div class="fld pflicht"><label for="s-end">Projektende</label>
+    <div class="fld"><label for="s-end">Projektende</label>
       <input type="date" id="s-end">
     </div>
-    <div class="fld pflicht"><label for="s-beruf">Berufsgruppe</label>
+    <div class="fld"><label for="s-beruf">Berufsgruppe</label>
       <select id="s-beruf"><option value="">– bitte wählen –</option></select>
     </div>
     <div class="fld"><label for="s-jahr">Gagentabelle</label>
       <select id="s-jahr"></select>
     </div>
-    <div class="fld">
-      <label for="s-gage">Wochenpauschalgage inkl. SZ/UEL (§7)</label>
+    <div class="fld"><label for="s-gage">Wochenpauschalgage inkl. SZ/UEL (§7) – vereinbarte Gage eintragen</label>
       <input type="number" id="s-gage" min="0" step="0.01">
-      <div class="gage-hinweis" id="gage-hinweis">
-        ⚠ KV-Minimum vorgeschlagen — bitte auf die <strong>tatsächlich vereinbarte</strong> Gage anpassen.
-      </div>
-      <div class="gage-unter-kv" id="gage-unter-kv"></div>
     </div>
-
+    <div class="fld"><label for="s-wmodell">Wochenmodell</label>
+      <select id="s-wmodell">
+        <option value="5">5-Tage-Woche (Faktor-ÜSt ab 12h/Tag; Sa ab 10h – Tage frei vereinbarbar, §5 Abs. 1)</option>
+        <option value="6">6-Tage-Woche inkl. Samstag (Faktor-ÜSt ab 10h/Tag – Tage frei vereinbarbar, §5 Abs. 1)</option>
+      </select>
+    </div>
   </div>
   <div class="grid3" style="margin-top:4px">
     <div class="fld">
       <label for="s-faktor">Faktor auf Gesamtentgelt für Stunden über Limit</label>
       <input type="number" id="s-faktor" value="1.5" min="1" step="0.1">
-      <p class="fn">Wird auf den vollen Stundenwert (inkl. ÜSt- und Nachtzuschlag) angewendet. Kein KV-Zuschlag, frei vereinbar. Standard: 1,5.</p>
+      <p class="fn">Der Faktor wird auf den vollständigen Entgeltwert der jeweiligen Stunde — einschließlich der für diesen Zeitraum geltenden Zuschläge (Nacht, Samstag etc.) — angewendet. Stunden jenseits 12h/Tag (5T) bzw. 10h/Tag (6T). Standard: 1,5.</p>
     </div>
     <div class="fld">
       <label for="s-diaet">Diäten außerhalb Firmensitz (>3h, §17)</label>
       <input type="number" id="s-diaet" value="15.40" min="0" step="0.10">
-    </div>
-    <div class="fld" style="grid-column:1/-1">
-      <div class="toggle-box" style="padding:10px 14px">
-        <label style="display:flex;align-items:flex-start;gap:10px;font-weight:400;cursor:pointer">
-          <input type="checkbox" id="s-bezpause-auto" style="margin-top:3px;width:auto;flex-shrink:0">
-          <span>
-            <strong>Bezahlte Pflichtpause wird nicht gesondert konsumiert</strong><br>
-            <span style="font-size:.78rem;color:var(--grau);line-height:1.6">
-              Bei aktivierter Option werden 30 Minuten der eingetragenen Mittagspause als bezahlte Arbeitszeit gewertet
-              und nicht von der Anwesenheitszeit abgezogen. Beispiel: 08:00–20:00 mit 30 Minuten Mittagspause ergibt
-              normalerweise 11,5 Stunden — mit aktivierter Option 12 Stunden.<br>
-              Es wird kein Anspruch wegen nicht erhaltener Pflichtpause ausgewiesen, weil die 30 Minuten bereits als
-              Arbeitszeit gerechnet werden.<br>
-              <strong>Achtung:</strong> Diese Option bildet eine in der Filmproduktion vorkommende Abrechnungspraxis ab.
-              Sie ersetzt nicht die nach §5 Abs.&thinsp;4 KV vorgeschriebene Pflichtpause; der Verzicht auf die
-              tatsächliche Pausengewährung kann arbeitszeitrechtlich unzulässig sein.
-              Gilt bei 8h täglicher Normalarbeitszeit; bei abweichend vereinbarter NAZ manuell prüfen.
-            </span>
-          </span>
-        </label>
-      </div>
+      <p class="fn">KV §17: €15,40 je Arbeitstag mit mehr als 3h Arbeit außerhalb des Betriebs im Ortsgebiet.</p>
     </div>
     <div class="fld">
       <div class="toggle-box">
-        <p style="font-size:.76rem;margin-bottom:6px"><strong>Zuschlagsbasis §10/§11</strong> — KV 2026 enthält einen Widerspruch zwischen §10 Abs. 1 und §10 Abs. 6. Bitte Lesart wählen:</p>
+        <p><strong>§10/§11 Zuschlagsbasis</strong> — KV 2026 enthält einen Widerspruch: §10 Abs. 1 verweist auf §9 Abs. 5 (vereinbarte Stundengage ÷ 40), §10 Abs. 6 schreibt Mindestgagentarif × 4,33 ÷ 173 vor.</p>
         <div class="radio-row">
-          <label><input type="radio" name="kv-basis" value="vereinbart" checked>Vereinbarte Gage ÷ 40 (§9 Abs. 5)</label>
-          <label><input type="radio" name="kv-basis" value="mindest">Mindestgagentarif × 4,33 ÷ 173 (§10 Abs. 6)</label>
+          <label><input type="radio" name="kv-basis" value="vereinbart" checked>§9 Abs. 5 (vereinbarte Gage ÷ 40)</label>
+          <label><input type="radio" name="kv-basis" value="mindest">§10/§11 Abs. 6 (Mindestgagentarif × 4,33 ÷ 173)</label>
         </div>
       </div>
     </div>
@@ -218,17 +185,12 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 <div id="wochen-container"></div>
 
 <div id="hint-storage" style="background:var(--infobg);border:1px solid var(--infobord);border-radius:5px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;line-height:1.6">
-  <strong>Datenspeicherung:</strong> Einträge werden automatisch im Browser (localStorage) gespeichert — nur auf diesem Gerät in diesem Browser. Auf einem anderen Gerät oder nach Cache-Leerung sind die Daten weg. Regelmäßig per Excel-Export sichern!
+  <strong>Datenspeicherung:</strong> Alle Einträge werden automatisch im <em>localStorage</em> deines Browsers gespeichert — nicht in der HTML-Datei selbst. Das bedeutet: Die Daten bleiben auf diesem Gerät in diesem Browser gespeichert, solange du den Browser-Cache nicht leerst. Öffnest du die Datei in einem anderen Browser oder auf einem anderen Gerät, startest du mit einer leeren Liste. Zum manuellen Löschen: Browser-Entwicklerwerkzeuge (F12) → Anwendung → Lokaler Speicher → Eintrag <code>gr-stunden-v1</code> löschen. Oder den Button unten verwenden.
   <button onclick="document.getElementById('hint-storage').style.display='none'" style="float:right;background:none;border:none;cursor:pointer;font-size:1rem;color:var(--grau)" title="Schließen">✕</button>
 </div>
-<div id="placeholder" style="background:var(--feld);border:1px dashed var(--rand);border-radius:6px;padding:24px 20px;color:var(--grau);font-size:.9rem">
-  <div id="ph-text">Bitte Pflichtfelder ausfüllen:</div>
-  <ul id="ph-list" style="margin:8px 0 0 18px;font-size:.85rem;line-height:1.8">
-    <li id="ph-start" style="display:none">Projektbeginn <span style="color:var(--rot)">*</span></li>
-    <li id="ph-end" style="display:none">Projektende <span style="color:var(--rot)">*</span></li>
-    <li id="ph-beruf" style="display:none">Berufsgruppe <span style="color:var(--rot)">*</span></li>
-    <li id="ph-gage" style="display:none">Wochenpauschalgage</li>
-  </ul>
+<div id="placeholder">
+  <strong>Projekt konfigurieren</strong>
+  Nach Eingabe von Start- und Enddatum wird die Stundenliste erstellt.
 </div>
 
 <!-- Gesamt -->
@@ -247,60 +209,16 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
   </div>
 </div>
 
-<div class="export-bar" style="gap:0;flex-wrap:wrap;margin-top:24px">
-
-  <!-- Gruppe: Ergebnisse -->
-  <div style="display:flex;flex-direction:column;align-items:flex-start;margin-right:20px;margin-bottom:10px">
-    <span style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--grau);margin-bottom:5px">Ergebnisse</span>
-    <button class="btn btn-prim" id="btn-xlsx-ergebnis" style="white-space:nowrap">📊 Download</button>
-    <span style="font-size:.7rem;color:var(--grau);margin-top:3px;max-width:130px">Excel oder PDF mit allen berechneten Werten</span>
-  </div>
-
-  <!-- Gruppe: Datensicherung -->
-  <div style="display:flex;flex-direction:column;align-items:flex-start;margin-right:20px;margin-bottom:10px">
-    <span style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--grau);margin-bottom:5px">Datensicherung</span>
-    <div style="display:flex;gap:8px">
-      <div style="display:flex;flex-direction:column;align-items:flex-start">
-        <button class="btn btn-sec" id="btn-xlsx-export" style="white-space:nowrap">📤 Speichern</button>
-        <span style="font-size:.7rem;color:var(--grau);margin-top:3px;max-width:110px">Eingaben als Excel sichern</span>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-start">
-        <label class="btn btn-sec" style="cursor:pointer;white-space:nowrap" title="Eingabe-Excel hochladen">
-          📥 Laden
-          <input type="file" id="inp-xlsx-import" accept=".xlsx" style="display:none">
-        </label>
-        <span style="font-size:.7rem;color:var(--grau);margin-top:3px;max-width:110px">Gespeicherte Excel-Datei importieren</span>
-      </div>
-    </div>
-    <p style="font-size:.68rem;color:var(--grau);margin-top:5px">⚠ Excel-Funktionen benötigen Internetverbindung (SheetJS wird von cdnjs geladen).</p>
-  </div>
-
-  <!-- Gruppe: Sonstiges -->
-  <div style="display:flex;flex-direction:column;align-items:flex-start;margin-right:20px;margin-bottom:10px">
-    <span style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--grau);margin-bottom:5px">Sonstiges</span>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-ghost" id="btn-clear" style="color:var(--rot)">Daten löschen</button>
-    </div>
-  </div>
-
-  <span id="btn-clear-confirm" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;align-self:flex-end;margin-bottom:10px">
+<div class="export-bar">
+  <button class="btn btn-prim" id="btn-csv">CSV herunterladen</button>
+  <button class="btn btn-sec" id="btn-print">PDF drucken</button>
+  <button class="btn btn-ghost" id="btn-clear">Daten löschen</button>
+  <span id="btn-clear-confirm" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
     <span style="font-size:.82rem;font-weight:600;color:var(--rot)">Wirklich alle Daten löschen?</span>
     <button class="btn btn-prim" id="btn-clear-yes" style="padding:6px 14px">Ja, löschen</button>
     <button class="btn btn-ghost" id="btn-clear-no" style="padding:6px 14px">Abbrechen</button>
   </span>
-</div>
-
-<!-- Modal Ergebnisse -->
-<div id="modal-ergebnis" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:8px;padding:28px 32px;max-width:380px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3)">
-    <h3 style="margin-bottom:16px;font-size:1.1rem">Ergebnisse exportieren</h3>
-    <p style="font-size:.85rem;color:var(--grau);margin-bottom:20px">Alle berechneten Werte — Zuschläge, Stunden, Summen — werden exportiert.</p>
-    <div style="display:flex;gap:12px;flex-wrap:wrap">
-      <button class="btn btn-prim" id="btn-ergebnis-xlsx" style="flex:1">Excel (.xlsx)</button>
-      <button class="btn btn-sec" id="btn-ergebnis-pdf" style="flex:1">PDF herunterladen</button>
-    </div>
-    <button class="btn btn-ghost" id="btn-modal-close" style="width:100%;margin-top:10px">Abbrechen</button>
-  </div>
+  <span style="font-size:.72rem;color:var(--grau);align-self:center;margin-left:4px">Alle Eingaben werden automatisch im Browser gespeichert (localStorage).</span>
 </div>
 
 <!-- Hinweis: Einschränkungen und nicht abgebildete KV-Fälle -->
@@ -313,37 +231,75 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 24px">
 
     <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
-      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ §10 Abs. 4 — Ausnahme So/FT-Zuschlag</strong>
-      Kein Zuschlag, wenn unmittelbar vor und nach der Wochenend-/Feiertagsarbeit mindestens 3 Tage kein Arbeitsverhältnis mit demselben AG bestand. Muss manuell herausgerechnet werden.
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Nacht-NAZ vs. Nacht-Überstunden (Näherung)</strong>
+      Die Aufteilung von Nachtstunden in Normalarbeitszeit (50&nbsp;%) und
+      Überstunden (100&nbsp;%) erfolgt proportional auf Basis von 8&nbsp;Stunden NAZ-Grenze.
+      Eine minutengenaue Segmentierung der tatsächlichen Zeitachse
+      (Normalarbeitszeit&nbsp;Tag / Nacht / Überstunden&nbsp;50&nbsp;%&nbsp;/&nbsp;100&nbsp;%) ist in dieser Version
+      nicht implementiert. Für eine exakte Berechnung komplex gelagerter Nachtschichten
+      empfiehlt sich eine manuelle Prüfung.
+    </div>
+
+    <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ §10 Abs. 4 — Ausnahme vom Wochenend-/Feiertagszuschlag</strong>
+      Kein Zuschlag nach §10, wenn unmittelbar vor und nach der Wochenend- oder
+      Feiertagsarbeit mindestens drei aufeinanderfolgende Tage kein aufrechtes
+      Arbeitsverhältnis mit demselben Arbeitgeber bestand. Diese Konstellation
+      kann die Stundenliste nicht automatisch erkennen. Bei Anwendbarkeit
+      müssen die Zuschläge manuell herausgerechnet werden.
     </div>
 
     <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
       <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ §6-Verschiebungszuschlag (25&nbsp;%) nicht abgebildet</strong>
-      Bei Verschiebung auf Sa/So nach §6 kann +25 % zur Tagesgage entstehen. Manuell prüfen und ggf. addieren.
+      Wird Arbeitsleistung nach §6 auf Samstag oder Sonntag verschoben,
+      kann ein zusätzlicher Zuschlag von 25&nbsp;% zur Tagesgage entstehen.
+      Die Stundenliste kennt keine Information darüber, ob ein Wochenendtag
+      regulär oder nach §6 verschoben war. Dieser Zuschlag ist manuell
+      zu prüfen und gegebenenfalls hinzuzurechnen.
     </div>
 
     <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
-      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Ersatzruhe nicht dokumentiert</strong>
-      So/FT-Arbeit und Sondernächte können Anspruch auf bezahlte Ersatzruhe begründen. Separat mit dem Arbeitgeber dokumentieren.
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Ersatzruhe wird nicht dokumentiert</strong>
+      Bei Sonn- und Feiertagsarbeit sowie bestimmten Sondernächten
+      (Sa→So, So→Mo, nach Feiertag) kann Anspruch auf bezahlte Ersatzruhe
+      bestehen. Die Stundenliste weist nur den Geldwert der Zuschläge aus,
+      nicht den Ersatzruheanspruch. Dieser ist separat zu dokumentieren
+      und mit dem Arbeitgeber abzustimmen.
     </div>
 
     <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
-      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ 24./31. Dezember — Warnung aktiv, Berechnung vereinfacht</strong>
-      Hinweis wird angezeigt (NAZ endet nach 4h / spätestens 12:00). Abrechnung für diese Tage manuell prüfen.
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ 24. und 31. Dezember — Warnung vorhanden, Berechnung vereinfacht</strong>
+      Die Sonderregel (NAZ endet nach 4&nbsp;Stunden / spätestens 12:00&nbsp;Uhr) wird
+      als Hinweis angezeigt. Die Zuschlagsberechnung folgt aber der normalen
+      Tageslogik. Für eine regelkonforme Abrechnung dieser Tage
+      ist die Berechnung manuell zu prüfen.
     </div>
 
     <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
-      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Bezahlte Pflichtpause §5 Abs. 4</strong>
-      Bei Nichtgewährung wird 0,5&nbsp;× Stundenlohn ausgewiesen. Orientierungswert; rechtlich noch nicht abschließend geklärt.
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Bezahlte Pflichtpause — Entgeltanspruch bei Nichtgewährung</strong>
+      Bei Nichtgewährung der bezahlten Pflichtpause nach §5 Abs.&nbsp;4 wird
+      automatisch 0,5&nbsp;× Stundenlohn als Entgeltanspruch ausgewiesen.
+      Ob dieser Anspruch in jeder Konstellation in dieser Höhe entsteht,
+      ist arbeitsrechtlich noch nicht abschließend geklärt. Betrag als
+      Orientierungswert verstehen; im Zweifelsfall younionfil.at kontaktieren.
     </div>
 
     <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
-      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Teilwochenberechnung (§8 KV)</strong>
-      Gezählt werden Arbeitstage (ohne arbeitsfreie Tage) im Projektzeitraum ÷ 5 oder ÷ 6. Unterschiede zu vertraglichen Regelungen (§8 KV) manuell prüfen. manuell prüfen.
+      <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Teilwochenberechnung — methodische Einschränkung</strong>
+      Teilwochen werden als Anzahl der Tage im Projektzeitraum × 1/5 oder 1/6
+      der Wochenpauschalgage berechnet. Dies entspricht nicht zwingend der
+      KV-§8-Logik, die zwischen Vertragsdauer, vereinbarten und tatsächlich
+      geleisteten Arbeitstagen unterscheidet. Bei ungewöhnlichen Teilwochen
+      empfiehlt sich eine manuelle Kontrolle anhand §8 KV.
     </div>
 
     <div style="background:var(--infobg);border:1px solid var(--infobord);border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
-      Orientierungswerte · KV Filmschaffende ab 1.7.2026 · Kein Ersatz für Rechtsberatung · <a href="https://www.younionfilm.at" target="_blank" rel="noopener">younion Film</a>
+      <strong style="display:block;margin-bottom:4px">ℹ Allgemeiner Hinweis</strong>
+      Alle Beträge sind Orientierungswerte auf Basis des KV Filmschaffende
+      (gültig ab 1.7.2026). Individuelle Vertragsgestaltungen, Betriebsvereinbarungen
+      und konkrete Auslegungsfragen des KV können zu abweichenden Ergebnissen führen.
+      Für verbindliche Auskünfte: <a href="https://www.younionfilm.at" target="_blank" rel="noopener">younion Film</a>
+      oder eine arbeitsrechtliche Beratung.
     </div>
 
   </div>
@@ -568,12 +524,6 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
   if(vv===null||bb===null)return{s:[],total:0,nH:0,nightH:0,fh:0,thr:12,warns:[]};
   if(bb<=vv)bb+=1440;
   var pm0=pm||0;
-  // bezPauseAuto: bezahlte Pflichtpause (30 Min.) ist in der Mittagspause enthalten
-  // → 30 Min. der Mittagspause werden als bezahlte Arbeitszeit gewertet (nicht abgezogen)
-  if(state.meta.bezPauseAuto){
-    var nH_raw=Math.max(0,bb-vv-pm0)/60;
-    if(nH_raw>9)pm0=Math.max(0,pm0-30); // bezahlte 30 Min. herausrechnen
-  }
   var pvMin=pt(pauseVon);if(pvMin!==null&&pvMin<vv)pvMin+=1440;
 
   var nM=Math.max(0,bb-vv-pm0),nH=nM/60;
@@ -583,82 +533,52 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
   var vstd=GR.stundenlohnVon(pg);
   var thr=(wmod===6)?10:(typ==='samstag'?10:12);
   var fh=Math.max(0,nH-thr);
+  var nazFrac=nH>0?Math.min(1,8/nH):1;  // NAZ-Anteil für Nacht-Split
   var s=[],warns=[];
 
-  // Over-Limit-Beginn: VORWÄRTS entlang der tatsächlichen Arbeitszeit ermitteln
-  var olStart;
-  if(fh>0.01){
-    var thrM=thr*60;
-    if(!pvMin||pm0===0){olStart=vv+thrM;}
-    else{var netBP=pvMin-vv;olStart=(thrM<=netBP)?vv+thrM:pvMin+pm0+(thrM-netBP);}
-  } else {olStart=bb;}
+  // Over-Limit-Periode: letzte fh×60 Brutto-Minuten der Schicht (Näherung)
+  var olStart=fh>0.01?(bb-fh*60):bb;
 
-  // NAZ-Grenze: VORWÄRTS — wann ist die 8. Netto-Arbeitsstunde vollständig?
-  // (Ersetzt die fehlerhafte proportionale nazFrac-Näherung)
-  var NAZ_H=8;
-  var nazEndM;
-  if(nH<=NAZ_H){nazEndM=bb;} // NAZ wird nicht überschritten
-  else if(!pvMin||pm0===0){nazEndM=vv+NAZ_H*60;}
-  else{
-    var netBP2=pvMin-vv,nazThrM=NAZ_H*60;
-    nazEndM=(nazThrM<=netBP2)?vv+nazThrM:pvMin+pm0+(nazThrM-netBP2);
-  }
-
-  // Sondernacht-Typen
+  // — Sondernacht-Typen —
   var prevDs=ymd(addD(new Date(ds+'T12:00:00'),-1));
   var earlySnt=specialNightType(prevDs); // Frühsegment: Nacht des Vortags
   var lateSnt=specialNightType(ds);      // Spätsegment: Nacht des aktuellen Tags
 
-  // Hilfsfunktion: Netto-Nacht-Minuten in Zeitraum [from, to]
-  // (zieht Pause-Überschneidung mit [from,to] und Nacht-Intervall ab)
-  function netNightM(from,to,intvs){
-    if(from>=to)return 0;
-    var g=overlapMin(from,to,intvs);
-    if(!g||!pvMin||pm0===0)return g;
-    var ps=Math.max(pvMin,from),pe=Math.min(pvMin+pm0,to);
-    return Math.max(0,g-(ps<pe?overlapMin(ps,pe,intvs):0));
-  }
-
-  // Within-limit Nacht: aufgeteilt an NAZ-Grenze (nazEndM)
-  // NAZ-Nacht: [vv, nazEndM] ∩ Nacht → 50% Zuschlag
-  // OT-Nacht:  [nazEndM, olStart] ∩ Nacht → 100% Zuschlag
-  var nazNightEarlyM=netNightM(vv,Math.min(nazEndM,olStart),EARLY_INTVS);
-  var otNightEarlyM =netNightM(Math.min(nazEndM,olStart),olStart,EARLY_INTVS);
-  var nazNightLateM =netNightM(vv,Math.min(nazEndM,olStart),LATE_INTVS);
-  var otNightLateM  =netNightM(Math.min(nazEndM,olStart),olStart,LATE_INTVS);
-
-  // OL-Nacht: [olStart, bb] ∩ Nacht, NETTO (Pause im OL-Nacht abziehen)
-  function olNightNet(intvs){
-    if(fh<=0.01)return 0;
-    var g=overlapMin(olStart,bb,intvs); if(!g)return 0;
-    var pOlS=Math.max(pvMin||0,olStart),pOlE=Math.min((pvMin||0)+pm0,bb);
-    return Math.max(0,g-(pvMin!==null&&pm0>0&&pOlS<pOlE?overlapMin(pOlS,pOlE,intvs):0));
-  }
-  var earlyOlM=olNightNet(EARLY_INTVS), lateOlM=olNightNet(LATE_INTVS);
+  // — Nacht-Segmente für gesamte Schicht —
+  var ns=nightSegments(v,b,pm0,pvMin);
+  // Within-Limit vs. Over-Limit aufteilen
+  var earlyOlM=fh>0.01?overlapMin(olStart,bb,EARLY_INTVS):0;
+  var lateOlM =fh>0.01?overlapMin(olStart,bb,LATE_INTVS):0;
+  var earlyRegH=Math.max(0,ns.earlyM-earlyOlM)/60; // Nacht within limit (Frühsegment)
+  var lateRegH =Math.max(0,ns.lateM -lateOlM)/60;  // Nacht within limit (Spätsegment)
   var earlyOlH=earlyOlM/60, lateOlH=lateOlM/60;
-  var nightH=(nazNightEarlyM+otNightEarlyM+earlyOlM+nazNightLateM+otNightLateM+lateOlM)/60;
+  var nightH=(ns.earlyM+ns.lateM)/60;
 
-  // Samstag-Beginn: 5. Stunde = nach 4 Netto-Arbeitsstunden (vorwärts, mit Pause)
+  // — Samstag-Zuschlag-Beginn —
   var saFrom2=null,saKind='';
   if(typ==='samstag'&&nH>0){
-    var sa4M=4*60, sa15=900; // sa15 = 15:00
-    var sa5Net;
-    if(!pvMin||pm0===0){sa5Net=vv+sa4M;}
-    else{var nbpSa=pvMin-vv;sa5Net=(sa4M<=nbpSa)?vv+sa4M:pvMin+pm0+(sa4M-nbpSa);}
-    saFrom2=Math.min(sa5Net,sa15);
-    saKind=(sa5Net<=sa15)?'ab 5.Std (netto)':'ab 15:00';
+    var sa5=vv+240,sa15=900;
+    saFrom2=Math.min(sa5,sa15);
+    saKind=(sa5<=sa15)?'ab 5.Std':'ab 15:00';
   }
 
-  /* Within-limit Nacht-Zuschläge: korrekte NAZ/OT-Aufteilung anhand nazEndM */
-  function addWithinNight(nazNH,otNH,snt){
-    var totalH=nazNH+otNH;
-    if(totalH<0.01)return;
+  /* Nacht-Zuschlagswert (Betrag) für h Stunden mit gegebenem Sondernacht-Typ */
+  function nightSurchargeVal(h,snt){
+    if(h<0.01)return 0;
+    if(snt)return h*std;                               // Sondernacht: 100 %
+    return h*(nazFrac*std*0.5+(1-nazFrac)*std);        // regulär: NAZ→50 %, ÜSt→100 %
+  }
+
+  /* Nacht-Zuschlag als Chip-Einträge für within-limit Stunden */
+  function addNightSurcharge(segH,snt){
+    if(segH<0.01)return;
     if(snt){
       var l=snt==='saso'?'Nacht Sa\u2192So 100% (\u00a711)':snt==='somo'?'Nacht So\u2192Mo 100% (\u00a711)':'Nacht nach Feiertag 100% (\u00a711)';
-      s.push({l:l,b:GR.r2(totalH*std),typ:'nacht100'});
+      s.push({l:l,b:GR.r2(segH*std),typ:'nacht100'});
     } else {
-      if(nazNH>0.01)s.push({l:'Nachtzuschlag 50% '+Math.round(nazNH*10)/10+'h (\u00a711)',b:GR.r2(nazNH*std*0.5),typ:'nacht'});
-      if(otNH>0.01)s.push({l:'Nacht-\u00dcSt 100% '+Math.round(otNH*10)/10+'h (\u00a711)',b:GR.r2(otNH*std),typ:'nacht100'});
+      var nzH=segH*nazFrac,ozH=segH*(1-nazFrac);
+      if(nzH>0.01)s.push({l:'Nachtzuschlag 50% '+Math.round(nzH*10)/10+'h (\u00a711)',b:GR.r2(nzH*std*0.5),typ:'nacht'});
+      if(ozH>0.01)s.push({l:'Nacht-\u00dcSt 100% '+Math.round(ozH*10)/10+'h (\u00a711)',b:GR.r2(ozH*std),typ:'nacht100'});
     }
   }
 
@@ -666,9 +586,9 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
   if((typ==='sonntag'||typ==='feiertag')&&nH>0)
     s.push({l:typ==='feiertag'?'Feiertagszuschlag (\u00a710)':'Sonntagszuschlag (\u00a710)',b:GR.r2(tg),typ:'so'});
 
-  // 2. Nacht within limit: NAZ/OT-Aufteilung an tatsächlicher 8h-Grenze (nazEndM)
-  addWithinNight(nazNightEarlyM/60,otNightEarlyM/60,earlySnt); // Frühsegment
-  addWithinNight(nazNightLateM/60,otNightLateM/60,lateSnt);    // Spätsegment
+  // 2. Nacht — NUR within-limit (OL-Nacht geht in Faktor ein, kein double-count)
+  addNightSurcharge(earlyRegH,earlySnt);
+  addNightSurcharge(lateRegH,lateSnt);
 
   // 3. Samstag — NUR within-limit (OL-Sa geht in Faktor ein, kein double-count)
   if(saFrom2!==null&&saFrom2<bb){
@@ -686,57 +606,30 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
   }
 
   // 4. FAKTOR AUF GESAMTENTGELT — Stunden über Limit
-  //
-  // Regulärer Gesamtstundenwert einer OL-Stunde (zeitlich segmentiert):
-  //
-  //   Segment       Basis   + ÜSt(100%)  + Nacht     + Sa(100%)  = regulärer Wert
-  //   Tag           std       +std                                  2×std
-  //   Nacht         std       +std          +50%std                 2.5×std
-  //   Sondernacht   std       +std          +100%std                3×std
-  //   Sa-Tag        std       +std                     +std         3×std
-  //   Sa-Nacht      std       +std          +50%std    +std         3.5×std
-  //
-  //   Alle OL-Stunden sind im 100%-ÜSt-Bereich (jenseits 8h NAZ + 2×50%-ÜSt-Stunden).
-  //   Nachtzuschlag (§11 Abs.2: 50%) ist kumulativ zum ÜSt-Zuschlag (§9).
-  //   Sondernächte (Sa→So, So→Mo, nach FT): 100%-Nacht statt 50%.
-  //   Sa-Zuschlag (§10 Abs.1: 100%) ist additiv zu OT und Nacht.
-  //   Kein double-count: OL-Zuschläge werden nicht separat nochmals ausgewiesen.
-  //
-  //   Entgelt OL = regulärer_Gesamtstundenwert × Faktor (kein KV-Zuschlag)
+  // Gesamtentgeltwert = Basis + Nacht-Zuschlag(OL) + Sa-Zuschlag(OL), dann × Faktor
   if(fh>0.01){
-    // Schritt 1: Basis + 100%-ÜSt für alle OL-Stunden
-    var olRegVal=fh*std*2;  // std × (1 + 100%-ÜSt)
-
-    // Schritt 2: Nachtzuschlag für OL-Nacht-Stunden (additiv zu ÜSt, kumulierbar nach §11)
-    // Frühsegment (00:00–06:00 des aktuellen Tags → Nacht des Vortags)
-    if(earlyOlH>0.01){
-      olRegVal+=earlySnt?earlyOlH*std:earlyOlH*std*0.5; // Sondernacht 100%, regulär 50%
-    }
-    // Spätsegment (22:00–06:00+1 → Nacht des aktuellen Tags)
-    if(lateOlH>0.01){
-      olRegVal+=lateSnt?lateOlH*std:lateOlH*std*0.5;
-    }
-
-    // Schritt 3: Sa-Zuschlag (§10 Abs.1, 100%) für OL-Sa-Stunden (additiv zu OT und Nacht)
+    // Basis der OL-Stunden
+    var olBaseVal=fh*std;
+    // Nacht-Zuschlagswert der OL-Nachtstunden (schließt Sondernacht ein)
+    var olNightVal=nightSurchargeVal(earlyOlH,earlySnt)+nightSurchargeVal(lateOlH,lateSnt);
+    // Samstag-Zuschlagswert der OL-Sa-Stunden (100 % auf Stundenlohn)
+    var olSaVal=0;
     if(saFrom2!==null&&saFrom2<bb){
       var saOlFrom=Math.max(olStart,saFrom2);
       if(saOlFrom<bb){
         var saOlGross=bb-saOlFrom,saOlPause=0;
         if(pm0>0&&pvMin!==null){saOlPause=Math.max(0,Math.min(pvMin+pm0,bb)-Math.max(pvMin,saOlFrom));}
         var saOlNetH=Math.max(0,saOlGross-saOlPause)/60;
-        olRegVal+=saOlNetH*std; // +100% Sa
+        olSaVal=saOlNetH*std;
       }
     }
-
-    // Schritt 4: Gesamtentgelt × Faktor
-    s.push({l:'Faktor \u00d7'+faktor+' auf Gesamtentgelt ('+Math.round(fh*10)/10+'h \u00fcber '+thr+'h)',
-            b:GR.r2(olRegVal*faktor),typ:'faktor'});
+    // Gesamtentgelt × Faktor
+    var olTotalReg=olBaseVal+olNightVal+olSaVal;
+    s.push({l:'Faktor \u00d7'+faktor+' auf Gesamtentgelt ('+Math.round(fh*10)/10+'h \u00fcber '+thr+'h)',b:GR.r2(olTotalReg*faktor),typ:'faktor'});
   }
 
-  // 5. Bezahlte Pflichtpause
-  // bezPauseAuto: in Mittagspause eingerechnet → immer als erhalten
-  var _bezP = state.meta.bezPauseAuto ? true : bezPauseErhalten;
-  if(nH>9&&_bezP===false)
+  // 5. Bezahlte Pflichtpause nicht erhalten
+  if(nH>9&&bezPauseErhalten===false)
     s.push({l:'Bez. Pause nicht erhalten \u2013 Anspr. \u00a75 Abs.\u00a04 (0,5h)',b:GR.r2(vstd*0.5),typ:'warn'});
 
   // 6. Warnungen
@@ -753,15 +646,15 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
  * ==================================================== */
 var KEY='gr-stunden-v1';
 var state={
-  meta:{personName:'',svnr:'',projektname:'',startDatum:'',endDatum:'',berufIndex:-1,jahrIndex:2,
-        pauschalgage:0,wochenmodell:5,kvBasis:'vereinbart',faktor:1.5,diaet:15.40,bezPauseAuto:false},
+  meta:{projektname:'',startDatum:'',endDatum:'',berufIndex:-1,jahrIndex:2,
+        pauschalgage:0,wochenmodell:5,kvBasis:'vereinbart',faktor:1.5,diaet:15.40},
   wochen:{},
   tage:{}
 };
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 function load(){try{var s=localStorage.getItem(KEY);if(s)state=JSON.parse(s)}catch(e){}}
 function getTag(ds){
-  if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:true,notiz:''};
+  if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:false,notiz:''};
   var t=state.tage[ds];
   // Migration: alte Datensätze ohne neue Felder
   if(t.pauseVon===undefined)t.pauseVon='';
@@ -769,19 +662,7 @@ function getTag(ds){
   if(t.ausserhalb===undefined)t.ausserhalb=false;
   return t;
 }
-function getWoche(wk){
-  if(!state.wochen[wk])state.wochen[wk]={};
-  if(!state.wochen[wk].wmod){
-    // Neue Woche erbt Modell der zuletzt bekannten Woche, sonst 5 als Fallback
-    var known=Object.keys(state.wochen).filter(function(k){return k!==wk&&state.wochen[k].wmod;});
-    known.sort();
-    var prevWk=known.length?known[known.length-1]:null;
-    state.wochen[wk].wmod=prevWk?+state.wochen[prevWk].wmod:5;
-  }
-  // teilwocheArt folgt dem Wochenmodell automatisch
-  state.wochen[wk].teilwocheArt=(+state.wochen[wk].wmod===6)?'sechstel':'fuenftel';
-  return state.wochen[wk];
-}
+function getWoche(wk){if(!state.wochen[wk])state.wochen[wk]={teilwocheArt:'fuenftel'};return state.wochen[wk]}
 
 /* ====================================================
  * FORMAT
@@ -796,7 +677,6 @@ function fh(h){var g=Math.abs(h),hh=Math.floor(g),mm=Math.round((g-hh)*60);retur
 function weeksFor(s,e){
   var w=[],seen=new Set(),c=new Date(s);
   while(c<=e){var k=isoWk(c);if(!seen.has(k)){seen.add(k);w.push(k)}c.setDate(c.getDate()+1)}
-  w.sort(); // aufsteigend chronologisch (YYYY-Www-Format sortiert lexikografisch korrekt)
   return w;
 }
 function daysInWeek(wk,s,e){
@@ -814,17 +694,18 @@ function isPartial(wk,s,e,wmod){
  * ==================================================== */
 function calcWeek(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
   var active=days.filter(function(d){return d.inRange});
-  var teilDiv=(wst.teilwocheArt==='sechstel')?6:(wst.teilwocheArt==='fuenftel')?5:wmod;
-  var wochenbasis=partial?GR.r2(active.length*pg/teilDiv):pg;
+  var wochenbasis=partial
+    ?(wst.teilwocheArt==='sechstel'?GR.r2(active.length*pg/6):GR.r2(active.length*pg/5))
+    :pg;
   var surchargeTotal=0,nettoTotal=0,faktorTotal=0;
-  var bezPauseFaellig=0,bezPauseNichtErhalten=0,bezPauseAutoCount=0,ausserhalbTage=0,drinnenTage=0;
+  var bezPauseFaellig=0,bezPauseNichtErhalten=0,ausserhalbTage=0,drinnenTage=0;
   var dayWarns={}; // ds → [warns]
   active.forEach(function(d){
     var t=getTag(d.ds);
     if(!t.von||!t.bis)return;
     var r=daySurcharges(d.ds,t.von,t.bis,+t.pause||0,t.pauseVon||'',pg,pi,yi,basis,wmod,faktor,t.bezPause);
     surchargeTotal+=r.total;nettoTotal+=r.nH;faktorTotal+=r.fh;
-    if(r.nH>9){bezPauseFaellig++;if(state.meta.bezPauseAuto){bezPauseAutoCount++;}else if(!t.bezPause){bezPauseNichtErhalten++;}}
+    if(r.nH>9){bezPauseFaellig++;if(!t.bezPause)bezPauseNichtErhalten++;}
     // A7: Diät nur wenn nH>3
     if(t.ausserhalb&&r.nH>3)ausserhalbTage++;
     else if(!t.ausserhalb)drinnenTage++;
@@ -848,7 +729,7 @@ function calcWeek(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
     if(gapMin<660){ruheWarn.push({ds:worked[ri].ds,gapH:Math.round(gapMin*10/60)/10});}
   }
   return{wochenbasis,surchargeTotal,total:GR.r2(wochenbasis+surchargeTotal),
-         nettoTotal,faktorTotal,bezPauseFaellig,bezPauseNichtErhalten,bezPauseAutoCount,
+         nettoTotal,faktorTotal,bezPauseFaellig,bezPauseNichtErhalten,
          ausserhalbTage,drinnenTage,activeDays:active.length,partial,
          warn60h,ruheWarn,dayWarns};
 }
@@ -861,14 +742,8 @@ function renderAll(){
   var c=document.getElementById('wochen-container');
   var ph=document.getElementById('placeholder');
   var gb=document.getElementById('gesamt-block');
-  if(!s||!e||s>e||!state.meta.pauschalgage||state.meta.berufIndex<0){
-    c.innerHTML='';ph.style.display='';gb.style.display='none';
-    // Pflichtfelder-Liste aktualisieren
-    document.getElementById('ph-start').style.display=!state.meta.startDatum?'':'none';
-    document.getElementById('ph-end').style.display=!state.meta.endDatum?'':'none';
-    document.getElementById('ph-beruf').style.display=(state.meta.berufIndex<0)?'':'none';
-    document.getElementById('ph-gage').style.display=!state.meta.pauschalgage?'':'none';
-    return;
+  if(!s||!e||s>e||!state.meta.pauschalgage){
+    c.innerHTML='';ph.style.display='';gb.style.display='none';return;
   }
   ph.style.display='none';
   var wks=weeksFor(s,e);
@@ -907,18 +782,17 @@ function renderAll(){
   }
 
   wks.forEach(function(wk){
+    var partial=isPartial(wk,s,e,wmod);
     var wst=getWoche(wk);
-    var wmod_wk=+wst.wmod||wmod; // Wochenmodell dieser Woche
-    var partial=isPartial(wk,s,e,wmod_wk);
     var days=daysInWeek(wk,s,e);
-    var wr=calcWeek(wk,days,pg,wmod_wk,faktor,basis,pi,yi,partial,wst);
+    var wr=calcWeek(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst);
     totAusserhalb+=wr.ausserhalbTage;totDrinnen+=wr.drinnenTage;
     totBezPauseFaellig+=wr.bezPauseFaellig;totBezPauseNichtErhalten+=wr.bezPauseNichtErhalten;
     gesamtRows.push({wk,wr});gtotal+=wr.total;
     var el=c.querySelector('[data-week="'+wk+'"]');
     if(!el){el=document.createElement('div');el.className='woche';el.dataset.week=wk;c.appendChild(el)}
-    el.innerHTML=weekHTML(wk,days,pg,wmod_wk,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt);
-    attachListeners(el,wk,days,pg,wmod_wk,faktor,basis,pi,yi,partial,wst);
+    el.innerHTML=weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt);
+    attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst);
     prev=el;
   });
   renderGesamt(gesamtRows,gtotal,totAusserhalb,totDrinnen,totBezPauseFaellig,totBezPauseNichtErhalten,diaet);
@@ -930,19 +804,15 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
   var kwN=wk.split('-W')[1];
   var hdr='KW\u00a0'+kwN+'\u00a0\u2014\u00a0'+dShort(ymd(mon))+'\u2013'+dShort(ymd(sun));
 
-  // Wochenmodell-Selektor (pro Woche)
-  var wmodSel='<select data-wmod="'+wk+'" style="font-size:.74rem;padding:2px 4px;border-radius:3px;margin-left:6px" title="Wochenmodell dieser Woche">'+
-    '<option value="5"'+(wmod===5?' selected':'')+'>5-Tage-Modell – Faktorgrenze 12 h</option>'+
-    '<option value="6"'+(wmod===6?' selected':'')+'>6-Tage-Modell – Faktorgrenze 10 h</option>'+
-  '</select>';
-
   var teilBar='';
   if(partial){
-    var teilD=wmod===6?6:5;
+    var div=wst.teilwocheArt==='sechstel'?6:5;
     teilBar='<div class="teilwoche-bar">'+
-      '<span>Teilwoche – '+wr.activeDays+' Projektkalendertag'+(wr.activeDays!==1?'e':'')+
-        ' ÷'+teilD+' ('+wmod+'-Tage-Woche)</span>'+
-      '<span><strong>'+fe(wr.wochenbasis)+'</strong></span>'+
+      '<span>⚠ Teilwoche ('+wr.activeDays+' Arbeitstage):</span>'+
+      '<select data-tw="'+wk+'">'+
+        '<option value="fuenftel"'+(wst.teilwocheArt==='fuenftel'?' selected':'')+'>1/5 je Arbeitstag (12h-Tag, §8b)</option>'+
+        '<option value="sechstel"'+(wst.teilwocheArt==='sechstel'?' selected':'')+'>1/6 je Arbeitstag (10h-Tag, §8b)</option>'+
+      '</select><span>= '+fe(wr.wochenbasis)+'</span>'+
     '</div>';
   }
 
@@ -973,10 +843,7 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
     var bezPauseFaellig=nH>9;
     var bezPauseCell='';
     if(d.inRange){
-      if(state.meta.bezPauseAuto&&nH>9){
-        // Projektweite Option aktiv: immer als erhalten markiert
-        bezPauseCell='<span style="font-size:.68rem;color:var(--gruen)" title="Bezahlte Pause in Mittagspause eingerechnet (Projektoption)">✓ auto</span>';
-      } else if(bezPauseFaellig){
+      if(bezPauseFaellig){
         bezPauseCell='<label style="display:flex;align-items:center;gap:3px;cursor:pointer" title="§5 Abs. 4: Bei mehr als 1h Überstunden nach NAZ-Ende ist eine bezahlte 30-min-Pause vorgeschrieben.">'+
           '<input type="checkbox" class="bezpause" data-date="'+d.ds+'" data-field="bezPause"'+(t.bezPause?' checked':'')+' '+(dis?'disabled':'')+'>'+
           '<span style="font-size:.68rem;color:'+(t.bezPause?'var(--gruen)':'var(--rot)')+'">'+
@@ -1005,7 +872,7 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
       '<td class="datum-cell">'+dShort(d.ds)+'</td>'+
       '<td><input type="time" value="'+(t.von||'')+'" data-date="'+d.ds+'" data-field="von" '+(dis?'disabled':'')+'></td>'+
       '<td><input type="time" value="'+(t.bis||'')+'" data-date="'+d.ds+'" data-field="bis" '+(dis?'disabled':'')+'></td>'+
-      '<td><input type="number" value="'+(t.pause!==undefined?t.pause:30)+'" min="0" step="5" data-date="'+d.ds+'" data-field="pause" style="width:52px" title="Mittagspause (unbezahlt, Min.)" '+(dis?'disabled':'')+'></td>'+
+      '<td><input type="number" value="'+(t.pause!==undefined?t.pause:30)+'" min="0" step="5" data-date="'+d.ds+'" data-field="pause" style="width:52px" title="Mittagspause (unbezahlt, Min.)" title="Mittagspause (unbezahlt, Min.)" '+(dis?'disabled':'')+'></td>'+
       // Pause ab + Lage-Indikator
       '<td style="white-space:nowrap">'+
         '<input type="time" value="'+(t.pauseVon||'')+'" data-date="'+d.ds+'" data-field="pauseVon" style="width:74px" '+(dis?'disabled':'')+
@@ -1033,9 +900,8 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
   statsItems.push('<span class="'+nettoClass+'">'+wr.nettoTotal.toFixed(1)+' h netto'+(wr.warn60h?' ⚠ Über 60h/Woche!':'')+' </span>');
   if(wr.ausserhalbTage>0)statsItems.push('<span>'+wr.ausserhalbTage+' Arbeitstag'+(wr.ausserhalbTage>1?'e':'')+' außerhalb (Diät)</span>');
   if(wr.drinnenTage>0)statsItems.push('<span>'+wr.drinnenTage+' innerhalb</span>');
-  if(wr.bezPauseAutoCount)statsItems.push('<span class="ok">'+wr.bezPauseAutoCount+'× Bez. Pause ✓ (auto)</span>');
   if(wr.bezPauseNichtErhalten>0)statsItems.push('<span class="warn">'+wr.bezPauseNichtErhalten+'× bez. Pause nicht erhalten (§5 Abs. 4)</span>');
-  else if(wr.bezPauseFaellig>0&&!wr.bezPauseAutoCount)statsItems.push('<span class="ok">'+wr.bezPauseFaellig+'× bez. Pause ✓</span>');
+  else if(wr.bezPauseFaellig>0)statsItems.push('<span class="ok">'+wr.bezPauseFaellig+'× bez. Pause ✓</span>');
   if(wr.warn60h?wr.warn60h:false){}
   // Ruhezeit-Warnungen aus globalem ruheVerletzt (wird in weekHTML übergeben)
   var ruheWarnDays=days.filter(function(d){return ruheVerletzt&&ruheVerletzt[d.ds];});
@@ -1047,7 +913,6 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
   return'<div class="woche-header" data-toggle="'+wk+'">'+
     '<h3>'+hdr+'</h3>'+
     '<div style="display:flex;align-items:center;gap:10px">'+
-      wmodSel+
       '<span class="woche-kenn">'+fe(wr.total)+'</span>'+
       '<button style="background:none;border:none;cursor:pointer;color:var(--grau);font-size:.85rem" aria-label="Aufklappen">▾</button>'+
     '</div>'+
@@ -1067,7 +932,7 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
   '<tbody>'+rows+'</tbody>'+
   '<tfoot><tr class="woche-total-row">'+
     '<td colspan="6">'+
-      (partial?'Teilwoche '+wr.activeDays+' Kt. × 1/'+(wst.teilwocheArt==='sechstel'?6:5):'Wochenpauschalgage')+
+      (partial?'Teilwoche ('+wr.activeDays+' Tage × 1/'+(wst.teilwocheArt==='sechstel'?6:5)+')':'Wochenpauschalgage')+
       ' + Zuschläge'+
     '</td>'+
     '<td class="zahl">'+fh(wr.nettoTotal)+'</td>'+
@@ -1079,72 +944,29 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
   '</div>';
 }
 
-
-
-/* Letzter gedrückter Key (für Tab-Erkennung) */
-var _lastKey='';
-document.addEventListener('keydown',function(e){_lastKey=e.key;},true);
-
-/* Nach renderAll Fokus wiederherstellen wenn mit Tab navigiert wurde */
-function focusAfterRender(ds,field){
-  if(_lastKey!=='Tab')return;
-  var all=Array.from(document.querySelectorAll('input[type="time"][data-date]:not([disabled])'));
-  var idx=all.findIndex(function(el){return el.dataset.date===ds&&el.dataset.field===field;});
-  if(idx>=0&&all[idx+1])setTimeout(function(){all[idx+1].focus();},0);
-}
-
-/* Bei Fokus auf leeres Zeitfeld: Wert aus nächster ausgefüllter Zeile darüber vorschlagen */
-document.addEventListener('focusin',function(e){
-  var inp=e.target;
-  if(inp.type!=='time'||inp.value||inp.disabled)return;
-  var f=inp.dataset.field;
-  if(f!=='von'&&f!=='bis'&&f!=='pauseVon')return;
-  var ds=inp.dataset.date;
-  var d0=new Date(ds+'T12:00:00');
-  for(var i=1;i<=14;i++){
-    var prev=new Date(d0);prev.setDate(d0.getDate()-i);
-    var pds=prev.toISOString().slice(0,10);
-    var t=state.tage[pds];
-    if(t&&t[f]){inp.value=t[f];break;}
-  }
-},true);
-
 function attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
   var header=el.querySelector('.woche-header');
   if(header){header.addEventListener('click',function(ev){
     if(['INPUT','SELECT','BUTTON','LABEL'].includes(ev.target.tagName))return;
     var b=el.querySelector('.woche-body');if(b)b.style.display=b.style.display==='none'?'':'none';
   })}
-  // kein Teilwoche-Dropdown mehr (folgt automatisch dem Wochenmodell)
-  var wmodSel=el.querySelector('[data-wmod]');
-  if(wmodSel){wmodSel.addEventListener('change',function(){
-    if(!state.wochen[wk])state.wochen[wk]={};
-    state.wochen[wk].wmod=+this.value;
-    // teilwocheArt automatisch anpassen wenn Wochenmodell wechselt
-    state.wochen[wk].teilwocheArt=(+this.value===6)?'sechstel':'fuenftel';
-    save();renderAll();
-  });}
+  var tw=el.querySelector('[data-tw]');
+  if(tw){tw.addEventListener('change',function(){state.wochen[wk]={teilwocheArt:this.value};save();renderAll();})}
   el.querySelectorAll('[data-date]').forEach(function(inp){
-    function sv(){
-      var ds=inp.dataset.date,f=inp.dataset.field;
-      if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:true,notiz:''};
-      state.tage[ds][f]=inp.type==='checkbox'?inp.checked:(f==='pause'?+inp.value:inp.value);
-      save();
-    }
-    if(inp.type==='time'){
-      // Zeitfelder: speichern sofort, rendern erst nach blur
-      // → nativer Browser-Picker (Maus, Touch, Tastatur) bleibt ungestört offen
-      inp.addEventListener('change',sv);
-      inp.addEventListener('input', sv);
-      inp.addEventListener('blur',  function(){
-        var ds=inp.dataset.date,f=inp.dataset.field;
-        sv();renderAll();focusAfterRender(ds,f);
+    var ev=inp.type==='checkbox'?'change':'change';
+    inp.addEventListener(ev,function(){
+      var ds=this.dataset.date,f=this.dataset.field;
+      if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:false,notiz:''};
+      state.tage[ds][f]=this.type==='checkbox'?this.checked:(f==='pause'?+this.value:this.value);
+      save();renderAll();
+    });
+    if(inp.type==='time'||inp.type==='text'){
+      inp.addEventListener('input',function(){
+        var ds=this.dataset.date,f=this.dataset.field;
+        if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:false,notiz:''};
+        state.tage[ds][f]=this.value;
+        save();renderAll();
       });
-    } else if(inp.type==='checkbox'||inp.type==='number'){
-      inp.addEventListener('change',function(){sv();renderAll();});
-    } else {
-      inp.addEventListener('input', sv);
-      inp.addEventListener('blur',  function(){sv();renderAll();});
     }
   });
 }
@@ -1197,37 +1019,18 @@ function renderGesamt(rows,gtotal,totAusserh,totDrinnen,totBPF,totBPN,diaet){
 /* ====================================================
  * SETUP
  * ==================================================== */
-function syncUIFromState(){
-  var m=state.meta;
-  var el=function(id){return document.getElementById(id);};
-  if(el('s-person-name'))el('s-person-name').value=m.personName||'';
-  if(el('s-svnr'))el('s-svnr').value=m.svnr||'';
-  if(el('s-name'))el('s-name').value=m.projektname||'';
-  if(el('s-start'))el('s-start').value=m.startDatum||'';
-  if(el('s-end'))el('s-end').value=m.endDatum||'';
-  if(el('s-beruf')&&m.berufIndex>=0)el('s-beruf').value=m.berufIndex;
-  if(el('s-jahr'))el('s-jahr').value=m.jahrIndex>=0?m.jahrIndex:2;
-  if(el('s-gage'))el('s-gage').value=m.pauschalgage||'';
-  if(el('s-faktor'))el('s-faktor').value=m.faktor||1.5;
-  if(el('s-diaet'))el('s-diaet').value=m.diaet||15.40;
-  if(el('s-bezpause-auto'))el('s-bezpause-auto').checked=!!m.bezPauseAuto;
-  var rb=document.querySelector('input[name="kv-basis"][value="'+(m.kvBasis||'vereinbart')+'"]');
-  if(rb)rb.checked=true;
-}
-
 function initSetup(){
   var sb=document.getElementById('s-beruf'),sj=document.getElementById('s-jahr');
   GR.POS.forEach(function(p,i){var o=document.createElement('option');o.value=i;o.textContent=p[0];sb.appendChild(o)});
   GR.YEARS.forEach(function(y,i){var o=document.createElement('option');o.value=i;o.textContent=y;sj.appendChild(o)});
   // Aus State laden
-  document.getElementById('s-person-name').value=state.meta.personName||'';
-  document.getElementById('s-svnr').value=state.meta.svnr||'';
   document.getElementById('s-name').value=state.meta.projektname||'';
   document.getElementById('s-start').value=state.meta.startDatum||'';
   document.getElementById('s-end').value=state.meta.endDatum||'';
   if(state.meta.berufIndex>=0)sb.value=state.meta.berufIndex;
   sj.value=state.meta.jahrIndex>=0?state.meta.jahrIndex:2;
   document.getElementById('s-gage').value=state.meta.pauschalgage||'';
+  document.getElementById('s-wmodell').value=state.meta.wochenmodell||5;
   document.getElementById('s-faktor').value=state.meta.faktor||1.5;
   document.getElementById('s-diaet').value=state.meta.diaet||15.40;
   var rb=document.querySelector('input[name="kv-basis"][value="'+(state.meta.kvBasis||'vereinbart')+'"]');
@@ -1237,377 +1040,121 @@ function initSetup(){
     var pi=+sb.value,yi=+sj.value;
     state.meta.berufIndex=pi;state.meta.jahrIndex=yi;
     var mp=GR.mindestPauschalgage(pi,yi);
-    if(mp>0){
-      document.getElementById('s-gage').value=GR.r2(mp).toFixed(2);
-      state.meta.pauschalgage=GR.r2(mp);
-      // Hinweis: das ist nur das KV-Minimum
-      document.getElementById('gage-hinweis').classList.add('sichtbar');
-    }
-    else{document.getElementById('s-gage').value='';state.meta.pauschalgage=0;
-         document.getElementById('gage-hinweis').classList.remove('sichtbar');}
+    if(mp>0){document.getElementById('s-gage').value=GR.r2(mp).toFixed(2);state.meta.pauschalgage=GR.r2(mp);}
+    else{document.getElementById('s-gage').value='';state.meta.pauschalgage=0;}
     save();renderAll();
   }
   sb.addEventListener('change',onBeruf);sj.addEventListener('change',onBeruf);
 
   function onMeta(){
-    state.meta.personName=document.getElementById('s-person-name').value;
-    state.meta.svnr=document.getElementById('s-svnr').value;
     state.meta.projektname=document.getElementById('s-name').value;
     state.meta.startDatum=document.getElementById('s-start').value;
     state.meta.endDatum=document.getElementById('s-end').value;
-    var newGage=+document.getElementById('s-gage').value||0;
-    // Gage-Hinweis ausblenden wenn Gage geändert wurde
-    if(newGage && state.meta.berufIndex>=0){
-      var mp=GR.mindestPauschalgage(state.meta.berufIndex,state.meta.jahrIndex||2);
-      if(mp>0 && Math.abs(newGage-mp)>0.005){
-        document.getElementById('gage-hinweis').classList.remove('sichtbar');
-      }
-      // Unter-KV-Warnung
-      var unterKvEl=document.getElementById('gage-unter-kv');
-      if(mp>0 && newGage < mp-0.005){
-        unterKvEl.textContent='\u26a0 Gage liegt unter dem KV-Minimum von '+mp.toFixed(2).replace('.',',')+'\\xa0\u20ac!';
-        unterKvEl.classList.add('sichtbar');
-      } else {
-        unterKvEl.classList.remove('sichtbar');
-      }
-    }
-    state.meta.pauschalgage=newGage;
+    state.meta.pauschalgage=+document.getElementById('s-gage').value||0;
+    state.meta.wochenmodell=+document.getElementById('s-wmodell').value||5;
     state.meta.faktor=+document.getElementById('s-faktor').value||1.5;
     state.meta.diaet=+document.getElementById('s-diaet').value||15.40;
-    var bpa=document.getElementById('s-bezpause-auto');
-    if(bpa)state.meta.bezPauseAuto=bpa.checked;
     var rb2=document.querySelector('input[name="kv-basis"]:checked');
     state.meta.kvBasis=rb2?rb2.value:'vereinbart';
     save();renderAll();
   }
-  ['s-person-name','s-svnr','s-name','s-start','s-end','s-gage','s-faktor','s-diaet'].forEach(function(id){
+  ['s-name','s-start','s-end','s-gage','s-wmodell','s-faktor','s-diaet'].forEach(function(id){
     document.getElementById(id).addEventListener('change',onMeta);
     document.getElementById(id).addEventListener('input',onMeta);
   });
   document.querySelectorAll('input[name="kv-basis"]').forEach(function(r){r.addEventListener('change',onMeta)});
-  var bpaEl=document.getElementById('s-bezpause-auto');if(bpaEl)bpaEl.addEventListener('change',onMeta);
 }
 
 /* ====================================================
  * CSV EXPORT
  * ==================================================== */
+function exportCSV(){
+  var s=pd(state.meta.startDatum),e=pd(state.meta.endDatum);
+  if(!s||!e)return;
+  var pg=+state.meta.pauschalgage||0,wmod=+state.meta.wochenmodell||5;
+  var faktor=+state.meta.faktor||1.5,basis=state.meta.kvBasis||'vereinbart';
+  var pi=+state.meta.berufIndex,yi=+state.meta.jahrIndex||2;
+  var diaet=+state.meta.diaet||15.40;
+  var sep=';',L=[];
+  function row(a){L.push(a.map(function(x){return String(x==null?'':x).replace(/;/g,',')}).join(sep))}
+  row(['Stundenliste',state.meta.projektname||'']);
+  row(['Zeitraum',state.meta.startDatum+' bis '+state.meta.endDatum]);
+  row(['Beruf',pi>=0?GR.POS[pi][0]:'']);
+  row(['Wochenpauschalgage (§7)',String(pg).replace('.',',')]);
+  row(['Wochenmodell',wmod+'-Tage']);
+  row(['Faktor Überstunden',String(faktor).replace('.',',')]);
+  row(['Diäten außerhalb',String(diaet).replace('.',',')]);
+  row([]);
+  row(['Woche','Datum','Wochentag','Typ','Von','Bis','Pause (Min)','Pause ab (Uhr)',
+       'Pausenlage','Netto (h)','Nacht (h)','Faktor-ÜSt (h)',
+       'Bez. Pause fällig','Bez. Pause erhalten',
+       'Außerhalb (>3h)','Zuschläge (€)','Notiz','Tages-Zuschlag (€)']);
+  var wks=weeksFor(s,e);
+  var totAusserh=0,totBPN=0;
+  wks.forEach(function(wk){
+    var days=daysInWeek(wk,s,e);
+    var partial=isPartial(wk,s,e,wmod);
+    var wst=getWoche(wk);
+    var wr=calcWeek(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst);
+    totAusserh+=wr.ausserhalbTage;totBPN+=wr.bezPauseNichtErhalten;
+    days.forEach(function(d){
+      if(!d.inRange)return;
+      var t=getTag(d.ds);
+      var typ=dayType(d.ds);
+      var dow=new Date(d.ds+'T12:00:00').getDay();
+      var res=(t.von&&t.bis)?daySurcharges(d.ds,t.von,t.bis,+t.pause||0,t.pauseVon||'',pg,pi,yi,basis,wmod,faktor,t.bezPause):null;
+      var nH=res?GR.r2(res.nH):0;
+      var nightH=res?GR.r2(res.nightH||0):0;
+      var fkH=res?GR.r2(res.fh||0):0;
+      var pl=res?pauseLage(t.von,t.pauseVon,nH,+t.pause||0):'na';
+      var plLabel=pl==='ok'?'OK':pl==='spaet'?'Zu spät':pl==='fehlt'?'Fehlt':'n/a';
+      var bezFaellig=nH>9;
+      var zChips=res?res.s.map(function(x){return x.l+': '+x.b}).join(' | '):'';
+      row([wk,d.ds,TNAME[dow],typ,t.von||'',t.bis||'',t.pause||0,t.pauseVon||'',
+           plLabel,String(nH).replace('.',','),String(nightH).replace('.',','),String(fkH).replace('.',','),
+           bezFaellig?'Ja':'Nein',bezFaellig?(t.bezPause?'Ja':'Nein'):'n/a',
+           t.ausserhalb?'Ja':'Nein',
+           zChips,
+           t.notiz||'',
+           String(res?GR.r2(res.total):0).replace('.',',')]);
+    });
+    row([wk,'','','WOCHE GESAMT','','','','','','','','','','','',
+         '','',String(wr.total).replace('.',',')]);
+    row([]);
+  });
+  row([]);
+  row(['PROJEKT-GESAMT']);
+  row(['Arbeitstage gesamt',totAusserh+(wks.reduce(function(x,wk){return x+calcWeek(wk,daysInWeek(wk,s,e),pg,wmod,faktor,basis,pi,yi,isPartial(wk,s,e,wmod),getWoche(wk)).drinnenTage},0))]);
+  row(['Davon außerhalb Firmensitz (>3h)',totAusserh]);
+  row(['Diäten außerhalb',String(GR.r2(totAusserh*diaet)).replace('.',',')]);
+  row(['Bez. Pause nicht erhalten (§5 Abs. 4)',totBPN]);
+  var blob=new Blob(['\uFEFF'+L.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='stundenliste_'+(state.meta.projektname||'export').replace(/\s+/g,'_')+'.csv';
+  a.click();
+}
+
 /* ====================================================
  * INIT
  * ==================================================== */
-/* ====================================================
- * XLSX IMPORT / EXPORT
- * ==================================================== */
-function loadHtml2Pdf(cb){
-  if(window.html2pdf){cb();return;}
-  var s=document.createElement('script');
-  s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-  s.onload=cb;
-  s.onerror=function(){alert('html2pdf-Bibliothek nicht ladbar. Bitte Internetverbindung prüfen.');};
-  document.head.appendChild(s);
-}
-
-function loadXLSX(cb){
-  if(window.XLSX){cb();return;}
-  var s=document.createElement('script');
-  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-  s.onload=cb;
-  s.onerror=function(){alert('XLSX-Bibliothek nicht ladbar. Bitte Internetverbindung prüfen.');};
-  document.head.appendChild(s);
-}
-
-function exportEingabenXLSX(){
-  loadXLSX(function(){
-    var wb=XLSX.utils.book_new();
-    var m=state.meta,rows=[];
-    rows.push(['Stundenliste KV §7 Filmschaffende — Eingabedaten']);
-    rows.push([]);
-    rows.push(['Name:',m.personName||'']);
-    rows.push(['SV-Nummer:',m.svnr||'']);
-    rows.push(['Projekt:',m.projektname||'']);
-    rows.push(['Beginn:',m.startDatum||'']);
-    rows.push(['Ende:',m.endDatum||'']);
-    rows.push(['Berufsgruppe:',m.berufIndex>=0?GR.POS[m.berufIndex][0]:'']);
-    rows.push(['Gagentabelle:',GR.YEARS[m.jahrIndex]||'']);
-    rows.push(['Wochenpauschalgage (€):',m.pauschalgage||'']);
-    rows.push(['KV-Basis:',m.kvBasis==='mindest'?'KV-Mindestgage':'Vereinbarte Gage']);
-    var wmVals3=Object.values(state.wochen).map(function(w){return w.wmod;}).filter(Boolean);
-    var wmLabel3=wmVals3.length&&wmVals3.every(function(v){return v===wmVals3[0]})?wmVals3[0]+'-Tage (einheitlich)':'wechselnd – siehe Kalenderwochen';
-    rows.push(['Wochenmodell:',wmLabel3]);
-    rows.push(['Bez. Pause in Mittagspause eingerechnet:',m.bezPauseAuto?'Ja':'Nein']);
-    rows.push(['Faktor ÜSt über Limit:',m.faktor||1.5]);
-    rows.push(['Diät (€/Tag):',m.diaet||15.40]);
-    rows.push([]);
-    rows.push(['Datum','Wochentag','Von','Bis','Pause (Min)','Pause ab','Außerhalb (j/n)','Notiz','Bez. Pause erhalten (j/n)']);
-    var DAYS2=['So','Mo','Di','Mi','Do','Fr','Sa'];
-    var s0=new Date(m.startDatum+'T12:00:00'),e0=new Date(m.endDatum+'T12:00:00');
-    for(var d=new Date(s0);d<=e0;d.setDate(d.getDate()+1)){
-      var ds=d.toISOString().slice(0,10);
-      var t=getTag(ds);
-      rows.push([ds,DAYS2[d.getDay()],t.von||'',t.bis||'',t.pause||'',t.pauseVon||'',
-        t.ausserhalb?'j':'n',t.notiz||'',
-        (function(){
-          if(state.meta.bezPauseAuto&&t.von&&t.bis){
-            var vv2=pt(t.von),bb2=pt(t.bis);if(bb2!==null&&vv2!==null){if(bb2<=vv2)bb2+=1440;
-              var nh2=Math.max(0,bb2-vv2-(+t.pause||0))/60;if(nh2>9)return 'j (auto)';}
-          }
-          return t.bezPause===true?'j':t.bezPause===false?'n':'';
-        }())]);
-
-    }
-    var ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:14},{wch:7},{wch:7},{wch:7},{wch:13},{wch:20},{wch:16},{wch:32},{wch:24}];
-    XLSX.utils.book_append_sheet(wb,ws,'Eingaben');
-    // Wochen-Sheet: individuelle Wochenmodelle und Teilwochenart sichern
-    var wRows=[['KW','Wochenmodell','Teilwochenart']];
-    Object.keys(state.wochen).forEach(function(wk){
-      var w=state.wochen[wk];
-      wRows.push([wk,w.wmod||'',w.teilwocheArt||'fuenftel']);
-    });
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wRows),'Wochen');
-    XLSX.writeFile(wb,(m.projektname||'Stundenliste').replace(/[\\/:*?"<>|]/g,'_')+'_Eingaben.xlsx');
-  });
-}
-
-function importFromXLSX(file){
-  loadXLSX(function(){
-    var reader=new FileReader();
-    reader.onload=function(ev){
-      try{
-        var wb=XLSX.read(ev.target.result,{type:'array'});
-        var ws=wb.Sheets[wb.SheetNames[0]];
-        var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-        function cell(r,col){return String(rows[r]&&rows[r][col]!==undefined?rows[r][col]:'').trim();}
-        state.meta.personName =cell(2,1);
-        state.meta.svnr       =cell(3,1);
-        state.meta.projektname=cell(4,1);
-        state.meta.startDatum =cell(5,1);
-        state.meta.endDatum   =cell(6,1);
-        var bi=GR.POS.findIndex(function(p){return p[0]===cell(7,1);});
-        if(bi>=0)state.meta.berufIndex=bi;
-        var ji=GR.YEARS.findIndex(function(y){return y===cell(8,1);});
-        if(ji>=0)state.meta.jahrIndex=ji;
-        var gage=parseFloat(cell(9,1));if(!isNaN(gage))state.meta.pauschalgage=gage;
-        state.meta.kvBasis=cell(10,1).includes('Mindest')?'mindest':'vereinbart';
-        // state.meta.wochenmodell als Fallback
-        var bpCell=cell(12,1);state.meta.bezPauseAuto=bpCell.toLowerCase().includes('ja');
-        var fak=parseFloat(cell(13,1));if(!isNaN(fak))state.meta.faktor=fak;
-        var dv=parseFloat(cell(14,1));if(!isNaN(dv))state.meta.diaet=dv;
-        state.tage={};
-        for(var i=16;i<rows.length;i++){
-          var ds2=cell(i,0);
-          if(!/^\d{4}-\d{2}-\d{2}$/.test(ds2))continue;
-          var pm2=rows[i][4];var bp2=cell(i,8).toLowerCase();
-          state.tage[ds2]={von:cell(i,2),bis:cell(i,3),pause:pm2!==''?+pm2:0,pauseVon:cell(i,5),
-            ausserhalb:cell(i,6).toLowerCase()==='j',notiz:cell(i,7),
-            bezPause:bp2===''?null:bp2.startsWith('j')};
-        }
-        // Wochen-Sheet einlesen wenn vorhanden
-        if(wb.SheetNames.length>1){
-          var wsW=wb.Sheets[wb.SheetNames[1]];
-          var wRowsIn=XLSX.utils.sheet_to_json(wsW,{header:1,defval:''});
-          for(var wi=1;wi<wRowsIn.length;wi++){
-            var wk2=String(wRowsIn[wi][0]||'').trim();
-            if(!wk2)continue;
-            if(!state.wochen[wk2])state.wochen[wk2]={};
-            if(wRowsIn[wi][1])state.wochen[wk2].wmod=+wRowsIn[wi][1];
-            if(wRowsIn[wi][2])state.wochen[wk2].teilwocheArt=String(wRowsIn[wi][2]);
-          }
-        }
-        save(); syncUIFromState(); renderAll();
-        alert('Import erfolgreich.');
-      }catch(err){alert('Import fehlgeschlagen: '+err.message);}
-    };
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-function exportErgebnisseXLSX(){
-  loadXLSX(function(){
-    var wb=XLSX.utils.book_new();
-    var m=state.meta,pg=+m.pauschalgage,wmod=+m.wochenmodell||5;
-    var faktor=+m.faktor||1.5,basis=m.kvBasis||'vereinbart';
-    var pi=+m.berufIndex,yi=+m.jahrIndex||2,diaet=+m.diaet||15.40;
-    var fe2=function(v){return v!=null?GR.r2(v):0;};
-    var rows=[];
-    rows.push(['Stundenliste KV §7 Filmschaffende — Ergebnisse']);rows.push([]);
-    rows.push(['Name:',m.personName||'','SV-Nummer:',m.svnr||'']);
-    rows.push(['Projekt:',m.projektname||'','Zeitraum:',m.startDatum+' – '+m.endDatum]);
-    rows.push(['Berufsgruppe:',pi>=0?GR.POS[pi][0]:'',' Gagentabelle:',GR.YEARS[yi]||'']);
-    var wmodLabel=(function(){
-      var vals=Object.values(state.wochen).map(function(w){return w.wmod;}).filter(Boolean);
-      var allSame=vals.every(function(v){return v===vals[0]});
-      return allSame&&vals.length>0?vals[0]+'-Tage':'wechselnd – siehe Kalenderwochen';
-    })();
-    rows.push(['Wochenpauschalgage:',pg,'Wochenmodell:',wmodLabel]);rows.push([]);
-    rows.push(['KW','Datum','Tag','Von','Bis','Netto h','Nacht h','Faktor-ÜSt h','Zuschläge','Tagessumme €','Außerhalb']);
-    var DAYS3=['So','Mo','Di','Mi','Do','Fr','Sa'];
-    var s0=new Date(m.startDatum+'T12:00:00'),e0=new Date(m.endDatum+'T12:00:00');
-    var sDate=pd(m.startDatum),eDate=pd(m.endDatum);
-    var wks2=[];
-    for(var d=new Date(s0);d<=e0;d.setDate(d.getDate()+1)){var w2=isoWk(d);if(wks2.indexOf(w2)<0)wks2.push(w2);}
-    var gTotal=0,mTotal=0,mLabel='';
-    wks2.forEach(function(wk){
-      var wst=getWoche(wk);
-      var wmod_wk=+wst.wmod||wmod;
-      var days=daysInWeek(wk,sDate,eDate);
-      var partial=isPartial(wk,sDate,eDate,wmod_wk);
-      var wr=calcWeek(wk,days,pg,wmod_wk,faktor,basis,pi,yi,partial,wst);
-
-      // Monat dieser Woche (aus erstem aktiven Tag)
-      var firstDay=days.find(function(d){return d.inRange;});
-      var thisMonth=firstDay?firstDay.ds.slice(0,7):'';
-
-      // Monatswechsel: Zwischensumme ausgeben
-      if(mLabel&&thisMonth&&thisMonth!==mLabel){
-        var mDate=new Date(mLabel+'-01T12:00:00');
-        var mName=mDate.toLocaleDateString('de-AT',{month:'long',year:'numeric'});
-        rows.push(['','','','','','','','','MONATSSALDO '+mName+':',''+GR.r2(mTotal),'']);
-        rows.push([]);
-        mTotal=0;
-      }
-      if(thisMonth)mLabel=thisMonth;
-
-      rows.push(['KW '+wk+(partial?' (Teilwoche)':'')+(wmod_wk===6?' [6T]':' [5T]')]);
-      days.forEach(function(d){
-        if(!d.inRange)return;var t=getTag(d.ds);if(!t.von||!t.bis)return;
-        var res=daySurcharges(d.ds,t.von,t.bis,+t.pause||0,t.pauseVon||'',pg,pi,yi,basis,wmod_wk,faktor,t.bezPause);
-        var dd=new Date(d.ds+'T12:00:00');
-        var chips=res.s.map(function(cc){return cc.l+': '+cc.b.toFixed(2)+'€';}).join(' | ');
-        var aussTxt=(t.ausserhalb&&res.nH>3)?'Diät '+diaet.toFixed(2)+'€':'';
-        rows.push([wk,d.ds,DAYS3[dd.getDay()],t.von,t.bis,
-          GR.r2(res.nH),GR.r2(res.nightH),GR.r2(res.fh),chips,GR.r2(res.total),aussTxt]);
-      });
-      rows.push(['','','','','','','','','Wochenbasis: '+wr.wochenbasis.toFixed(2)+'  Zuschläge: '+wr.surchargeTotal.toFixed(2),''+GR.r2(wr.total),'']);
-      mTotal+=wr.total;gTotal+=wr.total;rows.push([]);
-    });
-    // Letzter Monat
-    if(mLabel){
-      var mDate2=new Date(mLabel+'-01T12:00:00');
-      var mName2=mDate2.toLocaleDateString('de-AT',{month:'long',year:'numeric'});
-      rows.push(['','','','','','','','','MONATSSALDO '+mName2+':',''+GR.r2(mTotal),'']);
-      rows.push([]);
-    }
-    rows.push([]);rows.push(['','','','','','','','','GESAMTSUMME:',''+GR.r2(gTotal),'']);
-    var ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:6},{wch:12},{wch:5},{wch:7},{wch:7},{wch:9},{wch:9},{wch:13},{wch:70},{wch:14},{wch:20}];
-    XLSX.utils.book_append_sheet(wb,ws,'Ergebnisse');
-    XLSX.writeFile(wb,(m.projektname||'Stundenliste').replace(/[\\/:*?"<>|]/g,'_')+'_Ergebnisse.xlsx');
-  });
-}
-
-function exportErgebnissePDF(){
-  var m=state.meta,pg=+m.pauschalgage,wmod=+m.wochenmodell||5;
-  var faktor=+m.faktor||1.5,basis=m.kvBasis||'vereinbart';
-  var pi=+m.berufIndex,yi=+m.jahrIndex||2,diaet=+m.diaet||15.40;
-  var fe3=function(v){return v!=null?new Intl.NumberFormat('de-AT',{style:'currency',currency:'EUR'}).format(GR.r2(v)):'';};
-  var DAYS4=['So','Mo','Di','Mi','Do','Fr','Sa'];
-  var html='<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Abrechnung '+escH(m.projektname||'')+'</title>'+
-    '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px;padding:20px}'+
-    'h1{font-size:15px;margin-bottom:4px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:2px 20px;margin:8px 0 14px;font-size:10px}'+
-    'table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:10px}'+
-    'th{background:#f0f0f0;border:1px solid #ccc;padding:3px 5px;text-align:left;font-size:9px}'+
-    'td{border:1px solid #ddd;padding:3px 5px;vertical-align:top}'+
-    'tr.wk td{background:#1a1a1a;color:#fff;font-weight:700;font-size:10px}'+
-    'tr.tot td{background:#eef7f0;font-weight:700}'+
-    'tr.gtot td{background:#b00d23;color:#fff;font-weight:700}'+
-    '@media print{button{display:none!important}}</style></head><body>';
-  html+='<h1>Stundenliste KV §7 Filmschaffende — Abrechnung</h1>';
-  html+='<div class="meta"><div><b>Name:</b> '+escH(m.personName||'—')+'</div><div><b>SV-Nummer:</b> '+escH(m.svnr||'—')+'</div>'+
-    '<div><b>Projekt:</b> '+escH(m.projektname||'—')+'</div><div><b>Zeitraum:</b> '+escH(m.startDatum)+' – '+escH(m.endDatum)+'</div>'+
-    '<div><b>Berufsgruppe:</b> '+escH(pi>=0?GR.POS[pi][0]:'—')+'</div><div><b>Gagentabelle:</b> '+escH(GR.YEARS[yi]||'—')+'</div>'+
-    '<div><b>Wochenpauschalgage:</b> '+fe3(pg)+'</div><div><b>Wochenmodell:</b> '+(function(){var vs=Object.values(state.wochen).map(function(w){return w.wmod;}).filter(Boolean);return vs.length&&vs.every(function(v){return v===vs[0]})?vs[0]+'-Tage':'wechselnd – siehe KW';})()+'</div></div>';
-  html+='<table><tr><th>Datum</th><th>Tag</th><th>Von</th><th>Bis</th><th>Netto h</th><th>Nacht h</th><th>FK-ÜSt h</th><th>Zuschläge</th><th>Summe</th></tr>';
-  html+='<style>tr.msaldo td{background:#fff3cd;font-weight:700;font-size:10px}</style>';
-  var s0=new Date(m.startDatum+'T12:00:00'),e0=new Date(m.endDatum+'T12:00:00');
-  var sDate3=pd(m.startDatum),eDate3=pd(m.endDatum);
-  var wks3=[];for(var d=new Date(s0);d<=e0;d.setDate(d.getDate()+1)){var w3=isoWk(d);if(wks3.indexOf(w3)<0)wks3.push(w3);}
-  var gT=0,mT=0,mLbl='';
-  wks3.forEach(function(wk){
-    var wst=getWoche(wk);
-    var wmod_wk=+wst.wmod||wmod;
-    var days=daysInWeek(wk,sDate3,eDate3);
-    var partial=isPartial(wk,sDate3,eDate3,wmod_wk);
-    var wr=calcWeek(wk,days,pg,wmod_wk,faktor,basis,pi,yi,partial,wst);
-    var firstDay=days.find(function(d){return d.inRange;});
-    var thisMonth=firstDay?firstDay.ds.slice(0,7):'';
-    // Monatswechsel
-    if(mLbl&&thisMonth&&thisMonth!==mLbl){
-      var mD=new Date(mLbl+'-01T12:00:00');
-      var mN=mD.toLocaleDateString('de-AT',{month:'long',year:'numeric'});
-      html+='<tr class="msaldo"><td colspan="8"><b>MONATSSALDO '+escH(mN)+'</b></td><td><b>'+fe3(mT)+'</b></td></tr>';
-      html+='<tr><td colspan="9" style="padding:0;height:8px;background:#fff;border:none"></td></tr>';
-      mT=0;
-    }
-    if(thisMonth)mLbl=thisMonth;
-    html+='<tr class="wk"><td colspan="8">KW '+wk+(partial?' (Teilwoche)':'')+' ['+wmod_wk+'T]&nbsp;&nbsp;Wochenbasis: '+fe3(wr.wochenbasis)+'&nbsp;&nbsp;Zuschläge: '+fe3(wr.surchargeTotal)+'</td><td>'+fe3(wr.total)+'</td></tr>';
-    days.forEach(function(d){
-      if(!d.inRange)return;var t=getTag(d.ds);if(!t.von||!t.bis)return;
-      var res=daySurcharges(d.ds,t.von,t.bis,+t.pause||0,t.pauseVon||'',pg,pi,yi,basis,wmod_wk,faktor,t.bezPause);
-      var dd=new Date(d.ds+'T12:00:00');
-      var chips=res.s.map(function(cc){return escH(cc.l)+': '+fe3(cc.b);}).join(' &bull; ');
-      if(t.ausserhalb&&res.nH>3)chips+=' &bull; Di\u00e4t: '+fe3(diaet);
-      html+='<tr><td>'+escH(d.ds)+'</td><td>'+DAYS4[dd.getDay()]+'</td><td>'+escH(t.von)+'</td><td>'+escH(t.bis)+'</td>'+
-        '<td>'+GR.r2(res.nH)+'</td><td>'+GR.r2(res.nightH)+'</td><td>'+GR.r2(res.fh)+'</td>'+
-        '<td style="font-size:9px">'+chips+'</td><td>'+fe3(res.total)+'</td></tr>';
-    });
-    mT+=wr.total;gT+=wr.total;
-  });
-  // Letzter Monat
-  if(mLbl){
-    var mD2=new Date(mLbl+'-01T12:00:00');
-    var mN2=mD2.toLocaleDateString('de-AT',{month:'long',year:'numeric'});
-    html+='<tr class="msaldo"><td colspan="8"><b>MONATSSALDO '+escH(mN2)+'</b></td><td><b>'+fe3(mT)+'</b></td></tr>';
-    html+='<tr><td colspan="9" style="padding:0;height:8px;background:#fff;border:none"></td></tr>';
-  }
-  html+='<tr class="gtot"><td colspan="8"><b>GESAMTSUMME</b></td><td><b>'+fe3(gT)+'</b></td></tr></table>';
-  html+='<p style="font-size:9px;color:#888;margin-top:8px">Orientierungswerte. KV Filmschaffende ab 1.7.2026. Erstellt: '+new Date().toLocaleDateString('de-AT')+'</p>';
-  html+='</body></html>';
-  // html2pdf.js: erzeugt PDF-Datei direkt im Browser (kein Druckdialog)
-  loadHtml2Pdf(function(){
-    var wrap=document.createElement('div');
-    wrap.style.cssText='position:fixed;left:-9999px;top:0;width:297mm';
-    // Nur den Body-Inhalt extrahieren
-    var tmp=document.createElement('div');
-    tmp.innerHTML=html;
-    var body=tmp.querySelector('body');
-    wrap.innerHTML=body?body.innerHTML:html;
-    document.body.appendChild(wrap);
-    var fname=(m.projektname||'Stundenliste').replace(/[\\/:*?"<>|]/g,'_')+'_Abrechnung.pdf';
-    html2pdf().set({
-      margin:[10,10,10,10],
-      filename:fname,
-      html2canvas:{scale:1.5,useCORS:true,logging:false},
-      jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}
-    }).from(wrap).save().then(function(){document.body.removeChild(wrap);});
-  });
-}
-
 document.addEventListener('DOMContentLoaded',function(){
   load();initSetup();renderAll();
-  document.getElementById('btn-xlsx-export').addEventListener('click',exportEingabenXLSX);
-  document.getElementById('inp-xlsx-import').addEventListener('change',function(e){
-    if(e.target.files[0])importFromXLSX(e.target.files[0]);
-    e.target.value='';
-  });
-  document.getElementById('btn-xlsx-ergebnis').addEventListener('click',function(){
-    document.getElementById('modal-ergebnis').style.display='flex';
-  });
-  document.getElementById('btn-modal-close').addEventListener('click',function(){
-    document.getElementById('modal-ergebnis').style.display='none';
-  });
-  document.getElementById('btn-ergebnis-xlsx').addEventListener('click',function(){
-    document.getElementById('modal-ergebnis').style.display='none';exportErgebnisseXLSX();
-  });
-  document.getElementById('btn-ergebnis-pdf').addEventListener('click',function(){
-    document.getElementById('modal-ergebnis').style.display='none';exportErgebnissePDF();
-  });
+  document.getElementById('btn-csv').addEventListener('click',exportCSV);
+  document.getElementById('btn-print').addEventListener('click',function(){window.print()});
   var clearBtn=document.getElementById('btn-clear');
   var clearConfirm=document.getElementById('btn-clear-confirm');
-  clearBtn.addEventListener('click',function(){clearConfirm.style.display='';clearBtn.style.display='none';});
-  document.getElementById('btn-clear-yes').addEventListener('click',function(){localStorage.removeItem(KEY);location.reload();});
-  document.getElementById('btn-clear-no').addEventListener('click',function(){clearConfirm.style.display='none';clearBtn.style.display='';});
+  clearBtn.addEventListener('click',function(){
+    clearConfirm.style.display='';
+    clearBtn.style.display='none';
+  });
+  document.getElementById('btn-clear-yes').addEventListener('click',function(){
+    localStorage.removeItem(KEY);location.reload();
+  });
+  document.getElementById('btn-clear-no').addEventListener('click',function(){
+    clearConfirm.style.display='none';
+    clearBtn.style.display='';
+  });
 });
 </script>
 </body>

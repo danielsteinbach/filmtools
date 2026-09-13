@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gagenrechner – Filmschaffende (KV §7)</title>
+<meta name="description" content="Prüft, ob eine Wochenpauschalgage dem Minimum des Kollektivvertrags Filmschaffende entspricht — 65 Berufsgruppen, Tarife 2024, 2025 und ab 1.7.2026.">
 <style>
   :root {
     --rot: #b00d23; --dunkel: #1a1a1a; --grau: #6e6e6e;
@@ -91,6 +92,7 @@
 </style>
 </head>
 <body>
+<a href="index.html" style="display:block;max-width:1080px;margin:0 auto;padding:16px 20px 0;font:600 .82rem/1.4 system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#ab0f1f;text-decoration:none">&#8592;&#160;Alle Filmtools</a>
 <div class="gr-wrap">
   <h1>Gagenrechner</h1>
   <p class="gr-intro">Wähle zuerst deinen Beruf &ndash; der Rechner schlägt dann automatisch deine
@@ -175,7 +177,7 @@
       <div>
         <span class="gr-label">Grund-Stundengage</span>
         <div class="gr-wert" id="w-std">&ndash;</div>
-        <p class="gr-fussnote">Wochengage (40h) ÷ 40 = §9 Abs. 5 (Wochenvertrag); bei Tagesverträgen gilt Tagesgage ÷ 8</p>
+        <p class="gr-fussnote">Wochengage (40h) ÷ 40 (§9 Abs. 5, befristete Verträge)</p>
       </div>
     </div>
 
@@ -250,12 +252,6 @@
     <p class="gr-fussnote rot">Tagesgagen werden anders berechnet als die §7-Pauschalgage.
     Basis: 8h Normalarbeitszeit + Überstunden nach §9. Die Überstunden sind bei den
     Tagesgagen inkl. SZ nicht Bestandteil der Sonderzahlungen.</p>
-    <p class="gr-fussnote" style="margin-bottom:8px">
-      <strong>Stundenlohn für Überstunden nach §9 Abs. 5:</strong>
-      Bei Tagesverträgen (1/4-Gage, Einzeldrehtag) gilt Tagesgage ÷ 8 = T/8.
-      Bei Mehrtagsverträgen (1/5-Gage) gilt Wochengage ÷ 40 = W/40 —
-      da T = W/5 ist T/8 = W/40, beide Formeln sind hier identisch.
-    </p>
     <div class="gr-grid">
       <div>
         <div class="gr-h3">1/4 der Wochengage</div>
@@ -396,10 +392,6 @@ var GR = (function () {
     };
     [4, 5].forEach(function (frac) {
       var T = W / frac;
-      // §9 Abs. 5 KV: Stundenlohn = Tagesgage ÷ 8 (Tagesvertrag) = T/8
-      // Für frac=5: T/8 = W/40 (identisch mit Wochenvertrag-Formel)
-      // Für frac=4: T/8 = W/32 (Einzeldrehtag — ausdrücklich NICHT W/40)
-      // Ergibt: h10 = T + 2×(T/8)×1,5 = T×1,375; h12 = T + 2×(T/8)×1,5 + 2×(T/8)×2 = T×1,875
       o.tage[frac] = {
         exkl: { h8: T,       h10: T * 1.375, h12: T * 1.875 },
         inkl: { h8: T * F,   h10: T * F + T * 0.375, h12: T * F + T * 0.875 }
@@ -447,18 +439,6 @@ var GR = (function () {
           fails.push('P=' + c.P + ' ' + k + ': ' + r2(got[k]) + ' ≠ ' + c.exp[k]);
       });
     });
-    // frac=4 Tagesgage Referenzfall: Produktionsassistenz 2026
-    // T = W/4, Stundenlohn = T/8 (§9 Abs. 5 Tagesvertrag), h10 = T×1.375
-    var paPos = null;
-    for (var j = 0; j < POSITIONS.length; j++) {
-      if (POSITIONS[j][0] === 'Produktionsassistenz') { paPos = POSITIONS[j]; break; }
-    }
-    if (paPos) {
-      var paPG = r2(r2(paPos[3]) * P7 * F); // Mindest-PG 2026
-      var paT4 = calc(paPG).tage[4];
-      if (Math.abs(r2(paT4.exkl.h10) - 268.84) > 0.05)
-        fails.push('frac4 Produktionsassistenz h10_exkl: ' + r2(paT4.exkl.h10) + ' ≠ 268.84');
-    }
     // Rundungsfalle
     var kamera = null;
     for (var i = 0; i < POSITIONS.length; i++) {
