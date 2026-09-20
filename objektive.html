@@ -1,0 +1,1580 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wie ein Objektiv sieht</title>
+<meta name="description" content="Optik zum Nachrechnen: ein Fotoobjektiv vollständig aus seinen Patentdaten durchgerechnet, dazu ein einfaches Modell für Blende, Schärfentiefe und Bildwinkel.">
+<!-- Keine externen Schriften: die Seite laedt nichts nach und setzt in den
+     Schriften des jeweiligen Geraetes, wie die uebrigen Filmtools-Seiten. -->
+<style>
+
+  :root{
+    --paper:#e9edf0; --surface:#ffffff; --sunk:#f3f6f8; --ink:#151d26; --muted:#5a6a78;
+    --line:#c6d0d8; --line-soft:#dde4e9;
+    --amber:#a96c11; --amber-soft:rgba(169,108,17,.16);
+    --violet:#5f4f9b; --violet-soft:rgba(95,79,155,.13);
+    --teal:#16646a;  --teal-soft:rgba(22,100,106,.13);
+    --glass:#9fb4c2; --glass-edge:#6d8394; --barrel:#2b343d; --onaccent:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0e141a; --surface:#161f27; --sunk:#111a21; --ink:#e4ebf1; --muted:#93a4b2;
+      --line:#2e3d49; --line-soft:#26333d;
+      --amber:#e3a94f; --amber-soft:rgba(227,169,79,.18);
+      --violet:#a99ada; --violet-soft:rgba(169,154,218,.16);
+      --teal:#5cbcc2;  --teal-soft:rgba(92,188,194,.16);
+      --glass:#40525f; --glass-edge:#78909f; --barrel:#c2ced8; --onaccent:#101820;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0e141a; --surface:#161f27; --sunk:#111a21; --ink:#e4ebf1; --muted:#93a4b2;
+    --line:#2e3d49; --line-soft:#26333d;
+    --amber:#e3a94f; --amber-soft:rgba(227,169,79,.18);
+    --violet:#a99ada; --violet-soft:rgba(169,154,218,.16);
+    --teal:#5cbcc2;  --teal-soft:rgba(92,188,194,.16);
+    --glass:#40525f; --glass-edge:#78909f; --barrel:#c2ced8; --onaccent:#101820;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:15px;line-height:1.6}
+  .wrap{max-width:980px;margin:0 auto;padding-inline:20px;padding-block:44px 64px}
+
+  .eyebrow{font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-size:11px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+  h1{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif;font-weight:700;
+    font-size:clamp(28px,5.2vw,42px);line-height:1.05;letter-spacing:-.02em;
+    margin:0 0 14px;text-wrap:balance}
+  .lede{max-width:64ch;color:var(--muted);margin:0 0 28px;font-size:16px}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:3px}
+  .pad{padding:18px 22px}
+  .divider{border-top:1px solid var(--line-soft)}
+  .row{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:flex-end}
+  .field{flex:1 1 240px;min-width:200px}
+  .field.narrow{flex:0 0 auto;min-width:0}
+  label,.ctrl-label{display:block;font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-size:11px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  select{width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--sunk);
+    border:1px solid var(--line);border-radius:2px;padding:9px 10px}
+  optgroup{font-style:normal;font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--amber);height:24px;margin:0}
+  .readout{font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-size:13px;font-weight:500;
+    color:var(--ink);font-variant-numeric:tabular-nums;margin-top:2px}
+  .readout .dim{color:var(--muted);font-weight:400}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+  .seg button{font:inherit;font-size:13px;padding:8px 14px;border:0;cursor:pointer;
+    background:var(--sunk);color:var(--muted)}
+  .seg button[aria-pressed="true"]{background:var(--amber);color:var(--onaccent)}
+  .fnum{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif;font-weight:700;font-size:34px;line-height:1;
+    letter-spacing:-.02em;color:var(--amber);font-variant-numeric:tabular-nums}
+  .iris{width:66px;height:66px;flex:none}
+
+  .lensnote{margin:14px 0 0;font-size:13px;color:var(--muted);max-width:78ch}
+  .warn{margin:12px 0 0;font-size:13px;line-height:1.55;max-width:78ch;color:var(--ink);
+    border-left:3px solid var(--amber);padding:9px 0 9px 12px;background:var(--sunk)}
+  .badge{display:inline-block;font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-size:10.5px;
+    letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);
+    border-radius:2px;padding:2px 7px;margin-right:8px;color:var(--muted)}
+
+  figure{margin:22px 0 6px}
+  .stage{background:var(--surface);border:1px solid var(--line);border-radius:3px;
+    padding:14px 14px 6px;overflow-x:auto}
+  .stage svg{display:block;width:100%;min-width:790px;height:auto}
+  figcaption{color:var(--muted);font-size:13px;margin-top:12px;max-width:76ch}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  caption{text-align:left;padding:18px 22px 4px;font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  th,td{padding:10px 22px;text-align:left;border-bottom:1px solid var(--line-soft)}
+  tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+  th{font-weight:500;color:var(--ink)}
+  th .sub{display:block;color:var(--muted);font-size:12.5px;font-weight:400;line-height:1.35}
+  td.val{font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-variant-numeric:tabular-nums;
+    font-weight:500;text-align:right;white-space:nowrap}
+  td.note{color:var(--muted);font-size:13px;width:34%}
+  @media (max-width:600px){
+    td.note{display:none}
+    th,td{padding-inline:16px} caption{padding-inline:16px} .pad{padding:16px}
+  }
+
+  h2{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif;font-weight:600;font-size:20px;
+     letter-spacing:-.01em;margin:44px 0 10px}
+  p{max-width:68ch}
+  .k{font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-size:.92em;color:var(--amber);font-weight:500}
+  .v{font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-size:.92em;color:var(--violet);font-weight:500}
+  .t{font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-size:.92em;color:var(--teal);font-weight:500}
+  footer{margin-top:52px;padding-top:18px;border-top:1px solid var(--line);
+         color:var(--muted);font-size:13px}
+  footer p{max-width:80ch}
+
+  /* ---- Teil 1: gerechneter Strahlengang ---------------------------------- */
+  .tm-ax{stroke:var(--line);stroke-width:1;stroke-dasharray:6 5}
+  .tm-gl{fill:var(--glass);fill-opacity:.42;stroke:var(--glass-edge);stroke-width:.8}
+  .tm-cm{fill:none;stroke:var(--glass-edge);stroke-width:.6;stroke-opacity:.75}
+  .tm-rf{fill:none;stroke:var(--violet);stroke-width:1;stroke-opacity:.85}
+  .tm-rc{fill:none;stroke:var(--amber);stroke-width:1.3}
+  .tm-ra{fill:none;stroke:var(--teal);stroke-width:.8;stroke-opacity:.7}
+  .tm-st{stroke:var(--barrel);stroke-width:2.6;stroke-linecap:round}
+  .tm-sen{stroke:var(--barrel);stroke-width:3.2;stroke-linecap:round}
+  .tm-dot{fill:var(--amber)}
+  .tm-sb{stroke:var(--muted);stroke-width:1}
+  .tm-lb{fill:var(--muted);font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-size:10.5px}
+  .tm-ok{border-color:var(--teal);color:var(--teal)}
+  .tm-approx{border-color:var(--violet);color:var(--violet)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+    gap:1px;background:var(--line-soft);border-top:1px solid var(--line-soft)}
+  .grid > div{background:var(--surface);padding:13px 16px}
+  .grid dt{font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-size:10.5px;letter-spacing:.11em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 5px}
+  .grid dd{margin:0;font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-size:16px;font-weight:500;
+    font-variant-numeric:tabular-nums}
+  .toc{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 34px;padding:0;list-style:none}
+  .toc a{display:inline-block;font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono",Consolas,"Liberation Mono",Menlo,monospace;font-size:11.5px;
+    letter-spacing:.09em;text-transform:uppercase;text-decoration:none;color:var(--muted);
+    border:1px solid var(--line);border-radius:2px;padding:6px 11px}
+  .toc a:hover{color:var(--ink);border-color:var(--ink)}
+  .part{margin-top:66px;padding-top:30px;border-top:2px solid var(--line)}
+  .part:first-of-type{border-top:0;margin-top:34px;padding-top:0}
+  h3{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",Arial,sans-serif;font-weight:600;font-size:16px;margin:30px 0 8px}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin:14px 0 0;
+    font-size:12.5px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .legend i{width:20px;height:0;border-top:2.5px solid;flex:none}
+  .check{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);
+    font-family:inherit;letter-spacing:0;text-transform:none;margin:0}
+  .check input{accent-color:var(--teal);width:16px;height:16px}
+  .disc{background:var(--sunk);border:1px solid var(--line);border-radius:3px;
+    padding:18px 22px;margin:22px 0}
+  .disc h3{margin-top:0}
+  .disc p{font-size:13.5px;color:var(--muted);max-width:78ch}
+
+  .scrollx{overflow-x:auto}
+  @media (max-width:600px){
+    table{font-size:13.5px}
+    th,td{padding-inline:13px} caption{padding-inline:13px}
+    .grid > div{padding:11px 13px}
+    h1{font-size:27px !important}
+    h2{font-size:21px !important}
+  }
+  @media (max-width:430px){
+    td.val{white-space:normal}
+    th,td{padding-inline:11px} caption{padding-inline:11px}
+  }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Optik zum Nachrechnen &middot; 8. Schulstufe</p>
+  <h1 style="font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,'Helvetica Neue',Arial,sans-serif;font-weight:700;font-size:34px;letter-spacing:-.02em;margin:0 0 14px">Wie ein Objektiv sieht</h1>
+  <p class="lede">Diese Seite ist entstanden, um im Rahmen einer Jahresarbeit &uuml;ber Natur-
+  und Tierfotografie die Wirkung von Objektiven zu verdeutlichen &ndash; sie geh&ouml;rt nicht zur
+  Arbeit selbst. Sie versucht, das Wichtigste an einem Fotoobjektiv nicht zu behaupten, sondern
+  vorzurechnen: warum ein Teleobjektiv einen so schmalen Ausschnitt zeigt, was die Blende
+  wirklich tut, und wieso ein Zoom l&auml;nger wird, wenn man zoomt.</p>
+  <p class="lede">Sie hat zwei Teile, und die sind verschieden genau. Der erste rechnet
+  <em>ein</em> wirkliches Objektiv vollst&auml;ndig durch, mit den Bauzahlen aus seiner
+  Patentschrift. Der zweite vergleicht sechzehn Objektive in einem einfachen Modell.
+  Beides steht absichtlich nebeneinander: so sieht man, was eine Rechnung ist und was
+  eine Veranschaulichung.</p>
+  <ul class="toc">
+    <li><a href="#teil1">Teil 1 &middot; Ein Objektiv, durchgerechnet</a></li>
+    <li><a href="#teil2">Teil 2 &middot; Sechzehn Objektive im Modell</a></li>
+    <li><a href="#methode">Methode, Grenzen, Haftung</a></li>
+  </ul>
+<section class="part" id="teil1">
+  <p class="eyebrow">Teil 1 &middot; Ein Objektiv, durchgerechnet</p>
+  <h2 style="font-size:24px;margin-top:0">Tamron 50-300 mm: jeder Strahl einzeln gerechnet</h2>
+  <p>Dieses Objektiv hat 19 Linsen. Wo jede davon sitzt, wie stark sie gekr&uuml;mmt ist und
+  aus welchem Glas sie besteht, steht in der Patentschrift
+  <span class="k">JP&nbsp;2024-120449&nbsp;A</span> &ndash; einem &ouml;ffentlichen Dokument.
+  Aus diesen Zahlen ist hier jeder Strahl einzeln durch alle 36 Fl&auml;chen gerechnet:
+  Schnittpunkt mit der Kugelfl&auml;che, Brechung nach dem Brechungsgesetz, weiter zur
+  n&auml;chsten. Keine dicke Linse wird zur d&uuml;nnen vereinfacht, nichts ist gesch&auml;tzt.</p>
+  <p>Gezeichnet sind zw&ouml;lf gleichm&auml;&szlig;ig &uuml;ber das Bildfeld verteilte Strahlen
+  und ein Mittelstrahl. Jeder kommt aus einer anderen Richtung &ndash; zusammen zeigen sie,
+  was das Objektiv &uuml;berhaupt sieht, und wo jede dieser Richtungen auf dem Sensor landet.</p>
+
+  <div class="panel pad" style="margin-top:24px">
+    <div class="row">
+      <div class="field">
+        <label for="tm-foc">Brennweite</label>
+        <input type="range" id="tm-foc" min="0" max="240" value="0" step="1">
+        <div class="readout" id="tm-focOut"></div>
+      </div>
+      <div class="field narrow">
+        <span class="ctrl-label">Dokumentierte Stellungen</span>
+        <div class="seg">
+          <button type="button" data-tm-jump="0" aria-pressed="true">50</button>
+          <button type="button" data-tm-jump="120" aria-pressed="false">150</button>
+          <button type="button" data-tm-jump="240" aria-pressed="false">300</button>
+        </div>
+      </div>
+      <div class="field narrow">
+        <span class="ctrl-label">Zusatz</span>
+        <label class="check"><input type="checkbox" id="tm-bundle"> &Ouml;ffnungsb&uuml;ndel zeigen</label>
+      </div>
+    </div>
+  </div>
+
+  <figure>
+    <div class="stage">
+      <svg id="tm-ray" viewBox="0 0 900 322" role="img"
+           aria-label="Ma&szlig;st&auml;blicher Strahlengang des Tamron 50-300 mm"></svg>
+    </div>
+    <figcaption><span class="badge" id="tm-badge"></span><span id="tm-cap"></span></figcaption>
+  </figure>
+
+  <div class="panel" style="margin-top:6px">
+    <div class="grid">
+      <div><dt>Bildwinkel diagonal</dt><dd id="tm-v-ang"></dd></div>
+      <div><dt>Offenblende</dt><dd id="tm-v-fno"></dd></div>
+      <div><dt>Eintrittspupille</dt><dd id="tm-v-ep"></dd></div>
+      <div><dt>Baul&auml;nge</dt><dd id="tm-v-len"></dd></div>
+      <div><dt>Strahlabstand innen</dt><dd id="tm-v-inner"></dd></div>
+      <div><dt>Strahlabstand au&szlig;en</dt><dd id="tm-v-outer"></dd></div>
+    </div>
+  </div>
+  <div class="legend">
+    <span><i style="border-color:var(--amber)"></i>Mittelstrahl</span>
+    <span><i style="border-color:var(--violet)"></i>zw&ouml;lf Feldstrahlen</span>
+    <span><i style="border-color:var(--teal)"></i>&Ouml;ffnungsb&uuml;ndel (nur zugeschaltet)</span>
+  </div>
+
+  <h3>Gleiche Winkelschritte, ungleiche Abst&auml;nde</h3>
+  <p>Die dreizehn Strahlen kommen in genau gleichen Winkelabst&auml;nden herein. Auf dem Sensor
+  landen sie trotzdem nicht in gleichen Abst&auml;nden: au&szlig;en ist der Abstand gr&ouml;&szlig;er
+  als in der Mitte. Der Grund steht in der Formel, nach der ein Objektiv abbildet &ndash;
+  die Bildh&ouml;he w&auml;chst mit dem <em>Tangens</em> des Winkels, und der w&auml;chst
+  schneller als der Winkel selbst. Bei 50&nbsp;mm sieht man den Unterschied deutlich,
+  bei 300&nbsp;mm fast nicht mehr: auf einem so schmalen Winkelbereich ist der Tangens
+  praktisch eine Gerade.</p>
+
+  <h3>Zoomen ist nur Abstands&auml;nderung</h3>
+  <p>Zwischen 50 und 300&nbsp;mm kommt kein einziges St&uuml;ck Glas dazu. Es &auml;ndern sich
+  f&uuml;nf Luftabst&auml;nde, mehr nicht &ndash; und aus 50&nbsp;mm werden 300.</p>
+  <div class="panel scrollx" style="margin-top:14px">
+    <table style="min-width:520px">
+      <caption>Die f&uuml;nf beweglichen Luftabst&auml;nde, in Millimetern</caption>
+      <thead><tr><th>Stellung</th><td class="val">nach Fl.&nbsp;5</td><td class="val">nach Fl.&nbsp;14</td>
+      <td class="val">nach Fl.&nbsp;25</td><td class="val">nach Fl.&nbsp;28</td><td class="val">nach Fl.&nbsp;34</td>
+      <td class="val">Baul&auml;nge</td></tr></thead>
+      <tbody>
+        <tr><th>50 mm</th><td class="val">5,1</td><td class="val">31,0</td><td class="val">2,7</td><td class="val">16,5</td><td class="val">18,5</td><td class="val">166,0</td></tr>
+        <tr><th>150 mm</th><td class="val">47,0</td><td class="val">7,0</td><td class="val">9,6</td><td class="val">12,6</td><td class="val">26,7</td><td class="val">195,0</td></tr>
+        <tr><th>300 mm</th><td class="val">70,1</td><td class="val">1,2</td><td class="val">2,7</td><td class="val">17,3</td><td class="val">39,6</td><td class="val">223,0</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="lensnote">Die Summe der Ver&auml;nderungen ist genau die Differenz der
+  Baul&auml;ngen: 223,0&nbsp;&minus;&nbsp;166,0&nbsp;=&nbsp;57,0&nbsp;mm. So weit f&auml;hrt
+  der Tubus aus. Nur diese drei Stellungen stehen im Patent; alles dazwischen rechnet die
+  Seite sich weich zurecht.</p>
+
+  <h3>Die Blende ist nicht das, was man von vorn sieht</h3>
+  <p>Von vorn blickt man durch die Frontgruppe <em>auf</em> die Blende. Sie erscheint dabei
+  vergr&ouml;&szlig;ert und verschoben &ndash; dieses scheinbare Loch hei&szlig;t
+  Eintrittspupille, und nur sein Durchmesser bestimmt, wie viel Licht ankommt. Die
+  Blendenzahl ist nichts anderes als Brennweite geteilt durch diesen Durchmesser:
+  bei 300&nbsp;mm sind das 290,9&nbsp;&divide;&nbsp;44,8&nbsp;=&nbsp;6,5.</p>
+
+  <h3>Die Probe</h3>
+  <p>Woher wei&szlig; man, dass die Rechnung stimmt? Man rechnet die Brennweite aus dem
+  fertigen Strahlengang zur&uuml;ck und vergleicht sie mit der im Patent angegebenen.
+  Sie trifft auf 0,012&nbsp;Prozent. Dasselbe beim Bildwinkel: der aus dem Strahlengang
+  ermittelte halbe Feldwinkel trifft den dokumentierten Wert auf vier Nachkommastellen.
+  Das ist keine Kleinigkeit &ndash; eine falsche Brechzahl oder ein vertauschtes Vorzeichen
+  w&uuml;rde man sofort sehen.</p>
+</section>
+
+<section class="part" id="teil2">
+  <p class="eyebrow">Teil 2 &middot; Sechzehn Objektive im einfachen Modell</p>
+  <h2 style="font-size:24px;margin-top:0">Blende, Sch&auml;rfentiefe und Bildwinkel zum Ausprobieren</h2>
+  <p>F&uuml;r die meisten Objektive gibt es keine ver&ouml;ffentlichten Konstruktionsdaten.
+  Was man hat, sind Herstellerangaben: Brennweite, Blendenbereich, Anzahl der Linsen und
+  Gruppen, Filtergewinde, Baul&auml;nge. Daraus l&auml;sst sich vieles richtig ausrechnen
+  &ndash; Bildwinkel, Eintrittspupille, Sch&auml;rfentiefe, hyperfokale Entfernung &ndash;
+  und manches nur andeuten.</p>
+  <p><strong>Der Innenaufbau in dieser zweiten Zeichnung ist deshalb schematisch.</strong>
+  Die <em>Anzahl</em> der Gruppen stimmt, ihre Anordnung nicht. Der graue Bereich dagegen
+  ist der wirkliche Bildwinkel in echten Grad, und die Tabelle unter der Zeichnung rechnet
+  mit richtigen Formeln. Wer den Unterschied zu Teil&nbsp;1 sehen will: dort ist das Glas
+  selbst die Rechnung, hier ist es ein Symbol.</p>
+  <div class="panel">
+    <div class="pad">
+      <div class="row">
+        <div class="field" style="flex:2 1 340px">
+          <label for="lens">Objektiv</label>
+          <select id="lens"></select>
+        </div>
+        <div class="field narrow">
+          <span class="ctrl-label">Sensorgröße</span>
+          <div class="seg" role="group" aria-label="Sensorgröße">
+            <button type="button" id="bodyA" aria-pressed="true">APS-C</button>
+            <button type="button" id="bodyB" aria-pressed="false">Vollformat</button>
+          </div>
+        </div>
+      </div>
+      <p class="lensnote" style="margin-top:12px">APS-C rechnet mit 23,5&nbsp;&#215;&nbsp;15,6&nbsp;mm Sensorfläche und 0,020&nbsp;mm zulässigem Zerstreuungskreis – das entspricht etwa einer Sony&nbsp;a6300. Vollformat rechnet mit 36&nbsp;&#215;&nbsp;24&nbsp;mm und 0,030&nbsp;mm, etwa einer Sony&nbsp;a7&nbsp;II. Andere Kameras desselben Formats verhalten sich gleich.</p>
+      <p class="lensnote" id="lensnote"></p>
+      <p class="warn" id="nearwarn" hidden></p>
+    </div>
+
+    <div class="pad divider">
+      <div class="row">
+        <div class="field" id="zoomField">
+          <label for="foc">Brennweite</label>
+          <input type="range" id="foc" min="0" max="100" step="1" value="0">
+          <div class="readout" id="focOut">135 mm</div>
+        </div>
+        <div class="field">
+          <label for="dist">Fokusentfernung</label>
+          <input type="range" id="dist" min="0" max="9" step="1" value="6">
+          <div class="readout" id="distOut">10 m</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pad divider">
+      <div class="row" style="align-items:center">
+        <div class="field narrow" style="min-width:104px">
+          <span class="ctrl-label">Blende</span>
+          <div class="fnum" id="fnum">f/2,8</div>
+        </div>
+        <svg class="iris" viewBox="0 0 120 120" role="img" aria-label="Blendenöffnung von vorn gesehen">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".28"/>
+          <path id="irisPath" d="" fill="var(--amber-soft)" stroke="var(--amber)" stroke-width="1.6"/>
+        </svg>
+        <div class="field">
+          <label for="ap">Blendenreihe</label>
+          <input type="range" id="ap" min="0" max="6" step="1" value="0">
+          <div class="readout" id="apOut"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <figure>
+    <div class="stage">
+      <svg id="ray" viewBox="0 0 1040 430" role="img"
+           aria-label="Schematischer Strahlengang. Drei Objektpunkte in unterschiedlicher Entfernung strahlen durch ein Objektiv auf den Sensor. Die Linsen sind in fester Größe gezeichnet, maßstäblich zum Filtergewinde; nur das Strahlenbündel wird beim Abblenden dünner. Der scharf gestellte Punkt liegt auf der optischen Achse und wird zum Punkt, der nähere und der fernere Punkt treffen den Sensor als Zerstreuungskreise auf gegenüberliegenden Seiten der Achse.">
+        <g id="barrel" stroke="var(--barrel)" fill="none" opacity=".5" stroke-width="1.5"></g>
+
+        <line x1="26" y1="210" x2="876" y2="210" stroke="currentColor" stroke-width="1"
+              stroke-dasharray="6 5" opacity=".4"/>
+        <text x="30" y="203" font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace" font-size="10.5"
+              fill="currentColor" opacity=".55">optische Achse</text>
+
+        <polygon id="fieldObj" points="" fill="currentColor" opacity=".07" stroke="currentColor" stroke-opacity=".22" stroke-width="1"/>
+        <polygon id="fieldLens" points="" fill="currentColor" opacity=".07"/>
+        <polygon id="fieldImg" points="" fill="currentColor" opacity=".05"/>
+        <polyline id="chief1" points="" fill="none" stroke="currentColor" stroke-width="1"
+                  stroke-dasharray="5 4" opacity=".4"/>
+        <polyline id="chief2" points="" fill="none" stroke="currentColor" stroke-width="1"
+                  stroke-dasharray="5 4" opacity=".4"/>
+        <polyline id="arcField" points="" fill="none" stroke="currentColor"
+                  stroke-width="1" opacity=".5"/>
+        <text id="labField" x="0" y="0" font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace"
+              font-size="12" fill="currentColor" opacity=".75" font-weight="600"></text>
+
+        <polygon id="coneH" points="" fill="var(--violet-soft)"/>
+        <polygon id="coneV" points="" fill="var(--teal-soft)"/>
+        <polygon id="coneM" points="" fill="var(--amber-soft)"/>
+        <polyline id="rayH1" points="" fill="none" stroke="var(--violet)" stroke-width="1.4"/>
+        <polyline id="rayH2" points="" fill="none" stroke="var(--violet)" stroke-width="1.4"/>
+        <polyline id="rayV1" points="" fill="none" stroke="var(--teal)" stroke-width="1.4"/>
+        <polyline id="rayV2" points="" fill="none" stroke="var(--teal)" stroke-width="1.4"/>
+        <polyline id="ghostV1" points="" fill="none" stroke="var(--teal)" stroke-width="1"
+                  stroke-dasharray="3 4" opacity=".55"/>
+        <polyline id="ghostV2" points="" fill="none" stroke="var(--teal)" stroke-width="1"
+                  stroke-dasharray="3 4" opacity=".55"/>
+        <polyline id="rayM1" points="" fill="none" stroke="var(--amber)" stroke-width="1.7"/>
+        <polyline id="rayM2" points="" fill="none" stroke="var(--amber)" stroke-width="1.7"/>
+
+        <g id="groups" fill="var(--glass)" fill-opacity=".42"
+           stroke="var(--glass-edge)" stroke-width="1.1"></g>
+
+        <rect id="bladeTop" x="500" y="106" width="15" height="40" fill="var(--barrel)" rx="1"/>
+        <rect id="bladeBot" x="500" y="274" width="15" height="40" fill="var(--barrel)" rx="1"/>
+        <text id="bladeLab" x="508" y="99" text-anchor="middle"
+              font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace" font-size="10.5"
+              fill="var(--barrel)" opacity=".85">Blende</text>
+        <text id="apLabel" x="480" y="206" text-anchor="middle"
+              font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace" font-size="11.5"
+              fill="var(--amber)" font-weight="500"></text>
+        <text id="frontLabel" x="340" y="0" text-anchor="middle"
+              font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace" font-size="10.5"
+              fill="currentColor" opacity=".55"></text>
+        <text id="groupCount" x="520" y="356" text-anchor="middle"
+              font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace" font-size="10.5"
+              fill="currentColor" opacity=".55"></text>
+
+        <line x1="800" y1="108" x2="800" y2="312" stroke="currentColor" stroke-width="3"/>
+        <text id="sensorLab" x="800" y="100" text-anchor="middle"
+              font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace" font-size="11"
+              fill="currentColor" opacity=".7">Sensor</text>
+
+        <line id="cocV" x1="800" y1="140" x2="800" y2="164" stroke="var(--teal)"
+              stroke-width="5" stroke-linecap="round"/>
+        <circle id="dotM" cx="800" cy="210" r="3.4" fill="var(--amber)"/>
+        <line id="cocH" x1="800" y1="256" x2="800" y2="280" stroke="var(--violet)"
+              stroke-width="5" stroke-linecap="round"/>
+
+        <text id="labV" x="814" y="152" font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace"
+              font-size="11" fill="var(--teal)" font-weight="500"></text>
+        <text x="814" y="203" font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace"
+              font-size="11" fill="var(--amber)" font-weight="500">Bildpunkt – scharf</text>
+        <text id="labH" x="814" y="268" font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace"
+              font-size="11" fill="var(--violet)" font-weight="500"></text>
+
+        <circle id="ptH" cx="62" cy="148" r="4.5" fill="var(--violet)"/>
+        <text id="nH" x="62" y="134" text-anchor="middle" font-family="&quot;Segoe UI&quot;, -apple-system, BlinkMacSystemFont, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif"
+              font-size="12.5" fill="var(--violet)" font-weight="600">Hintergrund</text>
+        <text id="dH" x="62" y="121" text-anchor="middle" font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace"
+              font-size="10.5" fill="var(--violet)" opacity=".85"></text>
+
+        <circle id="ptM" cx="150" cy="210" r="4.5" fill="var(--amber)"/>
+        <text id="nM" x="146" y="240" text-anchor="middle" font-family="&quot;Segoe UI&quot;, -apple-system, BlinkMacSystemFont, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif"
+              font-size="12.5" fill="var(--amber)" font-weight="600">Motiv</text>
+        <text id="dM" x="146" y="253" text-anchor="middle" font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace"
+              font-size="10.5" fill="var(--amber)" opacity=".85"></text>
+
+        <circle id="ptV" cx="252" cy="288" r="4.5" fill="var(--teal)"/>
+        <text id="nV" x="252" y="310" text-anchor="middle" font-family="&quot;Segoe UI&quot;, -apple-system, BlinkMacSystemFont, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif"
+              font-size="12.5" fill="var(--teal)" font-weight="600">Vordergrund</text>
+        <text id="dV" x="252" y="323" text-anchor="middle" font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace"
+              font-size="10.5" fill="var(--teal)" opacity=".85"></text>
+
+        <text x="34" y="418" font-family="ui-monospace, Consolas, &quot;Liberation Mono&quot;, Menlo, monospace" font-size="10.5"
+              fill="currentColor" opacity=".45">Feldwinkel und Objektivmaße maßstäblich · Entfernungen gestaucht</text>
+      </svg>
+    </div>
+    <figcaption id="figcap"></figcaption>
+  </figure>
+
+  <div class="panel" style="margin-top:22px">
+    <table>
+      <caption id="tabcap"></caption>
+      <tbody>
+        <tr>
+          <th scope="row" id="th-pupil">Eintrittspupille
+            <span class="sub">Brennweite geteilt durch Blendenzahl</span></th>
+          <td class="note">So breit ist das Bündel in der Zeichnung – im Verhältnis zum Frontdurchmesser.</td>
+          <td class="val" id="v-pupil"></td>
+        </tr>
+        <tr>
+          <th scope="row">Axiales Bündel
+            <span class="sub">Pupille bezogen auf das Filtergewinde</span></th>
+          <td class="note">Nur der Anteil für einen Punkt in der Bildmitte – bei Weitwinkeln wenig, das ist normal.</td>
+          <td class="val" id="v-fill"></td>
+        </tr>
+        <tr>
+          <th scope="row">Mit Randstrahlen
+            <span class="sub">Modellschätzung, inklusive Bündel für die Bildecken</span></th>
+          <td class="note">Grobe Abschätzung aus Bildwinkel und Filtergewinde – ohne reale Pupillenlage und Vignettierung.</td>
+          <td class="val" id="v-used"></td>
+        </tr>
+        <tr>
+          <th scope="row">Bildfeld diagonal
+            <span class="sub">am gewählten Sensor, bei dieser Entfernung</span></th>
+          <td class="note">Der graue Bereich in der Zeichnung. Hängt von Brennweite und Sensorformat ab – die Blende ändert daran nichts.</td>
+          <td class="val" id="v-ang"></td>
+        </tr>
+        <tr>
+          <th scope="row">Bildwinkel wie
+            <span class="sub">umgerechnet aufs Kleinbild</span></th>
+          <td class="note">An APS-C zeigt dieselbe Brennweite einen um den Faktor 1,5 engeren Ausschnitt.</td>
+          <td class="val" id="v-equiv"></td>
+        </tr>
+        <tr>
+          <th scope="row">Relative Beleuchtungsstärke
+            <span class="sub">am Sensor, bezogen auf die Offenblende</span></th>
+          <td class="note">Die Fläche wächst im Quadrat zum Durchmesser – jede Stufe kostet die Hälfte.</td>
+          <td class="val" id="v-light"></td>
+        </tr>
+        <tr>
+          <th scope="row">Verschlusszeit
+            <span class="sub">ausgehend von 1/1000 s bei Offenblende</span></th>
+          <td class="note">Bei gleichem ISO. Hier wird im Wald entschieden, ob das Bild noch geht.</td>
+          <td class="val" id="v-time"></td>
+        </tr>
+        <tr>
+          <th scope="row">Schärfentiefe
+            <span class="sub">von … bis</span></th>
+          <td class="note">Der Bereich, in dem beide Zerstreuungskreise klein genug bleiben.</td>
+          <td class="val" id="v-dofrange"></td>
+        </tr>
+        <tr>
+          <th scope="row">Tiefe insgesamt</th>
+          <td class="note">Ab der hyperfokalen Entfernung reicht sie bis unendlich.</td>
+          <td class="val" id="v-doftotal"></td>
+        </tr>
+        <tr>
+          <th scope="row">Hyperfokale Entfernung</th>
+          <td class="note">Darauf scharf gestellt, ist alles von der halben Distanz bis unendlich scharf.</td>
+          <td class="val" id="v-hyper"></td>
+        </tr>
+        <tr>
+          <th scope="row" id="th-v">Vordergrund</th>
+          <td class="note">Der türkise Fleck oben am Sensor, in echten Millimetern.</td>
+          <td class="val" id="v-cocV"></td>
+        </tr>
+        <tr>
+          <th scope="row" id="th-h">Hintergrund</th>
+          <td class="note">Der violette Fleck unten. Bei gleichem Abstand kleiner als der Vordergrund.</td>
+          <td class="val" id="v-cocH"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Was das Abblenden wirklich tut</h2>
+  <p>Die Linsen bleiben, wie sie sind. Was kleiner wird, ist allein der Teil des Glases, durch den
+  noch Licht läuft – in der Zeichnung der eingefärbte Kegel innerhalb der Elemente.</p>
+  <p>Das erklärt zum Teil, warum abgeblendete Bilder oft besser aussehen: Schmalere Bündel
+  vermeiden die äußeren Zonen jedes Bündels, die am meisten zu Abbildungsfehlern beitragen. Es
+  heißt aber nicht, dass nur noch die Linsenmitte benutzt würde – die Bündel der Bildränder
+  laufen weiterhin seitlich versetzt durch das Glas, nur eben dünner. Und bei stärkerem
+  Abblenden wird zunehmend Beugung sichtbar; ab wann sie praktisch stört, hängt von
+  Sensorauflösung, Pixelgröße und Ausgabegröße ab.</p>
+
+  <h2>Das graue Feld: was die Optik überhaupt sieht</h2>
+  <p>Der hellgraue Bereich ist das gesamte Bildfeld, und links von der Eintrittspupille ist er
+  <b>winkeltreu gezeichnet</b>: Was im Bild wie 104 Grad aussieht, sind auch 104 Grad. Der Bogen
+  am Scheitel trägt die Gradzahl. Bei den weiten Brennweiten läuft das Feld deshalb schon nach
+  wenigen Zentimetern aus dem Bild – das ist kein Zeichenfehler, sondern die Aussage: Ein
+  14-mm-Objektiv sieht fast alles, was vor ihm liegt.</p>
+  <p>Im Modell setzt das Feld an dem geschätzten genutzten Bereich der Frontöffnung an – der
+  Wert steht in der Tabelle unter <b>mit Randstrahlen</b>. Das Licht tritt
+  eben nicht durch einen Punkt ein, sondern über eine Fläche: Jeder Punkt der Szene schickt ein
+  Bündel vom Durchmesser der Eintrittspupille, und die äußere Begrenzung des grauen Bereichs ist
+  die Einhüllende all dieser Bündel.</p>
+  <p>Erst die <em>Hauptstrahlen</em> – die gestrichelten Linien, also die Mittellinien der
+  Randbündel – laufen auf einen Punkt zu. Dieser Punkt ist die <b>Eintrittspupille</b>: das
+  optische Bild der physischen Blende, wie es die vorderen Linsengruppen nach außen werfen.
+  Sie ist damit kein Bauteil und liegt im Allgemeinen <em>nicht</em> dort, wo die Blende
+  tatsächlich sitzt – bei Weitwinkeln oft weit davor, bei Teleobjektiven weit dahinter. Dass die
+  Hauptstrahlen sich in ihr kreuzen, macht anschaulich, warum oben und unten vertauscht werden;
+  die eigentliche Bildumkehr folgt aber aus der Abbildung durch das ganze System, nicht aus
+  diesem Punkt allein. In der Zeichnung ist die Blende der Übersicht halber in die Mitte des
+  Gruppenpakets gesetzt; wo sie wirklich sitzt, ist bei keinem dieser Objektive veröffentlicht.
+  Rechts der Pupille bleibt die Darstellung schematisch, weil der Sensor nicht im wahren Abstand
+  steht: Bei Fokus auf unendlich liegt er eine Brennweite hinter der bildseitigen Hauptebene –
+  beim 14er also 14 mm, beim 300er 300 mm. In einem gemeinsamen Maßstab würden die kurzen
+  Brennweiten zu einem Strich zusammenfallen.</p>
+  <p>Die drei farbigen Punkte liegen immer innerhalb dieses Feldes und wandern mit ihm. Bei einem
+  Weitwinkel spreizen sie weit auseinander, bei einem Tele rücken sie eng zusammen – das ist
+  genau der Unterschied, den man durch den Sucher sieht.</p>
+  <p>Damit wird auch verständlich, warum Weitwinkel so große Frontlinsen brauchen. Der farbige
+  Kegel zeigt nur die Bündel nahe der Bildmitte; die machen bei kurzen Brennweiten einen kleinen
+  Teil der Frontlinse aus – das Minolta 17-35 mm bei f/2,8 hat sechs Millimeter Eintrittspupille
+  in einem 77er-Gewinde. Das übrige Glas ist trotzdem nicht überflüssig: Es trägt die schräg
+  einfallenden Bündel der Bildränder. In der Tabelle stehen deshalb beide Zahlen, <b>axiales
+  Bündel</b> für die Mitte und <b>mit Randstrahlen</b> für den grob geschätzten benötigten
+  Durchmesser. Am kurzen Ende des 17-35 sind das rund hundert Prozent, bei 35 mm nur noch gut die
+  Hälfte: In diesem Modell bestimmt vor allem das weitwinklige Zoomende, wie groß die
+  Frontöffnung sein muss.</p>
+
+  <h2>Was das Feld verändert und was nicht</h2>
+  <p><b>Die Brennweite</b> ist der Haupthebel: Vom Walimex 14 mm an Vollformat bis zum Tamron bei
+  300 mm reicht die Spanne von 114 auf 8 Grad.</p>
+  <p><b>Das Sensorformat</b> ebenso. Dieselbe Optik sieht an APS-C deutlich weniger als an
+  Vollformat, weil der kleinere Sensor nur den mittleren Ausschnitt des Bildkreises benutzt.
+  Umschalten genügt, das Feld springt sichtbar.</p>
+  <p><b>Die Entfernung</b> wirkt schwach, aber real: Beim Fokussieren in die Nähe wächst die
+  Bildweite, und das Feld wird enger. Der angezeigte Wert gilt für eine <em>ideale
+  Auszugsfokussierung</em>, bei der das ganze Objektiv nach vorn fährt. Die tatsächliche
+  Fokusatmung eines konkreten Objektivs kann davon deutlich abweichen, besonders bei
+  Innenfokussierung – sie lässt sich nur messen, nicht aus den Katalogdaten errechnen.</p>
+  <p><b>Die Blende</b> ändert am Bildwinkel dagegen gar nichts. Sie macht nur den Kegel dünner,
+  nicht das Feld enger – deshalb bleibt der graue Bereich stehen, während der farbige schrumpft.</p>
+
+  <h2>Warum das Bild auf dem Kopf steht</h2>
+  <p>Der <span class="k">Motivpunkt</span> liegt auf der optischen Achse, also landet auch sein
+  Bildpunkt auf der Achse – mittig auf dem Sensor. Die beiden anderen liegen daneben, und ihre
+  Bilder wandern auf die jeweils <em>andere</em> Seite: Der Hintergrundpunkt oben wird unten
+  abgebildet, der Vordergrundpunkt unten oben.</p>
+
+  <h2>Drei Entfernungen, drei Schicksale</h2>
+  <p><span class="k">Scharf gestellt.</span> Im dargestellten Idealmodell treffen sich die
+  Strahlen eines fokussierten Objektpunkts genau in der Sensorebene – unabhängig davon, wie weit
+  die Blende offen ist. Ein reales Objektiv kommt dem nahe, erreicht es aber nie ganz.</p>
+  <p><span class="v">Weiter weg.</span> Ferneres wird näher an der Linse abgebildet. Das Bündel
+  kreuzt sich schon vor dem Sensor und läuft danach wieder auseinander – angekommen ist keine
+  Spitze, sondern eine Scheibe.</p>
+  <p><span class="t">Näher dran.</span> Umgekehrt: Näheres wird weiter hinten abgebildet. Das
+  Bündel wäre erst hinter dem Sensor fertig; gestrichelt ist angedeutet, wo es scharf würde.
+  Bei gleichem Abstand verwischt der Vordergrund immer stärker als der Hintergrund – die
+  Schärfentiefe ist nicht symmetrisch.</p>
+
+  <h2>Die drei Vergleiche, die sich lohnen</h2>
+  <p><b>Gleiche Blendenzahl, andere Brennweite.</b> Walimex 14 mm und Sonnar 135 mm, beide bei
+  f/2,8 auf 10 Meter. Fünf Millimeter Pupille gegen achtundvierzig. Dieselbe Zahl, fast der
+  zehnfache Durchmesser – deshalb ist beim Weitwinkel alles scharf und beim Tele ein Handbreit.</p>
+  <p><b>Gleiche Brennweite, andere Blende.</b> Minolta MD 50 mm bei f/2 gegen Sony FE 50 mm Makro
+  bei f/2,8. Das ist eine volle Blendenstufe: 25 gegen 18 Millimeter Pupille, die doppelte
+  Öffnungsfläche – und entsprechend anderes Bokeh bei identischem Bildausschnitt.</p>
+  <p><b>Zoom am kurzen und am langen Ende.</b> Schieb das 24-240 durch: Der Tubus fährt aus,
+  die Offenblende rutscht stufenweise von f/3,5 auf f/6,3, und die Pupille wächst trotzdem von
+  sieben auf achtunddreißig Millimeter. Lichtschwächer und freistellungsstärker zugleich.</p>
+
+  <h2>Am Objektiv von Hand</h2>
+  <p>Die Ansicht neben dem Regler zeigt die Blende von vorn, mit der richtigen Lamellenzahl des
+  gewählten Objektivs – sechs beim Sonnar, sieben bei den meisten Sonys, neun beim Tamron und beim
+  Sigma, elf bei den beiden GM. Offen ist die Öffnung nahezu rund, abgeblendet nimmt sie die Form
+  der Lamellen an. Am besten sieht man das an den Lichtpunkten im Hintergrund: Sie bilden die
+  Blendenöffnung selbst ab.</p>
+
+  <h2>Was dieses Modell kann und was nicht</h2>
+  <p>Diese Seite rechnet jedes Objektiv so, als wäre es eine einzige dünne Linse mit fester
+  Brennweite. Das ist die Rechnung, die auch in jedem Lehrbuch steht, und sie ist erstaunlich
+  gut – solange man sich nicht zu nah ans Motiv begibt. Weil die Seite aber echte Objektive beim
+  Namen nennt, ist es fair zu sagen, wo dieses Modell an seine Grenzen kommt. Fünf Punkte sind
+  dabei wichtig.</p>
+
+  <p><b>Erstens: Ein Objektiv ist keine dünne Linse.</b> In einem Sonnar stecken fünf Linsen,
+  im Tamron neunzehn. Bei normalen Entfernungen verhält sich ein solches Paket fast genau wie
+  eine einzelne Linse – deshalb funktioniert die Rechnung dort gut. Beim Fokussieren in den
+  Nahbereich stimmt das nicht mehr: Moderne Objektive verschieben dabei einzelne Gruppen
+  gegeneinander und ändern dadurch ihre Brennweite. Das Sony 50-mm-Makro erreicht deshalb
+  einen Abbildungsmaßstab von 1:1 schon bei 16 Zentimetern, während die Dünnlinsenrechnung
+  dafür rund 20 Zentimeter bräuchte. Unterhalb der zehnfachen Brennweite erscheint deshalb
+  ein Warnhinweis.</p>
+
+  <p><b>Zweitens: Eintrittspupille und Blende sind zwei verschiedene Dinge.</b> Die Blende ist
+  ein Bauteil aus Metalllamellen, mitten im Objektiv. Die Eintrittspupille ist das, was man
+  sieht, wenn man von vorn hineinschaut – nämlich das Bild dieser Lamellen, vergrößert oder
+  verkleinert durch die Linsen davor. Nur wenn vor der Blende keine Linse säße, lägen beide am
+  selben Ort. In Wirklichkeit liegt die Pupille bei Weitwinkeln oft weit vor der Blende, bei
+  Teleobjektiven dahinter. Für die Rechnung zählt immer die Pupille: Brennweite geteilt durch
+  Blendenzahl ergibt ihren Durchmesser, nicht den der Lamellenöffnung.</p>
+
+  <p><b>Drittens: Das Filtergewinde ist nicht die Frontlinse.</b> Der Durchmesser des Objektivs
+  in der Zeichnung ist das Filtergewinde, weil nur das in jedem Datenblatt steht. Die Frontlinse
+  selbst ist etwas kleiner, weil das Gewinde außen um sie herum läuft. Die Prozentangaben zur
+  Ausnutzung sind deshalb Größenvergleiche, keine Messungen – sie zeigen richtig, dass ein
+  Weitwinkel bei Offenblende fast sein ganzes Glas braucht und ein abgeblendetes Tele nur einen
+  Bruchteil, aber die genaue Zahl sollte man nicht auf das Prozent nehmen.</p>
+
+  <p><b>Viertens: Die Fokusatmung ist hier ein Idealfall.</b> Die Seite nimmt an, dass beim
+  Fokussieren das ganze Objektiv nach vorn fährt – so war es bei alten Objektiven wie dem
+  Sonnar oder dem Minolta. Viele neuere Konstruktionen bewegen stattdessen nur eine innere
+  Gruppe und atmen dann völlig anders, manche kaum, manche sehr stark. Der angezeigte Wert
+  zeigt also die Richtung des Effekts, nicht den Messwert des konkreten Objektivs.</p>
+
+  <p><b>Fünftens: Die Zeichnung kann nicht überall maßstäblich sein.</b> Links von der
+  Eintrittspupille stimmt der Winkel, dort sind Höhe und Breite gleich skaliert. Rechts davon
+  geht das nicht mehr: Der Sensor sitzt bei Unendlich eine Brennweite hinter der Linse, also
+  beim 14er vierzehn Millimeter und beim 300er dreihundert. Beides im selben Bild, und die
+  kurzen Brennweiten würden zu einem Strich. Also ist die Bildseite gestaucht – die Zahlen in
+  der Tabelle sind davon nicht betroffen.</p>
+
+  <p>Nichts davon macht die Seite unbrauchbar. Für alles, was man draußen tatsächlich entscheidet
+  – welche Blende, welche Brennweite, wie viel Schärfentiefe bleibt, wie stark der Hintergrund
+  verschwimmt – liegt sie bei normalen Aufnahmeentfernungen richtig. Man sollte nur wissen, dass
+  sie ein Modell zeigt und keine Konstruktionszeichnung.</p>
+</section>
+
+<section class="part" id="methode">
+  <p class="eyebrow">Methode, Grenzen, Haftung</p>
+  <h2 style="font-size:24px;margin-top:0">Was hier gerechnet wird und was nicht</h2>
+
+  <h3>Teil 1: der Strahldurchgang</h3>
+  <p>F&uuml;r jede der 36 Fl&auml;chen sind Kr&uuml;mmungsradius, Dicke und Brechzahl
+  bekannt. Ein Strahl wird als Gerade angesetzt, mit der Kugelfl&auml;che geschnitten,
+  an der Fl&auml;chennormalen nach dem Brechungsgesetz gebrochen &ndash; und das
+  36-mal hintereinander. Als Probe wird die Brennweite aus dem fertigen Strahlengang
+  zur&uuml;ckgerechnet; sie trifft die im Patent angegebene auf 0,012&nbsp;Prozent.</p>
+  <p>Nicht gezeigt sind: die asph&auml;rischen Fl&auml;chen als solche &ndash; sie sind
+  hier als reine Kugelfl&auml;chen gezeichnet, die Abweichung l&auml;ge bei
+  Hundertstelmillimetern und w&auml;re unsichtbar; die Fassung, der Bildstabilisator und
+  der Fokusmotor; die Farbfehler, denn gerechnet ist f&uuml;r eine einzige Wellenl&auml;nge;
+  und die Scharfstellung, denn gerechnet ist f&uuml;r unendliche Entfernung. Die freien
+  &Ouml;ffnungen sind Obergrenzen aus der Glasgeometrie, nicht die gefassten Durchmesser.
+  Zwischenstellungen des Zooms sind interpoliert; exakt sind 50, 150 und 300&nbsp;mm.</p>
+
+  <h3>Teil 2: das Modell</h3>
+    <p><b>Herstellerangaben:</b> Brennweite, Blendenbereich, Linsen- und Gruppenzahl,
+    Lamellenzahl, Naheinstellgrenze, Filtergewinde, Gewicht und Baulänge. Bei den Zooms folgt die
+    Offenblende dokumentierten Stufen; wo keine Quelle den Umschaltpunkt nennt, wird linear
+    interpoliert und der Wert mit ≈ gekennzeichnet.</p>
+    <p><b>Daraus gerechnet, als Dünnlinsen-Idealfall:</b> Eintrittspupille, Schärfentiefe,
+    hyperfokale Entfernung, Bildfeld und die Zerstreuungskreise in Millimetern – mit 0,020 mm
+    zulässigem Zerstreuungskreis an APS-C und 0,030 mm an Vollformat. Für normale Entfernungen
+    eine gute Näherung, im Nahbereich nicht; dort erscheint ein Warnhinweis.</p>
+    <p><b>Modellschätzung, nicht belastbar:</b> die Lage der Eintrittspupille und daraus der Wert
+    „mit Randstrahlen“. Beide sind aus Bildwinkel und Filtergewinde erschlossen, unter der
+    Annahme, dass die Frontlinse gerade für das weiteste Feld des Objektivs ausgelegt ist. Das
+    Filtergewinde ist zudem nicht der Durchmesser der Frontlinse, sondern etwas größer – die
+    Prozentwerte sind Größenvergleiche, keine Messungen. Auch die Position der Blende im
+    Gruppenpaket ist gesetzt, nicht belegt.</p>
+    <p><b>Maßstäblich gezeichnet:</b> der Feldwinkel objektseitig, das Filtergewinde als
+    Objektivdurchmesser, die Baulänge nach Herstellerangabe und die Breite des Strahlenbündels
+    nach der Eintrittspupille. Sehr kleine Öffnungen werden mit einer Mindestbreite gezeichnet,
+    sonst wären sie unsichtbar.</p>
+    <p><b>Schematisch:</b> die Anordnung der Linsen im Schnitt. Kein Hersteller veröffentlicht
+    dazu eine Beschreibung – welche Gruppen verkittet sind und wo genau die Blende im Aufbau
+    sitzt, ist für keines dieser Objektive belegt. Gezeichnet wird die belegte <i>Anzahl</i> der
+    Gruppen in neutraler Folge, mit der Blende in der Mitte. Auch die Strahlablenkung an den
+    Gruppen ist nachempfunden. Bei den Zooms ist der Auszug nur dort maßstäblich, wo er belegt
+    ist – beim 24-240 mit 76,4 mm, beim 18-55 mit rund 19 mm, beim Minolta 17-35 mit 8,5 mm;
+    beim Tamron und beim 16-35 GM ist er symbolisch, weil keine Quelle ihn beziffert. Einzelne
+    Vorbehalte je Objektiv stehen in der Notiz unter der Auswahl.</p>
+    <p>Quellen: Herstellerangaben von Sony, Tamron, Sigma, Samyang und Canon; ergänzend
+    digitalkamera.de, OpticalLimits, LensTip, LENS-DB, mhohner.de, Dyxum, allphotolenses.com,
+    photoreview.com.au, Imaging Resource und Kamerastore.</p>
+
+  <div class="disc">
+    <h3>Haftungsausschluss</h3>
+    <p>Diese Seite ist ein Schulprojekt und dient dem Verst&auml;ndnis. Sie ersetzt kein
+    Lehrbuch, keine Messung und keine Herstellerangabe. Trotz sorgf&auml;ltiger Arbeit
+    kann sie Fehler enthalten; f&uuml;r Richtigkeit und Vollst&auml;ndigkeit wird keine
+    Gew&auml;hr &uuml;bernommen, und eine Haftung f&uuml;r Sch&auml;den aus der Nutzung
+    ist ausgeschlossen. Wer auf die Zahlen hin etwas kauft oder plant, pr&uuml;fe sie bitte
+    selbst nach.</p>
+    <p>Wo etwas nicht belegt ist, steht das dabei. Gesch&auml;tzte Werte sind als
+    Sch&auml;tzung gekennzeichnet, interpolierte als interpoliert. Nichts auf dieser Seite
+    ist aus einer Zeichnung abgegriffen oder erfunden.</p>
+    <p>Marken- und Typenbezeichnungen dienen allein der Beschreibung. Es besteht keine
+    Verbindung zu den genannten Herstellern, und diese Seite wird von niemandem
+    gesponsert. Die verwendeten Konstruktionsdaten stammen aus einer ver&ouml;ffentlichten
+    Patentanmeldung, die jedermann frei einsehen kann.</p>
+    <p>Externe Verweise wurden bei der Aufnahme gepr&uuml;ft. Auf die Inhalte fremder
+    Seiten besteht kein Einfluss; f&uuml;r sie haften deren Betreiber.</p>
+  </div>
+
+  <h3>Quellen</h3>
+  <p><b>Teil 1:</b> JP&nbsp;2024-120449&nbsp;A, Tamron Co.&nbsp;Ltd., Ausf&uuml;hrungsbeispiel&nbsp;1
+  &ndash; 19 Linsen, davon zehn paarweise zu f&uuml;nf Kittgliedern verbunden. Es handelt
+  sich um die ver&ouml;ffentlichte Patentanmeldung zum 50-300&nbsp;mm; sie beschreibt die
+  Rechnung, nicht zwangsl&auml;ufig die letzte Serienfassung.</p>
+  <p><b>Teil 2:</b> Herstellerangaben von Sony, Tamron, Sigma, Samyang und Canon;
+  erg&auml;nzend digitalkamera.de, OpticalLimits, LensTip, LENS-DB, mhohner.de, Dyxum,
+  allphotolenses.com, photoreview.com.au, Imaging Resource und Kamerastore.</p>
+
+  <!-- ===================================================================
+       IMPRESSUM
+       =================================================================== -->
+  <h3>Impressum</h3>
+  <p class="lensnote">Verantwortlich f&uuml;r den Inhalt: Daniel Steinbach,
+  Szenenbildner (Filmarchitektur), A-2391 Kaltenleutgeben, &Ouml;sterreich,
+  <a href="mailto:danielsteinbach@gmx.net">danielsteinbach@gmx.net</a>.
+  Privat und nicht kommerziell. Die Seite l&auml;dt keine fremden Inhalte nach,
+  setzt keine Cookies und wertet nichts aus; sie liegt auf GitHub&nbsp;Pages,
+  das beim Abruf technisch bedingt die IP-Adresse verarbeitet
+  (<a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement" rel="noopener">Datenschutzbestimmungen von GitHub</a>).</p>
+</section>
+
+<footer>
+  <p>Gerechnet und gezeichnet im Browser. Der gesamte Strahlengang in Teil&nbsp;1 wird bei
+  jeder Bewegung des Reglers neu gerechnet &ndash; es sind keine fertigen Bilder hinterlegt.</p>
+</footer>
+</div>
+<script>
+
+(function(){
+  "use strict";
+
+  var SERIES = [1.4,2,2.8,4,5.6,8,11,16,22,32,40];
+  var DISTS  = [0.2,0.3,0.5,1,1.5,2,3,5,8,10,15,20,30,50,100];
+
+  // frontMM = Filtergewinde (Ersatz: Frontdurchmesser) · lenMM = Baulänge · extMM = Zoomauszug
+  var LENSES = [
+   {g:'Sony E / FE', id:'s1635', name:'Sony FE 16-35 mm F2,8 GM', zoom:[16,35], flat:2.8,
+    minAp:22, el:16, gr:13, blades:11, round:true, mfd:0.28, front:82, len:121.6, ext:-8, extApprox:true,
+    cover:'FF', note:'16 Linsen in 13 Gruppen, 11 abgerundete Lamellen, durchgehend f/2,8. 82 mm Filter, 680 g, 121,6 mm. Besonderheit: Das Objektiv ist bei 16 mm am längsten und zieht sich zum langen Ende ein – umgekehrt zum üblichen Verhalten. Der Auszug in Millimetern ist nicht beziffert, hier symbolisch dargestellt.'},
+   {g:'Sony E / FE', id:'s85', name:'Sony FE 85 mm F1,4 GM', f:85, maxAp:1.4, minAp:16,
+    el:11, gr:8, blades:11, round:true, mfd:0.80, front:77, len:107.5, cover:'FF',
+    note:'11 Linsen in 8 Gruppen, 11 abgerundete Lamellen. Mit 60,7 mm bei Offenblende die größte Eintrittspupille dieser Auswahl. Naheinstellgrenze 0,80 m manuell, 0,85 m im AF. 77 mm Filter, 820 g.'},
+   {g:'Sony E / FE', id:'s1018', name:'Sony E 10-18 mm F4 OSS', zoom:[10,18], flat:4,
+    minAp:22, el:10, gr:8, blades:7, round:true, mfd:0.25, front:62, len:63.5, ext:0,
+    cover:'APSC', note:'10 Linsen in 8 Gruppen, 7 abgerundete Lamellen, durchgehend f/4. 62 mm Filter, 225 g. Ein innerer Tubus bewegt sich beim Zoomen; ob die Außenlänge dabei konstant bleibt, ist nicht eindeutig belegt – hier als konstant gezeichnet.'},
+   {g:'Sony E / FE', id:'s1855', name:'Sony E 18-55 mm F3,5-5,6 OSS', zoom:[18,55],
+    ramp:[[18,3.5],[24,4],[35,4.5],[55,5.6]], minRamp:[[18,22],[24,25],[35,25],[55,32]],
+    el:11, gr:9, blades:7, round:true, mfd:0.25, front:49, len:60, ext:19,
+    cover:'APSC', note:'11 Linsen in 9 Gruppen, 7 abgerundete Lamellen. Belegte Stützwerte: f/3,5 bei 18 mm, f/4 bei 24, f/4,5 bei 35, f/5,6 bei 55; die Umschaltpunkte dazwischen sind nicht belegt, die Anzeige nimmt den jeweiligen Stützpunkt als Zonenende. Kleinste Blende wandert von f/22 auf f/32. Rund 19 mm Auszug. 49 mm Filter, 194 g.'},
+   {g:'Sony E / FE', id:'s16', name:'Sony E 16 mm F2,8 Pancake', f:16, maxAp:2.8, minAp:22,
+    el:5, gr:5, blades:7, round:true, mfd:0.24, front:49, len:22.5, cover:'APSC',
+    note:'5 Linsen in 5 Gruppen – daraus folgt zwingend, dass es kein verkittetes Glied gibt, alle Elemente sind luftgetrennt. Eine Asphäre, 7 abgerundete Lamellen, 49 mm Filter, nur 67 g.'},
+   {g:'Sony E / FE', id:'s50m', name:'Sony FE 50 mm F2,8 Macro', f:50, maxAp:2.8, minAp:16,
+    el:8, gr:7, blades:7, round:true, mfd:0.16, front:55, len:71, cover:'FF',
+    note:'8 Linsen in 7 Gruppen, also ein Kittglied; dazu eine Asphäre und ein ED-Element, Positionen nicht belegt. Echter 1:1-Makro, kleinste Blende f/16 – nicht f/22. 55 mm Filter, 236 g.'},
+   {g:'Sony E / FE', id:'s24240', name:'Sony FE 24-240 mm F3,5-6,3 OSS', zoom:[24,240],
+    ramp:[[24,3.5],[35,4],[50,4.5],[70,5],[125,5.6],[240,6.3]], unsure:[101,150],
+    minRamp:[[24,22],[240,40]],
+    el:17, gr:12, blades:7, round:true, mfdRamp:[[24,0.5],[240,0.8]], front:72, len:118.5, ext:76.4,
+    cover:'FF', note:'17 Linsen in 12 Gruppen, fünf Asphären und ein ED-Element. Belegte Stützwerte: f/3,5 bei 24 mm, f/4 bei 35, f/4,5 bei 50, f/5 bei 70, f/5,6 bei 100 und f/6,3 bei 150. Wo genau dazwischen umgeschaltet wird, nennt keine Quelle – hier in der Mitte bei 125 mm angenommen und im unsicheren Bereich mit ≈ gekennzeichnet. Auszug 76,4 mm, belegt. 72 mm Filter, 780 g.'},
+   {g:'Geplant', id:'t50300', name:'Tamron 50-300 mm F4,5-6,3 Di III VC VXD', 
+    zoom:[50,300], ramp:[[70,4.5],[101,5],[181,5.6],[300,6.3]], minRamp:[[50,22],[300,32]],
+    el:19, gr:14, blades:9, round:true, mfdRamp:[[50,0.22],[300,0.9]], front:67, len:150, ext:45, extApprox:true,
+    cover:'FF', note:'19 Linsen in 14 Gruppen, zwei XLD- und zwei LD-Elemente. Offenblende exakt dokumentiert: f/4,5 bis 70 mm, f/5,0 bis 101, f/5,6 bis 181, ab 182 mm f/6,3. 9 abgerundete Lamellen, 67 mm Filter, 665 g, bei 50 mm Halbmakro mit 1:2. Der Auszug ist nicht beziffert, hier symbolisch.'},
+   {g:'Manuell, adaptiert', id:'w14', name:'Walimex pro 14 mm F2,8 ED AS IF UMC', f:14,
+    maxAp:2.8, minAp:22, el:14, gr:10, blades:6, round:null, mfd:0.28, front:87, frontApprox:true,
+    len:96, lenApprox:true, cover:'FF',
+    note:'14 Linsen in 10 Gruppen laut Samyang – LensTip und digitalkamera.de nennen abweichend 12 Gruppen. 6 Lamellen, Rundung nicht belegt. Kein Filtergewinde wegen der vorgewölbten Frontlinse; Frontdurchmesser und Baulänge sind hier genähert, weil nicht belegt. 550 g.'},
+   {g:'Manuell, adaptiert', id:'w24', name:'Walimex pro 24 mm F1,4 ED AS UMC', f:24,
+    maxAp:1.4, minAp:22, el:13, gr:12, blades:8, round:true, mfd:0.25, front:77, len:123.5,
+    cover:'FF', note:'13 Linsen in 12 Gruppen, zwei Asphären, 8 abgerundete Lamellen, 77 mm Filter. Angaben für die Sony-E-Variante: 123,5 mm lang, 590 g. Zum Gewicht widersprechen sich die Quellen: Samyang nennt je nach Bajonett 565 bis 590 g, LensTip und digitalkamera.de dagegen 680 g.'},
+   {g:'Manuell, adaptiert', id:'md50', name:'Minolta MD 50 mm F2', f:50, maxAp:2, minAp:22,
+    el:6, gr:5, blades:6, round:false, mfd:0.45, front:49, len:36, cover:'FF',
+    note:'6 Linsen in 5 Gruppen, eingeordnet als Doppel-Gauß-Derivat – also genau ein Kittglied, dessen Position nicht dokumentiert ist. 6 gerade, nicht abgerundete Lamellen. Angaben für die dritte Version ab 1981: 49 mm Filter, 150 g. Die ältere MD Rokkor von 1977 hat 55 mm Filter, 230 g und 0,50 m Nahgrenze.'},
+   {g:'Manuell, adaptiert', id:'son135', name:'Carl Zeiss Sonnar T* 2,8/135 (C/Y)', f:135,
+    maxAp:2.8, minAp:22, el:5, gr:4, blades:6, round:false, mfd:1.6, front:55, len:93,
+    cover:'FF', note:'5 Linsen in 4 Gruppen, also genau ein verkittetes Glied – an welcher Stelle, ist nicht veröffentlicht. 6 Lamellen, 55 mm Filter, 585 g, Naheinstellgrenze 1,6 m, eingebaute Gegenlichtblende.'},
+   {g:'Autofokus, adaptiert', id:'sig70', name:'Sigma 70 mm F2,8 EX DG Macro (A-Mount)', f:70,
+    maxAp:2.8, minAp:22, el:10, gr:9, blades:9, round:null, mfd:0.257, front:62, len:95,
+    cover:'FF', note:'10 Linsen in 9 Gruppen mit drei SLD-Elementen, 9 Lamellen – ob abgerundet, gibt Sigma nicht an. Echter 1:1-Makro. Der Tubus fährt beim Fokussieren von 95 auf 147 mm aus; dpreview nennt das System widersprüchlich „internal focusing". 62 mm Filter, 525 g. A-Bajonett, an spiegellosen Kameras nur mit Adapter.'},
+   {g:'Autofokus, adaptiert', id:'km1735', name:'Konica Minolta AF 17-35 mm F2,8-4 (D)',
+    zoom:[17,35], ramp:[[17,2.8],[35,4]], rampApprox:true, minRamp:[[17,22],[35,32]],
+    el:14, gr:11, blades:7, round:true, mfd:0.30, front:77, len:88.5, ext:8.5,
+    cover:'FF', note:'14 Linsen in 11 Gruppen, 7 abgerundete Lamellen, 77 mm Filter, 430 g. Bei welcher Brennweite die Offenblende von f/2,8 auf f/4 wechselt, gibt keine Quelle an – hier linear angenommen. Auszug 8,5 mm, belegt. A-Bajonett, an spiegellosen Kameras nur mit Adapter.'},
+   {g:'Autofokus, adaptiert', id:'nik2880', name:'Nikkor AF 28-80 mm F3,5-5,6 D', zoom:[28,80],
+    ramp:[[28,3.5],[80,5.6]], rampApprox:true, minRamp:[[28,22],[80,22]],
+    el:8, gr:8, blades:7, round:null, mfd:0.4, front:58, len:87.5, ext:20, extApprox:true,
+    cover:'FF', note:'Es gibt zwei Bauversionen. Hier die spätere: 8 Linsen in 8 Gruppen, 0,40 m Nahgrenze, 87,5 mm, 265 g. Die frühere hat 7 Linsen in 7 Gruppen und 0,50 m – die Quellen widersprechen sich allerdings auch innerhalb der Versionen. Blendenverlauf und Auszug sind nicht belegt, hier angenommen. 58 mm Filter. Nikon-F-Bajonett, an spiegellosen Kameras nur mit Adapter und dann rein manuell.'},
+   {g:'Autofokus, adaptiert', id:'ef24', name:'Canon EF 24 mm F2,8 (ohne IS)', f:24,
+    maxAp:2.8, minAp:22, el:10, gr:10, blades:6, round:false, mfd:0.25, front:58, len:48.5,
+    cover:'FF', note:'10 Linsen in 10 Gruppen – also kein einziges Kittglied. 6 Lamellen, für eine kreisförmige Blende gibt es keine Quelle, bei dieser Baureihe ist sie gerade. 58 mm Filter, 270 g. Canon-EF-Bajonett, an spiegellosen Kameras nur mit Adapter; passende Adapter übertragen den Autofokus.'}
+  ];
+
+  var BODIES = {
+    apsc:{ label:'APS-C', coc:0.020, crop:1.5 },
+    ff:  { label:'Vollformat', coc:0.030, crop:1.0 }
+  };
+
+  var st = { lens:null, body:'apsc', foc:135, dist:10, apIdx:0 };
+
+  function de(n,d){ return n.toFixed(d).replace('.',','); }
+  function stepAt(ramp,f){ for(var i=0;i<ramp.length;i++) if(f<=ramp[i][0]) return ramp[i][1];
+                           return ramp[ramp.length-1][1]; }
+  function lerpAt(ramp,f){
+    for(var i=0;i<ramp.length-1;i++){
+      if(f<=ramp[i+1][0]){
+        var t=(f-ramp[i][0])/(ramp[i+1][0]-ramp[i][0]);
+        return ramp[i][1]+Math.max(0,Math.min(1,t))*(ramp[i+1][1]-ramp[i][1]);
+      }
+    }
+    return ramp[ramp.length-1][1];
+  }
+  function maxApOf(L,f){
+    if(!L.zoom) return L.maxAp;
+    if(L.flat) return L.flat;
+    return L.rampApprox ? lerpAt(L.ramp,f) : stepAt(L.ramp,f);
+  }
+  function minApOf(L,f){ return L.zoom && L.minRamp ? Math.round(lerpAt(L.minRamp,f)) : L.minAp; }
+  function mfdOf(L,f){ return L.mfdRamp ? lerpAt(L.mfdRamp,f) : L.mfd; }
+  function distList(L,f){
+    var m=mfdOf(L,f), out=[Math.round(m*100)/100];
+    DISTS.forEach(function(d){ if(d > m*1.12) out.push(d); });
+    return out;
+  }
+  function lenOf(L,f){
+    if(!L.zoom || !L.ext) return L.len;
+    var t=(f-L.zoom[0])/(L.zoom[1]-L.zoom[0]);
+    return L.len + L.ext*t;
+  }
+  function stopsOf(L,f){
+    var mx=maxApOf(L,f), mn=minApOf(L,f), out=[Math.round(mx*10)/10];
+    SERIES.forEach(function(s){ if(s>mx+0.05 && s<=mn+0.01) out.push(s); });
+    return out;
+  }
+  function fmtAp(N){ return 'f/'+de(N, N<10?1:0); }
+  function fmtDist(m){ return m>=1 ? de(m, m%1?1:0)+' m' : Math.round(m*100)+' cm'; }
+
+  // Halbe Bilddiagonale des Formats, für das die Optik gerechnet ist
+  var DIAG={FF:21.63, APSC:14.10};
+
+  // Abstand Frontscheitel → Eintrittspupille, erschlossen aus der Annahme,
+  // dass die Frontlinse gerade für das weiteste Feld dieser Optik ausgelegt ist.
+  function pupilDist(L){
+    var wf   = L.zoom ? L.zoom[0] : L.f;
+    var yMax = DIAG[L.cover];
+    var tanW = yMax / wf;
+    var frontR = L.front/2;
+    var pupR   = wf / maxApOf(L, wf) / 2;
+    return Math.max(3, Math.min(L.len*0.8, (frontR - pupR)/tanW));
+  }
+
+  function optics(){
+    var L=st.lens, B=BODIES[st.body], f=st.foc;
+    var N=stopsOf(L,f)[st.apIdx], c=B.coc, s=st.dist*1000;
+    var H=f*f/(N*c)+f;
+    var near=s*(H-f)/(H+s-2*f), far=(s>=H)?Infinity:s*(H-f)/(H-s);
+    function blur(s2){ return (f*f/N)*Math.abs(s2-s)/(s2*(s-f)); }
+
+    // Bildwinkel am tatsächlich benutzten Sensor.
+    // Bei endlicher Entfernung fährt die Optik aus, die Bildweite wächst um den
+    // Abbildungsmaßstab – das Feld wird dadurch etwas enger (Fokusatmung).
+    var yBody = st.body==='apsc' ? DIAG.APSC : DIAG.FF;
+    if(L.cover==='APSC') yBody = DIAG.APSC;              // deckt nichts Größeres ab
+    var mag = f/Math.max(1, s-f);
+    var angDeg  = 2*Math.atan(yBody/(f*(1+mag)))*180/Math.PI;
+    var angInf  = 2*Math.atan(yBody/f)*180/Math.PI;
+
+    // Randstrahlen: Versatz des Bündels an der Frontlinse
+    var dEff  = pupilDist(L);
+    var yOwn  = DIAG[L.cover];
+    var delta = Math.min(dEff * (yOwn/f), L.front/2 - f/N/2);
+    var usedR = Math.max(f/N/2, delta + f/N/2);
+
+    return {L:L,B:B,f:f,N:N,c:c,s:s,H:H,near:near,far:far,
+            s2n:s*0.8,s2f:s*1.2,bV:blur(s*0.8),bH:blur(s*1.2),
+            pupil:f/N, stops:stopsOf(L,f), lenMM:lenOf(L,f),
+            ang:angDeg, angInf:angInf, dEff:dEff,
+            delta:Math.max(0,delta), usedMM:2*usedR};
+  }
+
+  // ---- Zeichnung -----------------------------------------------------------
+  var AX=210, SX=800, XREAR=626, SVGNS='http://www.w3.org/2000/svg';
+  var K=2;            // px je Millimeter für Durchmesser
+  var KL=1.15;        // px je Millimeter für Baulänge
+
+  function lensPath(cx,w,H,conv){
+    var b=w/2;
+    if(conv) return 'M '+cx+' '+(AX-H)+' C '+(cx+b)+' '+(AX-H*0.5)+', '+(cx+b)+' '+(AX+H*0.5)+', '+
+      cx+' '+(AX+H)+' C '+(cx-b)+' '+(AX+H*0.5)+', '+(cx-b)+' '+(AX-H*0.5)+', '+cx+' '+(AX-H)+' Z';
+    return 'M '+(cx-b)+' '+(AX-H)+' C '+(cx+b*0.5)+' '+(AX-H*0.5)+', '+(cx+b*0.5)+' '+(AX+H*0.5)+', '+
+      (cx-b)+' '+(AX+H)+' L '+(cx+b)+' '+(AX+H)+' C '+(cx-b*0.5)+' '+(AX+H*0.5)+', '+
+      (cx-b*0.5)+' '+(AX-H*0.5)+', '+(cx+b)+' '+(AX-H)+' Z';
+  }
+  function pts(a){ return a.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' '); }
+
+  function draw(o){
+    var L=o.L;
+    var frontH = Math.max(20, Math.min(94, (L.front/2)*K));
+    var rearH  = Math.max(16, Math.min(72, frontH*0.62));
+    var beamH  = Math.min((o.pupil/2)*K, (frontH-5)/1.24);
+    beamH = Math.max(1.8, beamH);
+
+    var lenPx = Math.max(38, Math.min(292, o.lenMM*KL));
+    var xFront = XREAR - lenPx;
+
+    // Tubus
+    var bar=document.getElementById('barrel');
+    while(bar.firstChild) bar.removeChild(bar.firstChild);
+    function ln(x1,y1,x2,y2){
+      var e=document.createElementNS(SVGNS,'line');
+      e.setAttribute('x1',x1.toFixed(1)); e.setAttribute('y1',y1.toFixed(1));
+      e.setAttribute('x2',x2.toFixed(1)); e.setAttribute('y2',y2.toFixed(1));
+      bar.appendChild(e);
+    }
+    var bt=AX-frontH-9, bb=AX+frontH+9;
+    ln(xFront,bt,XREAR,bt); ln(xFront,bb,XREAR,bb);
+    ln(xFront,bt,xFront,bb); ln(XREAR,bt,XREAR,bb);
+    ln(XREAR,AX-rearH-6,XREAR+10,AX-rearH-6);
+    ln(XREAR,AX+rearH+6,XREAR+10,AX+rearH+6);
+
+    // Gruppen
+    var g=document.getElementById('groups');
+    while(g.firstChild) g.removeChild(g.firstChild);
+    var n=L.gr, gA=xFront+11, gB=XREAR-15;
+    var step = n>1 ? (gB-gA)/(n-1) : 0;
+    var w = Math.max(3.5, Math.min(16, (gB-gA)/(n*2.2)));
+    var hs = n>9 ? 0.80 : (n>6 ? 0.90 : 1);
+    var xs=[];
+    for(var i=0;i<n;i++){
+      var x=gA+step*i; xs.push(x);
+      var H=(frontH+(rearH-frontH)*(n>1?i/(n-1):0))*hs;
+      var p=document.createElementNS(SVGNS,'path');
+      p.setAttribute('d',lensPath(x,w,H,i<n-1));
+      g.appendChild(p);
+    }
+    var si=Math.floor(n/2);
+    var stopX = n>1 ? (xs[si]+xs[Math.min(n-1,si+1)])/2 : xs[0];
+    var stopH = (frontH+(rearH-frontH)*(n>1?si/(n-1):0))*hs;
+
+    // Lamellen
+    var tb=document.getElementById('bladeTop'), bbl=document.getElementById('bladeBot');
+    tb.setAttribute('x',(stopX-7).toFixed(1)); bbl.setAttribute('x',(stopX-7).toFixed(1));
+    var bl=Math.min(30, Math.max(10, stopH+4-beamH));
+    tb.setAttribute('y',(AX-beamH-bl).toFixed(1));
+    tb.setAttribute('height',bl.toFixed(1));
+    bbl.setAttribute('y',(AX+beamH).toFixed(1));
+    bbl.setAttribute('height',bl.toFixed(1));
+    document.getElementById('bladeLab').setAttribute('x',stopX.toFixed(1));
+    document.getElementById('bladeLab').setAttribute('y',(AX-frontH-11).toFixed(1));
+
+    var al=document.getElementById('apLabel');
+    al.setAttribute('x',stopX.toFixed(1));
+    al.setAttribute('y',(AX-frontH-27).toFixed(1));
+    al.setAttribute('text-anchor','middle');
+    al.textContent = 'Pupille '+de(o.pupil,1)+' mm';
+
+    var fl=document.getElementById('frontLabel');
+    fl.setAttribute('x','34');
+    fl.setAttribute('y','399');
+    fl.setAttribute('text-anchor','start');
+    fl.textContent = (L.frontApprox?'~':'')+L.front+' mm Filter  ·  '+
+                     (L.lenApprox?'~':'')+Math.round(o.lenMM)+' mm lang  ·  '+
+                     L.el+' Linsen in '+L.gr+' Gruppen, Anordnung schematisch';
+    document.getElementById('groupCount').textContent='';
+
+    // Zerstreuungskreise aus den gerechneten Millimetern
+    function px(mm){ return Math.max(1.6, Math.min(56, mm*300)); }
+    var dV=px(o.bV), dH=px(o.bH);
+    var xLast=xs[n-1];
+
+    // ---- Bildfeld: objektseitig im echten Winkel ---------------------------
+    // Scheitel in der Eintrittspupille, alle Hauptstrahlen laufen dort durch.
+    // Links von der Pupille sind x und y gleich skaliert – der gezeichnete
+    // Öffnungswinkel ist also der tatsächliche. Rechts davon bleibt es
+    // schematisch, weil der Sensor nicht im wahren Abstand steht.
+    var XL = 30, YT = 96, YB = 324, HMAXF = Math.min(AX-YT, YB-AX);
+    var tanH = Math.tan(o.ang/2*Math.PI/180);
+    var SENS = 102;
+
+    // Das Licht tritt über den genutzten Frontlinsenbereich ein, nicht durch
+    // einen Punkt. Äußere Begrenzung: Linie im echten Feldwinkel, angesetzt
+    // am genutzten Frontradius. Objektseitig ist x wie y mit K skaliert.
+    var usedR = Math.min(frontH, (o.usedMM/2)*K);
+    var deltaPx = Math.max(0, usedR - beamH);
+    var xP = Math.min(XREAR-12, xFront + (tanH>1e-6 ? deltaPx/tanH : 0));
+
+    var xKnee = xFront - (HMAXF-usedR)/tanH;     // wo das Feld den Bildrand erreicht
+    function outerAt(x){ return Math.min(HMAXF, usedR + (xFront-x)*tanH); }
+
+    var poly;
+    if(xKnee > XL){
+      poly=[[xFront,AX-usedR],[xKnee,AX-HMAXF],[XL,AX-HMAXF],
+            [XL,AX+HMAXF],[xKnee,AX+HMAXF],[xFront,AX+usedR]];
+    } else {
+      poly=[[xFront,AX-usedR],[XL,AX-outerAt(XL)],[XL,AX+outerAt(XL)],[xFront,AX+usedR]];
+    }
+    document.getElementById('fieldObj').setAttribute('points',pts(poly));
+    document.getElementById('fieldLens').setAttribute('points',
+      pts([[xFront,AX-usedR],[stopX,AX-beamH],[stopX,AX+beamH],[xFront,AX+usedR]]));
+    document.getElementById('fieldImg').setAttribute('points',
+      pts([[stopX,AX-beamH],[SX,AX+SENS],[SX,AX-SENS],[stopX,AX+beamH]]));
+
+    var xEnd=Math.max(XL,xKnee);
+    var chiefEnd = AX - deltaPx - (xFront-xEnd)*tanH;
+    document.getElementById('chief1').setAttribute('points',
+      pts([[xEnd,chiefEnd],[xFront,AX-deltaPx],[xP,AX],[SX,AX+SENS]]));
+    document.getElementById('chief2').setAttribute('points',
+      pts([[xEnd,2*AX-chiefEnd],[xFront,AX+deltaPx],[xP,AX],[SX,AX-SENS]]));
+
+    // Winkelbogen am Scheitel der Hauptstrahlen, damit die Gradzahl ablesbar ist
+    // Bogen so groß wählen, dass er links vor der Frontlinse liegt und lesbar bleibt
+    var rArc=Math.max(40, Math.min((xP-XL)*0.55, xP-xFront+46)), arc=[], th=o.ang/2*Math.PI/180;
+    for(var a=-th;a<=th+1e-6;a+=th/16) arc.push([xP-rArc*Math.cos(a), AX+rArc*Math.sin(a)]);
+    document.getElementById('arcField').setAttribute('points',pts(arc));
+    var lfd=document.getElementById('labField');
+    lfd.setAttribute('x',(xP-rArc*Math.cos(th*0.55)-6).toFixed(1));
+    lfd.setAttribute('y',(AX-rArc*Math.sin(th*0.55)-7).toFixed(1));
+    lfd.setAttribute('text-anchor','end');
+    lfd.textContent=de(o.ang,1)+'°';
+
+    // Die drei Objektpunkte liegen im Feld und wandern mit ihm
+    function inner(x){ return Math.min(HMAXF-8, Math.max(0,(xFront-x)*tanH) + usedR*0.5); }
+    var SRC={H:[62, AX-0.78*inner(62)], M:[150,AX], V:[252, AX+0.78*inner(252)]};
+    [['H',SRC.H,-1],['M',SRC.M,1],['V',SRC.V,1]].forEach(function(q){
+      var id=q[0], p=q[1], dir=q[2];
+      document.getElementById('pt'+id).setAttribute('cy',p[1].toFixed(1));
+      var base = (id==='M') ? AX+0.78*inner(150)+22 : p[1]+dir*16;
+      document.getElementById('n'+id).setAttribute('y',base.toFixed(1));
+      document.getElementById('d'+id).setAttribute('y',(base+dir*15).toFixed(1));
+    });
+
+    var CFG=[{id:'H',src:SRC.H,cy:262,d:dH,cross:true},
+             {id:'V',src:SRC.V,cy:158,d:dV,cross:false},
+             {id:'M',src:SRC.M,cy:210,d:0,cross:false}];
+
+    function chain(src,sign){
+      var out=[src.slice()];
+      xs.forEach(function(x){
+        var fac = (x<=stopX)
+          ? 1.24 + (1.00-1.24)*(x-xs[0])/Math.max(1,stopX-xs[0])
+          : 1.00 + (0.90-1.00)*(x-stopX)/Math.max(1,xLast-stopX);
+        out.push([x, AX+sign*fac*beamH]);
+      });
+      return out;
+    }
+
+    CFG.forEach(function(b){
+      var top=chain(b.src,-1), bot=chain(b.src,+1);
+      var sT=b.cross? b.cy+b.d/2 : b.cy-b.d/2;
+      var sB=b.cross? b.cy-b.d/2 : b.cy+b.d/2;
+      document.getElementById('ray'+b.id+'1').setAttribute('points',pts(top.concat([[SX,sT]])));
+      document.getElementById('ray'+b.id+'2').setAttribute('points',pts(bot.concat([[SX,sB]])));
+
+      var y1=top[top.length-1][1], y2=bot[bot.length-1][1];
+      var m1=(sT-y1)/(SX-xLast), m2=(sB-y2)/(SX-xLast);
+      var tail;
+      if(b.cross){
+        var xc=xLast+(y2-y1)/(m1-m2);
+        tail=[[xc, y1+m1*(xc-xLast)]];
+      } else tail=[[SX,sT],[SX,sB]];
+      document.getElementById('cone'+b.id).setAttribute('points',
+        pts(top.concat(tail,bot.slice(1).reverse())));
+
+      if(b.id==='V'){
+        var xm=SX+(sB-sT)/(m1-m2), ym=sT+m1*(xm-SX);
+        var ok=isFinite(xm)&&xm>SX&&xm<1500;
+        document.getElementById('ghostV1').setAttribute('points', ok?pts([[SX,sT],[xm,ym]]):'');
+        document.getElementById('ghostV2').setAttribute('points', ok?pts([[SX,sB],[xm,ym]]):'');
+      }
+      if(b.id!=='M'){
+        var el=document.getElementById('coc'+b.id);
+        el.setAttribute('y1',(b.cy-b.d/2).toFixed(1));
+        el.setAttribute('y2',(b.cy+b.d/2).toFixed(1));
+        el.setAttribute('stroke-width',Math.max(3.5,Math.min(9,b.d/4)).toFixed(1));
+      }
+    });
+
+    document.getElementById('labV').textContent =
+      (o.bV<=o.c ? 'Vordergrund scharf' : 'Unschärfe Vordergrund');
+    document.getElementById('labH').textContent =
+      (o.bH<=o.c ? 'Hintergrund scharf' : 'Unschärfe Hintergrund');
+    document.getElementById('dH').textContent = fmtDist(o.s2f/1000);
+    document.getElementById('dM').textContent = fmtDist(o.s/1000)+' – scharf';
+    document.getElementById('dV').textContent = fmtDist(o.s2n/1000);
+    document.getElementById('sensorLab').textContent='Sensor · '+(st.body==='apsc'?'APS-C':'KB');
+  }
+
+  function irisPath(r,n,cf){
+    var v=[],c=[],i,a,am,half=Math.PI/n;
+    for(i=0;i<n;i++){
+      a=-Math.PI/2+i*2*half; am=a+half;
+      v.push([60+r*Math.cos(a),60+r*Math.sin(a)]);
+      c.push([60+r*cf*Math.cos(am),60+r*cf*Math.sin(am)]);
+    }
+    var d='M '+v[0][0].toFixed(2)+' '+v[0][1].toFixed(2);
+    for(i=0;i<n;i++){
+      var nx=v[(i+1)%n];
+      d+=' Q '+c[i][0].toFixed(2)+' '+c[i][1].toFixed(2)+' '+nx[0].toFixed(2)+' '+nx[1].toFixed(2);
+    }
+    return d+' Z';
+  }
+
+  function render(){
+    var L=st.lens, stops=stopsOf(L,st.foc);
+    if(st.apIdx>=stops.length) st.apIdx=stops.length-1;
+    var o=optics();
+
+    var apEl=document.getElementById('ap');
+    apEl.max=stops.length-1; apEl.value=st.apIdx;
+    apEl.setAttribute('aria-valuetext', fmtAp(o.N));
+    document.getElementById('foc').setAttribute('aria-valuetext',
+      Math.round(st.foc)+' Millimeter');
+    var apUnsure = st.apIdx===0 && (L.rampApprox ||
+      (L.unsure && st.foc>=L.unsure[0] && st.foc<=L.unsure[1]));
+    document.getElementById('fnum').textContent=(apUnsure ? '≈ ' : '')+fmtAp(o.N);
+    document.getElementById('apOut').innerHTML=
+      fmtAp(stops[0])+' … '+fmtAp(stops[stops.length-1])+
+      '<span class="dim">  ·  '+stops.length+' Werte, '+
+      de(2*Math.log(stops[stops.length-1]/stops[0])/Math.LN2,0)+' Blendenstufen</span>';
+
+    var t=(o.N-stops[0])/Math.max(0.001,stops[stops.length-1]-stops[0]);
+    var nb=L.blades, full=1/Math.cos(Math.PI/nb);
+    var cf=(L.round===false)?1:full-t*(full-1);
+    document.getElementById('irisPath').setAttribute('d',
+      irisPath(52*(stops[0]/o.N),nb,cf));
+
+    draw(o);
+
+    var sd=Math.log((o.N*o.N)/(stops[0]*stops[0]))/Math.LN2;
+    var light=(stops[0]*stops[0])/(o.N*o.N);
+    var shutter=Math.round(1000/Math.pow(2,sd));
+    function mmToStr(mm){ return mm>=1000?de(mm/1000,2)+' m':de(mm/10,1)+' cm'; }
+
+    var nearFld = o.s < 15*o.f, magN = o.f/Math.max(1,o.s-o.f);
+    document.getElementById('th-pupil').innerHTML = nearFld
+      ? 'Nominale Eintrittspupille<span class="sub">aus Nennbrennweite und Blendenzahl – '+
+        'im Nahbereich nicht die wirksame Öffnung</span>'
+      : 'Eintrittspupille<span class="sub">Brennweite geteilt durch Blendenzahl</span>';
+    document.getElementById('v-pupil').textContent=
+      de(o.pupil,1)+' mm'+(nearFld?' (nominal)':'');
+    document.getElementById('v-fill').textContent=
+      de(100*o.pupil/L.front,0)+' % von '+(L.frontApprox?'~':'')+L.front+' mm';
+    document.getElementById('v-used').textContent=
+      '≈ '+de(Math.min(100,100*o.usedMM/L.front),0)+' % · ≈ '+de(o.usedMM,0)+' mm';
+    var shrink=100*(1-o.ang/o.angInf);
+    document.getElementById('v-ang').textContent=
+      de(o.ang,1)+'°'+(shrink>=0.5 ? '  ·  '+de(shrink,0)+' % enger als ∞' : '');
+    document.getElementById('v-equiv').textContent=
+      Math.round(o.f*o.B.crop)+' mm'+(o.B.crop===1?'':' (KB)');
+    document.getElementById('v-light').textContent=
+      de(light*100, light<0.1?1:0)+' % · '+(sd<0.05?'±0':'−'+de(sd,1))+' Blenden';
+    document.getElementById('v-time').textContent=
+      shutter>=1?'1/'+shutter+' s':de(1/shutter,1)+' s';
+    document.getElementById('v-dofrange').textContent=
+      mmToStr(o.near)+' – '+(isFinite(o.far)?mmToStr(o.far):'∞');
+    document.getElementById('v-doftotal').textContent=
+      isFinite(o.far)?mmToStr(o.far-o.near):'unendlich';
+    document.getElementById('v-hyper').textContent=de(o.H/1000,1)+' m';
+
+    function cell(mm){ return mm<=o.c ? de(mm,3)+' mm ✓ scharf'
+                                      : de(mm,3)+' mm · '+de(mm/o.c,1)+'× zu groß'; }
+    document.getElementById('th-v').innerHTML=
+      'Vordergrund bei '+fmtDist(o.s2n/1000)+'<span class="sub">20 % näher als das Motiv</span>';
+    document.getElementById('th-h').innerHTML=
+      'Hintergrund bei '+fmtDist(o.s2f/1000)+'<span class="sub">20 % weiter als das Motiv</span>';
+    document.getElementById('v-cocV').textContent=cell(o.bV);
+    document.getElementById('v-cocH').textContent=cell(o.bH);
+
+    document.getElementById('tabcap').textContent=
+      L.name+' bei '+Math.round(o.f)+' mm · '+BODIES[st.body].label+
+      ' · zulässiger Zerstreuungskreis '+de(o.c,3)+' mm';
+
+    var nw=document.getElementById('nearwarn');
+    if(nearFld){
+      var mMod=magN;
+      nw.hidden=false;
+      nw.innerHTML='<b>Nahbereich – hier rechnet die Seite zunehmend ungenau.</b> Alle Formeln behandeln '+
+        'das Objektiv als dünne Linse mit fester Brennweite. Reale Optiken, besonders Makros mit '+
+        'Innenfokussierung, ändern beim Fokussieren Brennweite und wirksame Blende. Das Modell '+
+        'käme hier auf einen Abbildungsmaßstab von etwa 1:'+de(Math.max(1,1/mMod),1)+
+        (L.id==='s50m' ? ' – Sony gibt für dieses Objektiv dagegen 1:1 bei 0,16 m an.' :
+         (L.id==='sig70' ? ' – Sigma gibt 1:1 bei 0,257 m an.' :
+         (L.id==='t50300' ? ' – Tamron gibt bei 50 mm 1:2 an.' : '.'))) +
+        ' Schärfentiefe, Bildfeld und Zerstreuungskreise sind hier nur Richtwerte. Auch die '+
+        'wirksame Blende ist nicht mehr die eingestellte: Nach dem Auszugsfaktor wären es etwa '+
+        fmtAp(o.N*(1+mMod))+' statt '+fmtAp(o.N)+'. Und die Entfernung zählt im Modell ab der '+
+        'objektseitigen Hauptebene, deren Lage bei diesen Objektiven unbekannt ist; Hersteller '+
+        'messen dagegen ab der Sensorebene.';
+    } else nw.hidden=true;
+
+    var warn=(L.cover==='APSC'&&st.body==='ff')
+      ? ' <b>Deckt nur den APS-C-Bildkreis ab – an Vollformat nur mit Beschnitt verwendbar.</b>':'';
+    document.getElementById('lensnote').innerHTML=
+      (L.badge?'<span class="badge">'+L.badge+'</span>':'')+
+      (L.cover==='APSC'?'<span class="badge">APS-C</span>':'')+L.note+warn;
+
+    document.getElementById('figcap').textContent=
+      'Grau das gesamte Bildfeld von '+de(o.ang,1)+'°, farbig die Bündel der drei Objektpunkte '+
+      'darin. Filtergewinde '+(L.frontApprox?'rund ':'')+L.front+' mm, Baulänge '+
+      Math.round(o.lenMM)+' mm und die Bündelbreite von '+de(o.pupil,1)+' mm sind maßstäblich. '+
+      'Links von der Eintrittspupille ist auch der Öffnungswinkel echt: '+de(o.ang,1)+
+      '° im Bild sind '+de(o.ang,1)+'° in Wirklichkeit. Rechts davon bleibt es schematisch, '+
+      'weil der Sensor nicht im wahren Abstand steht. Die Lage der Eintrittspupille ist aus '+
+      'Bildwinkel und Frontdurchmesser erschlossen, nicht aus einer Konstruktionszeichnung. '+
+      L.el+' Linsen in '+L.gr+' Gruppen ist belegt, ihre Anordnung im Schnitt nicht.';
+  }
+
+  // ---- Bedienelemente ------------------------------------------------------
+  var sel=document.getElementById('lens'), groups={};
+  LENSES.forEach(function(L){ L.g = L.zoom ? 'Zoomobjektive' : 'Festbrennweiten'; });
+  LENSES.forEach(function(L,i){
+    if(!groups[L.g]){
+      var og=document.createElement('optgroup'); og.label=L.g;
+      sel.appendChild(og); groups[L.g]=og;
+    }
+    var op=document.createElement('option');
+    op.value=i; op.textContent=L.name+(L.zoom?'':' · '+L.f+' mm');
+    groups[L.g].appendChild(op);
+  });
+
+  var focEl=document.getElementById('foc'), focField=document.getElementById('zoomField');
+  var distEl=document.getElementById('dist');
+
+  function syncLens(){
+    var L=st.lens;
+    if(L.zoom){
+      focField.style.display='';
+      focEl.min=L.zoom[0]; focEl.max=L.zoom[1]; focEl.step=1;
+      if(st.foc<L.zoom[0]||st.foc>L.zoom[1]) st.foc=L.zoom[1];
+      focEl.value=st.foc;
+    } else { focField.style.display='none'; st.foc=L.f; }
+    document.getElementById('focOut').textContent=Math.round(st.foc)+' mm';
+    clampDist();
+  }
+  function clampDist(){
+    var m=mfdOf(st.lens,st.foc), list=distList(st.lens,st.foc);
+    var idx=Math.min(Math.max(0,+distEl.value), list.length-1);
+    distEl.max=list.length-1; distEl.value=idx; st.dist=list[idx];
+    distEl.setAttribute('aria-valuetext', fmtDist(st.dist));
+    document.getElementById('distOut').innerHTML=
+      fmtDist(st.dist)+'<span class="dim">  ·  Nahgrenze '+fmtDist(m)+'</span>';
+  }
+
+  sel.addEventListener('change',function(){
+    st.lens=LENSES[+sel.value]; st.apIdx=0; syncLens(); render();
+  });
+  focEl.addEventListener('input',function(){
+    st.foc=+focEl.value;
+    document.getElementById('focOut').textContent=st.foc+' mm';
+    clampDist(); render();
+  });
+  distEl.addEventListener('input',function(){ clampDist(); render(); });
+  document.getElementById('ap').addEventListener('input',function(e){
+    st.apIdx=+e.target.value; render();
+  });
+  function setBody(b){
+    st.body=b;
+    document.getElementById('bodyA').setAttribute('aria-pressed',String(b==='apsc'));
+    document.getElementById('bodyB').setAttribute('aria-pressed',String(b==='ff'));
+    render();
+  }
+  document.getElementById('bodyA').addEventListener('click',function(){ setBody('apsc'); });
+  document.getElementById('bodyB').addEventListener('click',function(){ setBody('ff'); });
+
+  var startIdx=0;
+  LENSES.forEach(function(L,i){ if(L.id==='son135') startIdx=i; });
+  sel.value=startIdx; st.lens=LENSES[startIdx];
+  distEl.value=Math.min(9, distList(st.lens,st.foc).length-1);
+  syncLens(); render();
+})();
+
+/* ---------------------------------------------------------------------------
+   Tamron 50-300 mm F4.5-6.3 Di III VC VXD – echter Strahldurchgang.
+   Konstruktionsdaten: JP 2024-120449 A, Ausführungsbeispiel 1.
+   --------------------------------------------------------------------------- */
+(function(){
+"use strict";
+var SURF=[
+ [129.142,1.200,1.804198],[62.453,6.434,1.437001],[2951.926,0.150,1],
+ [68.839,6.463,1.437001],[-534.675,'D5',1],
+ [68.952,1.200,1.696802],[24.197,8.000,1],
+ [-64.651,0.900,1.496997],[327.679,0.588,1],
+ [37.904,4.711,1.647690],[204.409,3.917,1],
+ [-46.436,0.760,1.729160],[31.162,2.587,1.858833],[123.684,'D14',1],
+ [49.692,3.281,1.691002],[-93.891,2.200,1],
+ [null,1.400,1],
+ [41.325,4.557,1.496997],[-29.055,0.800,1.903658],[256.941,12.004,1],
+ [140.393,3.176,1.720467],[-36.208,1.384,1],
+ [35.304,4.402,1.567320],[-27.633,0.800,1.950000],[137.742,'D25',1],
+ [373.826,2.235,1.921189],[-40.675,0.800,1.799520],[29.168,'D28',1],
+ [37.478,6.678,1.575006],[-32.083,1.000,1],
+ [-45.856,0.800,1.900433],[178.975,5.220,1],
+ [-21.685,1.000,1.870705],[-43.395,'D34',1],
+ [null,2.500,1.516798],[null,1.000,1]];
+var STOP=16, IMGH=21.633;
+var ANCH=[
+ {f:51.5254,FNO:4.6350,w:22.7921,D5:5.1089,D14:31.0382,D25:2.7007,D28:16.5071,D34:18.4979},
+ {f:150.0304,FNO:5.7677,w:7.8355,D5:46.9929,D14:6.9612,D25:9.5863,D28:12.6452,D34:26.6987},
+ {f:290.8948,FNO:6.4890,w:4.0980,D5:70.0570,D14:1.2000,D25:2.6856,D28:17.3384,D34:39.5668}];
+/* Halbdurchmesser je Fläche: einmal aus dem vollen Öffnungs- und Feldbündel
+   aller drei Stützstellen ermittelt, damit die Linsen beim Zoomen ihre Größe
+   behalten. */
+var SD=[28.44,27.68,27.62,25.85,25.85,18.23,15.94,15.70,15.35,14.88,14.27,13.67,
+ 13.28,13.23,10.96,10.96,10.74,10.52,10.31,10.23,11.60,11.60,11.40,11.31,11.09,
+ 10.98,10.95,10.70,13.95,13.95,13.56,13.47,13.47,14.51,21.81,22.27];
+
+var KEYS=['D5','D14','D25','D28','D34'];
+function lagr(t,k){var a=(t-1)*(t-2)/2,b=-t*(t-2),c=t*(t-1)/2;
+  return a*ANCH[0][k]+b*ANCH[1][k]+c*ANCH[2][k];}
+function buildT(t){var g={},i;for(i=0;i<KEYS.length;i++)g[KEYS[i]]=lagr(t,KEYS[i]);
+  var S=[];for(i=0;i<SURF.length;i++){var s=SURF[i];
+    S.push([s[0], (typeof s[1]==='string')?g[s[1]]:s[1], s[2]]);}
+  return S;}
+function verts(S){var v=[],z=0,i;for(i=0;i<S.length;i++){v.push(z);z+=S[i][1];}return{v:v,total:z};}
+
+var Z0=-45;
+function parax(S,y0,u0,stopAt){var y=y0+u0*(0-Z0),u=u0,n=1,i;
+  for(i=0;i<S.length;i++){var r=S[i][0],d=S[i][1],n2=S[i][2];
+    var c=(r===null)?0:1/r; u=(n*u-y*c*(n2-n))/n2; n=n2;
+    if(stopAt!==undefined&&i===stopAt)return y;
+    y+=u*d;}
+  return {y:y,u:u};}
+function efl(S){var r=parax(S,1,0);return -1/r.u;}
+
+function refract(P,D,C,r,n1,n2){
+  var Q,N;
+  if(r===null){var t=(C-P[0])/D[0];Q=[P[0]+t*D[0],P[1]+t*D[1]];N=[1,0];}
+  else{var cz=C+r,oz=P[0]-cz,oy=P[1];
+    var b=oz*D[0]+oy*D[1], c=oz*oz+oy*oy-r*r, disc=b*b-c;
+    if(disc<0)return null;
+    var s=Math.sqrt(disc),t1=-b-s,t2=-b+s;
+    var z1=P[0]+t1*D[0],z2=P[0]+t2*D[0];
+    var t=(Math.abs(z1-C)<=Math.abs(z2-C))?t1:t2;
+    Q=[P[0]+t*D[0],P[1]+t*D[1]];N=[(Q[0]-cz)/r,Q[1]/r];}
+  var mu=n1/n2, cosi=-(N[0]*D[0]+N[1]*D[1]);
+  if(cosi<0){N=[-N[0],-N[1]];cosi=-cosi;}
+  var k=1-mu*mu*(1-cosi*cosi); if(k<0)return null;
+  var w=mu*cosi-Math.sqrt(k);
+  return {Q:Q,D:[mu*D[0]+w*N[0],mu*D[1]+w*N[1]]};}
+
+function trace(S,y0,angDeg){
+  var g=verts(S),v=g.v,total=g.total,a=angDeg*Math.PI/180;
+  var D=[Math.cos(a),Math.sin(a)],P=[Z0,y0],pts=[P],n=1,i;
+  for(i=0;i<S.length;i++){var R=refract(P,D,v[i],S[i][0],n,S[i][2]);
+    if(!R)return null; pts.push(R.Q);P=R.Q;D=R.D;n=S[i][2];}
+  var t=(total-P[0])/D[0];
+  pts.push([total,P[1]+t*D[1]]);
+  return pts;}
+
+function stopH(S,y0,ang){var p=trace(S,y0,ang);return p?p[STOP+1][1]:null;}
+function chief(S,ang){
+  var u=Math.tan(ang*Math.PI/180);
+  var h0=parax(S,0,u,STOP),h1=parax(S,1,u,STOP);
+  var y=(Math.abs(h1-h0)>1e-12)?-h0/(h1-h0):0;
+  var lo=y-6,hi=y+6,flo=stopH(S,lo,ang),fhi=stopH(S,hi,ang),k=0;
+  while((flo===null||fhi===null||flo*fhi>0)&&k<12){lo-=6;hi+=6;
+    flo=stopH(S,lo,ang);fhi=stopH(S,hi,ang);k++;}
+  if(flo===null||fhi===null||flo*fhi>0)return null;
+  for(k=0;k<48;k++){var m=(lo+hi)/2,fm=stopH(S,m,ang);
+    if(fm===null){hi=m;continue;}
+    if(fm*flo<=0){hi=m;fhi=fm;}else{lo=m;flo=fm;}}
+  return (lo+hi)/2;}
+function imgH(S,ang){var y=chief(S,ang);if(y===null)return null;
+  var p=trace(S,y,ang);return p?p[p.length-1][1]:null;}
+function omega(S,f){
+  var lo=0.2,hi=Math.atan(IMGH/f)*180/Math.PI*1.9+2,k;
+  function g(x){var h=imgH(S,-x);return h===null?null:h+IMGH;}
+  var glo=g(lo),ghi=g(hi);
+  for(k=0;k<20&&(ghi===null||glo===null||glo*ghi>0);k++){hi*=0.85;ghi=g(hi);}
+  if(glo===null||ghi===null||glo*ghi>0)return null;
+  for(k=0;k<44;k++){var m=(lo+hi)/2,gm=g(m);
+    if(gm===null){hi=m;continue;}
+    if(gm*glo<=0){hi=m;ghi=gm;}else{lo=m;glo=gm;}}
+  return (lo+hi)/2;}
+
+function sag(r,y){if(r===null)return 0;var q=r*r-y*y;if(q<=0)return 0;
+  return r-(r<0?-1:1)*Math.sqrt(q);}
+/* Zusammenhängende Glasfolgen; verkittete Glieder zählen als eines. */
+var RUNS=(function(){var out=[],i=0;
+  while(i<SURF.length){
+    if(SURF[i][2]>1.0001){var j=i,th=0;
+      while(j<SURF.length&&SURF[j][2]>1.0001){th+=(typeof SURF[j][1]==='number')?SURF[j][1]:0;j++;}
+      out.push({i:i,j:j,th:th});i=j;}else i++;}
+  return out;})();
+function closeH(r1,r2,th){for(var k=1;k<=1200;k++){var y=k*0.05;
+  if(r1!==null&&y>Math.abs(r1)*0.99)return y;
+  if(r2!==null&&y>Math.abs(r2)*0.99)return y;
+  if(th+sag(r2,y)-sag(r1,y)<0.8)return y;}
+  return 60;}
+RUNS.forEach(function(R){var h=closeH(SURF[R.i][0],SURF[R.j][0],R.th),k;
+  var m=0;for(k=R.i;k<=R.j;k++)m=Math.max(m,SD[k]);
+  R.h=Math.min(h,m);});
+
+/* ------------------------------ Zeichnung ------------------------------ */
+var PXL=3.0, XS=858, YB=158, VW=900, VH=322, NRAY=13;
+var el={};
+function $(id){return document.getElementById(id);}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function fmt(x,n){return x.toFixed(n).replace('.',',');}
+
+function render(t){
+  var S=buildT(t), g=verts(S), v=g.v, total=g.total;
+  var f=efl(S), om=omega(S,f);
+  var FNO=lagrF(t), hEP=f/(2*FNO);
+  var X=function(z){return XS-(total-z)*PXL;};
+  var Y=function(y){return YB-y*PXL;};
+  var o=[],i,k;
+
+  /* Linker Zeichenrand in mm, damit das Bildfeld die Fläche ausfüllt */
+  var zL=(46-XS)/PXL+total;
+  o.push('<clipPath id="tm-clip"><rect x="40" y="16" width="832" height="'+(VH-42)+'"/></clipPath>');
+  o.push('<g clip-path="url(#tm-clip)">');
+  o.push('<line class="tm-ax" x1="46" y1="'+Y(0).toFixed(1)+
+         '" x2="'+X(total+8).toFixed(1)+'" y2="'+Y(0).toFixed(1)+'"/>');
+
+  /* Strahlen: 12 gleichmäßig verteilte Feldwinkel plus Mittelstrahl */
+  var land=[],paths=[];
+  for(k=-6;k<=6;k++){
+    var ang=-om*k/6;
+    var y0=chief(S,ang); if(y0===null)continue;
+    var p=trace(S,y0,ang); if(!p)continue;
+    p=p.slice(); p[0]=[zL, y0+(zL-Z0)*Math.tan(ang*Math.PI/180)];
+    var d='M '+p.map(function(q){return X(q[0]).toFixed(1)+' '+Y(q[1]).toFixed(1);}).join(' L ');
+    paths.push('<path class="'+(k===0?'tm-rc':'tm-rf')+'" d="'+d+'"/>');
+    land.push(p[p.length-1][1]);
+  }
+  /* optionales Öffnungsbündel */
+  if(el.bundle.checked){
+    for(k=0;k<7;k++){
+      var yb=hEP*(-1+2*k/6), pb=trace(S,yb,0);
+      if(!pb)continue;
+      pb=pb.slice(); pb[0]=[zL,yb];
+      o.push('<path class="tm-ra" d="M '+pb.map(function(q){return X(q[0]).toFixed(1)+' '+Y(q[1]).toFixed(1);}).join(' L ')+'"/>');
+    }
+  }
+  o=o.concat(paths);
+
+  /* Glas */
+  RUNS.forEach(function(R){
+    var h=R.h,r1=SURF[R.i][0],r2=SURF[R.j][0];
+    if(r1!==null)h=Math.min(h,Math.abs(r1)*0.985);
+    if(r2!==null)h=Math.min(h,Math.abs(r2)*0.985);
+    var N=26,p=[],q;
+    for(q=0;q<=N;q++){var y=-h+2*h*q/N;p.push(X(v[R.i]+sag(r1,y)).toFixed(1)+' '+Y(y).toFixed(1));}
+    for(q=0;q<=N;q++){var y2=h-2*h*q/N;p.push(X(v[R.j]+sag(r2,y2)).toFixed(1)+' '+Y(y2).toFixed(1));}
+    o.push('<path class="tm-gl" d="M '+p.join(' L ')+' Z"/>');
+    /* Kittflächen */
+    for(q=R.i+1;q<R.j;q++){
+      var rk=SURF[q][0],hm=h;
+      while(hm>0.5){var zf=v[R.i]+sag(r1,hm),zb=v[R.j]+sag(r2,hm),zk=v[q]+sag(rk,hm);
+        if(zk>zf+0.02&&zk<zb-0.02)break; hm-=0.4;}
+      if(hm<=0.5)continue;
+      var pc=[],w;
+      for(w=0;w<=18;w++){var yy=-hm+2*hm*w/18;pc.push(X(v[q]+sag(rk,yy)).toFixed(1)+' '+Y(yy).toFixed(1));}
+      o.push('<path class="tm-cm" d="M '+pc.join(' L ')+'"/>');
+    }
+  });
+
+  /* Blende */
+  var pm=trace(S,hEP,0), hs=pm?Math.abs(pm[STOP+1][1]):SD[STOP];
+  o.push('<line class="tm-st" x1="'+X(v[STOP]).toFixed(1)+'" y1="'+Y(hs).toFixed(1)+
+         '" x2="'+X(v[STOP]).toFixed(1)+'" y2="'+Y(hs+9).toFixed(1)+'"/>');
+  o.push('<line class="tm-st" x1="'+X(v[STOP]).toFixed(1)+'" y1="'+Y(-hs).toFixed(1)+
+         '" x2="'+X(v[STOP]).toFixed(1)+'" y2="'+Y(-hs-9).toFixed(1)+'"/>');
+  o.push('<text class="tm-lb" x="'+X(v[STOP]).toFixed(1)+'" y="'+(Y(hs+9)-5).toFixed(1)+
+         '" text-anchor="middle">Blende</text>');
+
+  /* Sensor samt Auftreffpunkten */
+  o.push('<line class="tm-sen" x1="'+X(total).toFixed(1)+'" y1="'+Y(IMGH).toFixed(1)+
+         '" x2="'+X(total).toFixed(1)+'" y2="'+Y(-IMGH).toFixed(1)+'"/>');
+  land.forEach(function(y){
+    o.push('<circle class="tm-dot" cx="'+X(total).toFixed(1)+'" cy="'+Y(y).toFixed(1)+'" r="2.6"/>');});
+  o.push('<text class="tm-lb" x="'+(X(total)-6).toFixed(1)+'" y="'+(Y(IMGH)-6).toFixed(1)+
+         '" text-anchor="end">Sensor 36 &#215; 24 mm</text>');
+
+  /* Winkelangabe links */
+  o.push('<text class="tm-lb" x="50" y="'+(Y(0)-20).toFixed(1)+
+         '">&#177;'+fmt(om,1)+'&#176; Feldwinkel</text>');
+
+  o.push('</g>');
+  /* Maßstab */
+  var xb=X(total)-50*PXL, yb2=VH-12;
+  o.push('<line class="tm-sb" x1="'+xb.toFixed(1)+'" y1="'+yb2+'" x2="'+X(total).toFixed(1)+'" y2="'+yb2+'"/>');
+  o.push('<line class="tm-sb" x1="'+xb.toFixed(1)+'" y1="'+(yb2-4)+'" x2="'+xb.toFixed(1)+'" y2="'+(yb2+4)+'"/>');
+  o.push('<line class="tm-sb" x1="'+X(total).toFixed(1)+'" y1="'+(yb2-4)+'" x2="'+X(total).toFixed(1)+'" y2="'+(yb2+4)+'"/>');
+  o.push('<text class="tm-lb" x="'+((xb+X(total))/2).toFixed(1)+'" y="'+(yb2-7)+'" text-anchor="middle">50 mm</text>');
+
+  el.svg.innerHTML=o.join('\n');
+
+  /* Anzeigen */
+  var exact=(Math.abs(t)<1e-6||Math.abs(t-1)<1e-6||Math.abs(t-2)<1e-6);
+  el.focOut.innerHTML=fmt(f,1)+' mm <span class="dim">&middot; Regler von 51,5 bis 290,9 mm</span>';
+  $('tm-v-ang').textContent=fmt(2*om,1)+'°';
+  $('tm-v-fno').textContent='f/'+fmt(FNO,2);
+  $('tm-v-ep').textContent=fmt(2*hEP,1)+' mm';
+  $('tm-v-len').textContent=fmt(total,1)+' mm';
+  if(land.length===NRAY){
+    $('tm-v-inner').textContent=fmt(Math.abs(land[6]-land[7]),2)+' mm';
+    $('tm-v-outer').textContent=fmt(Math.abs(land[11]-land[12]),2)+' mm';
+  }
+  el.badge.textContent=exact?'exakt aus der Patenttabelle':'zwischen den Stützstellen interpoliert';
+  el.badge.className='badge '+(exact?'tm-ok':'tm-approx');
+  el.cap.innerHTML=exact
+    ? 'Diese Stellung steht so in der Patentschrift. Brennweite und Bildwinkel sind hier aus dem Strahlengang zur&uuml;ckgerechnet und treffen die dort angegebenen Werte auf vier Nachkommastellen.'
+    : 'Zwischenstellung: die f&uuml;nf beweglichen Luftabst&auml;nde sind zwischen den drei dokumentierten Stellungen weich interpoliert. Der Strahlengang selbst ist auch hier exakt gerechnet &ndash; nur die Stellung der Gruppen ist gesch&auml;tzt.';
+}
+function lagrF(t){var a=(t-1)*(t-2)/2,b=-t*(t-2),c=t*(t-1)/2;
+  return a*ANCH[0].FNO+b*ANCH[1].FNO+c*ANCH[2].FNO;}
+
+function init(){
+  el.svg=$('tm-ray'); if(!el.svg)return;
+  el.foc=$('tm-foc'); el.focOut=$('tm-focOut'); el.cap=$('tm-cap');
+  el.badge=$('tm-badge'); el.bundle=$('tm-bundle');
+  var upd=function(){render(+el.foc.value/120);};
+  el.foc.addEventListener('input',upd);
+  el.bundle.addEventListener('change',upd);
+  [].forEach.call(document.querySelectorAll('[data-tm-jump]'),function(b){
+    b.addEventListener('click',function(){
+      el.foc.value=b.getAttribute('data-tm-jump');
+      [].forEach.call(document.querySelectorAll('[data-tm-jump]'),function(x){
+        x.setAttribute('aria-pressed', x===b?'true':'false');});
+      upd();});});
+  upd();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+
+</script>
+</body>
+</html>
