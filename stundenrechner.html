@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stundenliste – KV §7 Filmschaffende</title>
-<meta name="description" content="Arbeitszeiten über einen Projektzeitraum erfassen und nach KV §7 Wochenpauschalgage auswerten — mit Zuschlägen, Diäten nach §17 und Excel- bzw. PDF-Export.">
 <style>
 :root{
   --rot:#b00d23;--dunkel:#1a1a1a;--grau:#6e6e6e;--hellgrau:#f0f0f0;
@@ -131,7 +130,6 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 </style>
 </head>
 <body>
-<a href="index.html" style="display:block;max-width:1080px;margin:0 auto;padding:16px 20px 0;font:600 .82rem/1.4 system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#ab0f1f;text-decoration:none">&#8592;&#160;Alle Filmtools</a>
 <div class="wrap">
 <h1>Stundenliste</h1>
 <p style="text-align:center;font-size:.82rem;color:var(--grau);margin-bottom:20px">
@@ -1569,7 +1567,7 @@ function exportErgebnissePDF(){
   // html2pdf.js: erzeugt PDF-Datei direkt im Browser (kein Druckdialog)
   loadHtml2Pdf(function(){
     var wrap=document.createElement('div');
-    wrap.style.cssText='position:fixed;left:-9999px;top:0;width:297mm';
+    wrap.style.cssText='position:fixed;top:0;left:0;opacity:0.01;pointer-events:none;z-index:9998;width:297mm;background:#fff';
     // Nur den Body-Inhalt extrahieren
     var tmp=document.createElement('div');
     tmp.innerHTML=html;
