@@ -1579,7 +1579,7 @@ function exportErgebnissePDF(){
     html2pdf().set({
       margin:[10,10,10,10],
       filename:fname,
-      html2canvas:{scale:1.5,useCORS:true,logging:false},
+      html2canvas:{scale:1.5,useCORS:true,logging:false,scrollX:0,scrollY:0},
       jsPDF:{unit:'mm',format:'a4',orientation:'landscape'},
       pagebreak:{mode:['css','legacy'],avoid:'tr'} // keine Tabellenzeile am Seitenende durchschneiden
     }).from(wrap).save();
