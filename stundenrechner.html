@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stundenliste – KV §7 Filmschaffende</title>
-<meta name="description" content="Arbeitszeiten über einen Projektzeitraum erfassen und nach KV §7 Wochenpauschalgage auswerten — mit Zuschlägen, Diäten nach §17 und Excel- bzw. PDF-Export.">
 <style>
 :root{
   --rot:#b00d23;--dunkel:#1a1a1a;--grau:#6e6e6e;--hellgrau:#f0f0f0;
@@ -131,7 +130,6 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 </style>
 </head>
 <body>
-<a href="index.html" style="display:block;max-width:1080px;margin:0 auto;padding:16px 20px 0;font:600 .82rem/1.4 system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#ab0f1f;text-decoration:none">&#8592;&#160;Alle Filmtools</a>
 <div class="wrap">
 <h1>Stundenliste</h1>
 <p style="text-align:center;font-size:.82rem;color:var(--grau);margin-bottom:20px">
@@ -177,7 +175,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
     <div class="fld">
       <label for="s-faktor">Faktor auf Gesamtentgelt für Stunden über Limit</label>
       <input type="number" id="s-faktor" value="1.5" min="1" step="0.1">
-      <p class="fn">Wird auf den vollen Stundenwert (inkl. ÜSt- und Nachtzuschlag) angewendet. Kein KV-Zuschlag, frei vereinbar. Standard: 1,5.</p>
+      <p class="fn">Wird auf den vollen OL-Stundenlohn (Over-Limit, z.&thinsp;B. ab der 12. Arbeitsstunde bei 5-Tage-Woche) angewendet — inkl. ÜSt- und Nachtzuschlag, nicht nur auf den Grundlohn. Kein KV-Zuschlag, frei vereinbar. Standard: 1,5.</p>
     </div>
     <div class="fld">
       <label for="s-diaet">Diäten außerhalb Firmensitz (>3h, §17)</label>
@@ -249,40 +247,43 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
   </div>
 </div>
 
-<div class="export-bar" style="gap:0;flex-wrap:wrap;margin-top:24px">
+<div class="export-bar" style="gap:0;flex-wrap:wrap;margin-top:24px;justify-content:space-between;align-items:flex-start">
 
-  <!-- Gruppe: Ergebnisse -->
+  <!-- Gruppe: Ergebnisse (links) -->
   <div style="display:flex;flex-direction:column;align-items:flex-start;margin-right:20px;margin-bottom:10px">
     <span style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--grau);margin-bottom:5px">Ergebnisse</span>
     <button class="btn btn-prim" id="btn-xlsx-ergebnis" style="white-space:nowrap">📊 Download</button>
     <span style="font-size:.7rem;color:var(--grau);margin-top:3px;max-width:130px">Excel oder PDF mit allen berechneten Werten</span>
   </div>
 
-  <!-- Gruppe: Datensicherung -->
-  <div style="display:flex;flex-direction:column;align-items:flex-start;margin-right:20px;margin-bottom:10px">
-    <span style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--grau);margin-bottom:5px">Datensicherung</span>
-    <div style="display:flex;gap:8px">
-      <div style="display:flex;flex-direction:column;align-items:flex-start">
-        <button class="btn btn-sec" id="btn-xlsx-export" style="white-space:nowrap">📤 Speichern</button>
-        <span style="font-size:.7rem;color:var(--grau);margin-top:3px;max-width:110px">Eingaben als Excel sichern</span>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-start">
-        <label class="btn btn-sec" style="cursor:pointer;white-space:nowrap" title="Eingabe-Excel hochladen">
-          📥 Laden
-          <input type="file" id="inp-xlsx-import" accept=".xlsx" style="display:none">
-        </label>
-        <span style="font-size:.7rem;color:var(--grau);margin-top:3px;max-width:110px">Gespeicherte Excel-Datei importieren</span>
-      </div>
-    </div>
-    <p style="font-size:.68rem;color:var(--grau);margin-top:5px">⚠ Excel-Funktionen benötigen Internetverbindung (SheetJS wird von cdnjs geladen).</p>
-  </div>
+  <!-- Datensicherung + Löschen (rechts) -->
+  <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin-left:auto;margin-bottom:10px">
 
-  <!-- Gruppe: Sonstiges -->
-  <div style="display:flex;flex-direction:column;align-items:flex-start;margin-right:20px;margin-bottom:10px">
-    <span style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--grau);margin-bottom:5px">Sonstiges</span>
-    <div style="display:flex;gap:8px">
+    <!-- Gruppe: Datensicherung -->
+    <div style="display:flex;flex-direction:column;align-items:flex-start">
+      <span style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--grau);margin-bottom:5px">Datensicherung</span>
+      <div style="display:flex;gap:8px">
+        <div style="display:flex;flex-direction:column;align-items:flex-start">
+          <button class="btn btn-sec" id="btn-xlsx-export" style="white-space:nowrap">📤 Speichern</button>
+          <span style="font-size:.7rem;color:var(--grau);margin-top:3px;max-width:140px">Eingaben als Excel sichern — mit »Laden« wiederherstellbar</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start">
+          <label class="btn btn-sec" style="cursor:pointer;white-space:nowrap" title="Eingabe-Excel hochladen">
+            📥 Laden
+            <input type="file" id="inp-xlsx-import" accept=".xlsx" style="display:none">
+          </label>
+          <span style="font-size:.7rem;color:var(--grau);margin-top:3px;max-width:110px">Gespeicherte Excel-Datei importieren</span>
+        </div>
+      </div>
+      <p style="font-size:.68rem;color:var(--grau);margin-top:5px;max-width:300px">⚠ Daten sind nur im Browser gespeichert — nach Cache-Leerung oder Gerätewechsel weg. Regelmäßig per »Speichern« sichern! Excel-Funktionen benötigen Internetverbindung (SheetJS).</p>
+    </div>
+
+    <!-- Gruppe: Löschen -->
+    <div style="display:flex;flex-direction:column;align-items:flex-start">
+      <span style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--grau);margin-bottom:5px">Sonstiges</span>
       <button class="btn btn-ghost" id="btn-clear" style="color:var(--rot)">Daten löschen</button>
     </div>
+
   </div>
 
   <span id="btn-clear-confirm" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;align-self:flex-end;margin-bottom:10px">
@@ -1569,20 +1570,20 @@ function exportErgebnissePDF(){
   // html2pdf.js: erzeugt PDF-Datei direkt im Browser (kein Druckdialog)
   loadHtml2Pdf(function(){
     var wrap=document.createElement('div');
-    wrap.style.cssText='background:#fff'; // nicht verstecken und nicht fixieren: html2pdf kopiert das Element selbst in eine eigene Ebene
+    wrap.style.cssText='position:fixed;top:0;left:0;opacity:0.01;pointer-events:none;z-index:9998;width:297mm;background:#fff';
     // Nur den Body-Inhalt extrahieren
     var tmp=document.createElement('div');
     tmp.innerHTML=html;
     var body=tmp.querySelector('body');
     wrap.innerHTML=body?body.innerHTML:html;
+    document.body.appendChild(wrap);
     var fname=(m.projektname||'Stundenliste').replace(/[\\/:*?"<>|]/g,'_')+'_Abrechnung.pdf';
     html2pdf().set({
       margin:[10,10,10,10],
       filename:fname,
-      html2canvas:{scale:1.5,useCORS:true,logging:false,scrollX:0,scrollY:0},
-      jsPDF:{unit:'mm',format:'a4',orientation:'landscape'},
-      pagebreak:{mode:['css','legacy'],avoid:'tr'} // keine Tabellenzeile am Seitenende durchschneiden
-    }).from(wrap).save();
+      html2canvas:{scale:1.5,useCORS:true,logging:false},
+      jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}
+    }).from(wrap).save().then(function(){document.body.removeChild(wrap);});
   });
 }
 
