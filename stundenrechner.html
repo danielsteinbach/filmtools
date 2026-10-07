@@ -158,6 +158,11 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
     <div class="fld pflicht"><label for="s-beruf">Berufsgruppe</label>
       <select id="s-beruf"><option value="">– bitte wählen –</option></select>
     </div>
+    <div class="fld" id="fld-beruf-custom" style="display:none">
+      <label for="s-beruf-custom">Berufsbezeichnung (frei)</label>
+      <input type="text" id="s-beruf-custom" placeholder="z. B. Außenrequisitenassistenz">
+      <div style="font-size:.78rem;color:var(--grau);margin-top:4px;line-height:1.5">Dieser Beruf ist nicht im KV abgebildet. Bitte Wochenpauschalgage manuell eintragen.</div>
+    </div>
     <div class="fld"><label for="s-jahr">Gagentabelle</label>
       <select id="s-jahr"></select>
     </div>
@@ -184,7 +189,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
     <div class="fld" style="grid-column:1/-1">
       <div class="toggle-box" style="padding:10px 14px">
         <label style="display:flex;align-items:flex-start;gap:10px;font-weight:400;cursor:pointer">
-          <input type="checkbox" id="s-bezpause-auto" style="margin-top:3px;width:auto;flex-shrink:0">
+          <input type="checkbox" id="s-bezpause-auto" checked style="margin-top:3px;width:auto;flex-shrink:0">
           <span>
             <strong>Bezahlte Pflichtpause wird nicht gesondert konsumiert</strong><br>
             <span style="font-size:.78rem;color:var(--grau);line-height:1.6">
@@ -426,11 +431,14 @@ var GR=(function(){
     ["Jungbeleuchter:in",646.74,676.742558,689.939038],
     ["1. Kamerabühne",1016.3,1054.921854,1075.49283],
     ["2. Kamerabühne",862.32,895.08,912.53406],
-    ["Kamerabühne Helfer:in",646.74,676.742558,689.939038]
+    ["Kamerabühne Helfer:in",646.74,676.742558,689.939038],
+    ["– Sonstiger Beruf (freie Eingabe) –",0,0,0]
   ];
+  var CUSTOM_IDX=POS.length-1;
   function r2(x){return Math.round((x+Number.EPSILON)*100)/100}
+  function berufLabel(i,custom){return(i===CUSTOM_IDX&&custom)?custom:(i>=0?POS[i][0]:'');}
   return{
-    POS,YEARS,F,P7,r2,
+    POS,YEARS,F,P7,r2,CUSTOM_IDX,berufLabel,
     mindestPauschalgage:function(i,y){var w=POS[i][1+y];return w?r2(w*P7*F):0},
     stundenlohnVon:function(pg){return pg/F/P7/40},
     tagesgageVon:function(pg){return pg/F/P7/5},
@@ -757,7 +765,7 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
 var KEY='gr-stunden-v1';
 var state={
   meta:{personName:'',svnr:'',projektname:'',startDatum:'',endDatum:'',berufIndex:-1,jahrIndex:2,
-        pauschalgage:0,wochenmodell:5,kvBasis:'vereinbart',faktor:1.5,diaet:15.40,bezPauseAuto:false},
+        pauschalgage:0,wochenmodell:5,kvBasis:'vereinbart',faktor:1.5,diaet:15.40,bezPauseAuto:true,berufCustom:''},
   wochen:{},
   tage:{}
 };
@@ -1208,7 +1216,9 @@ function syncUIFromState(){
   if(el('s-name'))el('s-name').value=m.projektname||'';
   if(el('s-start'))el('s-start').value=m.startDatum||'';
   if(el('s-end'))el('s-end').value=m.endDatum||'';
-  if(el('s-beruf')&&m.berufIndex>=0)el('s-beruf').value=m.berufIndex;
+  if(el('s-beruf')&&m.berufIndex>=0){el('s-beruf').value=m.berufIndex;
+    var fldC=el('fld-beruf-custom');if(fldC)fldC.style.display=(m.berufIndex===GR.CUSTOM_IDX)?'':'none';}
+  if(el('s-beruf-custom'))el('s-beruf-custom').value=m.berufCustom||'';
   if(el('s-jahr'))el('s-jahr').value=m.jahrIndex>=0?m.jahrIndex:2;
   if(el('s-gage'))el('s-gage').value=m.pauschalgage||'';
   if(el('s-faktor'))el('s-faktor').value=m.faktor||1.5;
@@ -1228,7 +1238,11 @@ function initSetup(){
   document.getElementById('s-name').value=state.meta.projektname||'';
   document.getElementById('s-start').value=state.meta.startDatum||'';
   document.getElementById('s-end').value=state.meta.endDatum||'';
-  if(state.meta.berufIndex>=0)sb.value=state.meta.berufIndex;
+  if(state.meta.berufIndex>=0){sb.value=state.meta.berufIndex;
+    var fldCi=document.getElementById('fld-beruf-custom');
+    if(fldCi)fldCi.style.display=(state.meta.berufIndex===GR.CUSTOM_IDX)?'':'none';}
+  var bcInit=document.getElementById('s-beruf-custom');
+  if(bcInit)bcInit.value=state.meta.berufCustom||'';
   sj.value=state.meta.jahrIndex>=0?state.meta.jahrIndex:2;
   document.getElementById('s-gage').value=state.meta.pauschalgage||'';
   document.getElementById('s-faktor').value=state.meta.faktor||1.5;
@@ -1239,15 +1253,19 @@ function initSetup(){
   function onBeruf(){
     var pi=+sb.value,yi=+sj.value;
     state.meta.berufIndex=pi;state.meta.jahrIndex=yi;
+    var isCustom=(pi===GR.CUSTOM_IDX);
+    var fldCustom=document.getElementById('fld-beruf-custom');
+    if(fldCustom)fldCustom.style.display=isCustom?'':'none';
     var mp=GR.mindestPauschalgage(pi,yi);
+    var hintEl=document.getElementById('gage-hinweis');
     if(mp>0){
       document.getElementById('s-gage').value=GR.r2(mp).toFixed(2);
       state.meta.pauschalgage=GR.r2(mp);
-      // Hinweis: das ist nur das KV-Minimum
-      document.getElementById('gage-hinweis').classList.add('sichtbar');
+      hintEl.classList.add('sichtbar');
+    } else {
+      document.getElementById('s-gage').value='';state.meta.pauschalgage=0;
+      hintEl.classList.remove('sichtbar');
     }
-    else{document.getElementById('s-gage').value='';state.meta.pauschalgage=0;
-         document.getElementById('gage-hinweis').classList.remove('sichtbar');}
     save();renderAll();
   }
   sb.addEventListener('change',onBeruf);sj.addEventListener('change',onBeruf);
@@ -1277,15 +1295,18 @@ function initSetup(){
     state.meta.pauschalgage=newGage;
     state.meta.faktor=+document.getElementById('s-faktor').value||1.5;
     state.meta.diaet=+document.getElementById('s-diaet').value||15.40;
+    var bcEl=document.getElementById('s-beruf-custom');
+    if(bcEl)state.meta.berufCustom=bcEl.value;
     var bpa=document.getElementById('s-bezpause-auto');
     if(bpa)state.meta.bezPauseAuto=bpa.checked;
     var rb2=document.querySelector('input[name="kv-basis"]:checked');
     state.meta.kvBasis=rb2?rb2.value:'vereinbart';
     save();renderAll();
   }
-  ['s-person-name','s-svnr','s-name','s-start','s-end','s-gage','s-faktor','s-diaet'].forEach(function(id){
-    document.getElementById(id).addEventListener('change',onMeta);
-    document.getElementById(id).addEventListener('input',onMeta);
+  ['s-person-name','s-svnr','s-name','s-start','s-end','s-gage','s-faktor','s-diaet','s-beruf-custom'].forEach(function(id){
+    var el2=document.getElementById(id);if(!el2)return;
+    el2.addEventListener('change',onMeta);
+    el2.addEventListener('input',onMeta);
   });
   document.querySelectorAll('input[name="kv-basis"]').forEach(function(r){r.addEventListener('change',onMeta)});
   var bpaEl=document.getElementById('s-bezpause-auto');if(bpaEl)bpaEl.addEventListener('change',onMeta);
@@ -1329,7 +1350,7 @@ function exportEingabenXLSX(){
     rows.push(['Projekt:',m.projektname||'']);
     rows.push(['Beginn:',m.startDatum||'']);
     rows.push(['Ende:',m.endDatum||'']);
-    rows.push(['Berufsgruppe:',m.berufIndex>=0?GR.POS[m.berufIndex][0]:'']);
+    rows.push(['Berufsgruppe:',m.berufIndex>=0?GR.berufLabel(m.berufIndex,m.berufCustom):'']);
     rows.push(['Gagentabelle:',GR.YEARS[m.jahrIndex]||'']);
     rows.push(['Wochenpauschalgage (€):',m.pauschalgage||'']);
     rows.push(['KV-Basis:',m.kvBasis==='mindest'?'KV-Mindestgage':'Vereinbarte Gage']);
@@ -1437,7 +1458,7 @@ function exportErgebnisseXLSX(){
     rows.push(['Stundenliste KV §7 Filmschaffende — Ergebnisse']);rows.push([]);
     rows.push(['Name:',m.personName||'','SV-Nummer:',m.svnr||'']);
     rows.push(['Projekt:',m.projektname||'','Zeitraum:',m.startDatum+' – '+m.endDatum]);
-    rows.push(['Berufsgruppe:',pi>=0?GR.POS[pi][0]:'',' Gagentabelle:',GR.YEARS[yi]||'']);
+    rows.push(['Berufsgruppe:',pi>=0?GR.berufLabel(pi,m.berufCustom):'',' Gagentabelle:',GR.YEARS[yi]||'']);
     var wmodLabel=(function(){
       var vals=Object.values(state.wochen).map(function(w){return w.wmod;}).filter(Boolean);
       var allSame=vals.every(function(v){return v===vals[0]});
@@ -1519,7 +1540,7 @@ function exportErgebnissePDF(){
   html+='<h1>Stundenliste KV §7 Filmschaffende — Abrechnung</h1>';
   html+='<div class="meta"><div><b>Name:</b> '+escH(m.personName||'—')+'</div><div><b>SV-Nummer:</b> '+escH(m.svnr||'—')+'</div>'+
     '<div><b>Projekt:</b> '+escH(m.projektname||'—')+'</div><div><b>Zeitraum:</b> '+escH(m.startDatum)+' – '+escH(m.endDatum)+'</div>'+
-    '<div><b>Berufsgruppe:</b> '+escH(pi>=0?GR.POS[pi][0]:'—')+'</div><div><b>Gagentabelle:</b> '+escH(GR.YEARS[yi]||'—')+'</div>'+
+    '<div><b>Berufsgruppe:</b> '+escH(pi>=0?GR.berufLabel(pi,m.berufCustom):'—')+'</div><div><b>Gagentabelle:</b> '+escH(GR.YEARS[yi]||'—')+'</div>'+
     '<div><b>Wochenpauschalgage:</b> '+fe3(pg)+'</div><div><b>Wochenmodell:</b> '+(function(){var vs=Object.values(state.wochen).map(function(w){return w.wmod;}).filter(Boolean);return vs.length&&vs.every(function(v){return v===vs[0]})?vs[0]+'-Tage':'wechselnd – siehe KW';})()+'</div></div>';
   html+='<table><tr><th>Datum</th><th>Tag</th><th>Von</th><th>Bis</th><th>Netto h</th><th>Nacht h</th><th>FK-ÜSt h</th><th>Zuschläge</th><th>Summe</th></tr>';
   html+='<style>tr.msaldo td{background:#fff3cd;font-weight:700;font-size:10px}</style>';
