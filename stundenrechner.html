@@ -367,6 +367,7 @@ var GR=(function(){
   var F=1.2881166,P7=1.385;
   var YEARS=['ab 1.1.2024','ab 1.1.2025','ab 1.7.2026'];
   var POS=[
+    ["Beruf ohne Kollektivvertrag (freie Eingabe)",0,0,0],
     ["Regie (freie Vereinbarung)",0,0,0],
     ["Regieassistenz",1222.57,1269.031895,1293.778017],
     ["Herstellungsleitung I",2017.39,2094.046927,2134.880842],
@@ -431,10 +432,9 @@ var GR=(function(){
     ["Jungbeleuchter:in",646.74,676.742558,689.939038],
     ["1. Kamerabühne",1016.3,1054.921854,1075.49283],
     ["2. Kamerabühne",862.32,895.08,912.53406],
-    ["Kamerabühne Helfer:in",646.74,676.742558,689.939038],
-    ["– Sonstiger Beruf (freie Eingabe) –",0,0,0]
+    ["Kamerabühne Helfer:in",646.74,676.742558,689.939038]
   ];
-  var CUSTOM_IDX=POS.length-1;
+  var CUSTOM_IDX=0;
   function r2(x){return Math.round((x+Number.EPSILON)*100)/100}
   function berufLabel(i,custom){return(i===CUSTOM_IDX&&custom)?custom:(i>=0?POS[i][0]:'');}
   return{
