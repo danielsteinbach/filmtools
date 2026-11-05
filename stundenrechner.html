@@ -306,7 +306,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
     <p style="font-size:.85rem;color:var(--grau);margin-bottom:20px">Alle berechneten Werte — Zuschläge, Stunden, Summen — werden exportiert.</p>
     <div style="display:flex;gap:12px;flex-wrap:wrap">
       <button class="btn btn-prim" id="btn-ergebnis-xlsx" style="flex:1">Excel (.xlsx)</button>
-      <button class="btn btn-sec" id="btn-ergebnis-pdf" style="flex:1">PDF herunterladen</button>
+      <button class="btn btn-sec" id="btn-ergebnis-pdf" style="flex:1" title="Öffnet die Druckansicht – dort im Browser „Als PDF speichern“ wählen">Drucken / als PDF speichern</button>
     </div>
     <button class="btn btn-ghost" id="btn-modal-close" style="width:100%;margin-top:10px">Abbrechen</button>
   </div>
@@ -494,6 +494,15 @@ function projDays(){
 }
 function ersatzDays(){var a=projDays();if(!a.length)return a;var last=pd(a[a.length-1]);for(var i=1;i<=14;i++)a.push(ymd(addD(last,i)));return a;}
 function nextWeekKey(ds){var d=new Date(ds+'T12:00:00');return isoWk(addD(d,8-(d.getDay()||7)));}
+function bisLbl(ds,t){var v=pt(t.von),b=pt(t.bis);if(v!==null&&b!==null&&b<=v)return t.bis+' ('+dShort(ymd(addD(new Date(ds+'T12:00:00'),1)))+')';return t.bis;}
+function dayNotes(ds,t,res){
+  var n=(res.warns||[]).map(function(x){return String(x).replace(/^[\u26a0\u2139]\uFE0F?\s*/,'');});
+  var ty=dayType(ds);
+  if((ty==='sonntag'||ty==='feiertag')&&res.nH>0&&!t.einzel&&t.tausch!=='b'&&t.tausch!=='c'){
+    n.push(t.ersatz?('Ersatzruhetag/freier Tag: '+dShort(t.ersatz)+' (Lage nach ARG \u00a76 pr\u00fcfen)'):'Ersatzruhetag (KV \u00a710 Abs.2) noch nicht zugeordnet');
+  } else if(t.tausch==='b'||t.tausch==='c'){if(t.ersatz)n.push('Freier Tag zum Tausch: '+dShort(t.ersatz));}
+  return n;
+}
 function optCode(t){var a=[];if(t.tausch)a.push('tausch='+t.tausch);if(t.ersatz)a.push('ersatz='+t.ersatz);if(t.einzel)a.push('einzel=1');return a.join(';');}
 function parseOpt(c){var o={tausch:'',ersatz:'',einzel:false};String(c||'').split(';').forEach(function(p){var kv=p.split('=');var k=(kv[0]||'').trim(),v=(kv[1]||'').trim();if(k==='tausch'&&/^[abc]$/.test(v))o.tausch=v;else if(k==='ersatz'&&/^\d{4}-\d{2}-\d{2}$/.test(v))o.ersatz=v;else if(k==='einzel'&&v==='1')o.einzel=true;});return o;}
 function isOptDay(t){return !!(t&&(t.tausch||t.ersatz||t.einzel));}
@@ -788,7 +797,7 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
   // 6. Warnungen
   if(einzel&&nightH>0.01)warns.push('\u26a0 \u00a711 Abs.5: \u00a710 Abs.4 gilt sinngem\u00e4\u00df auch f\u00fcr Nachtzuschl\u00e4ge \u2013 hier NICHT automatisch entfernt, bitte pr\u00fcfen');
   if(bb>1440&&(typ0!=='werktag'||dayType(ymd(addD(new Date(ds+'T12:00:00'),1)))!=='werktag'))
-    warns.push('\u26a0 Schicht \u00fcberschreitet Mitternacht: Sa-/So-/Feiertagszuschl\u00e4ge werden nicht nach Kalendertagen getrennt \u2013 manuell pr\u00fcfen');
+    warns.push('\u26a0 Die Schicht endet am Folgetag ('+dShort(ymd(addD(new Date(ds+'T12:00:00'),1)))+'). Zuschl\u00e4ge werden derzeit nach dem Starttag berechnet und nicht um 00:00 Uhr aufgeteilt. Tagesart des Folgetages und Zuschl\u00e4ge manuell pr\u00fcfen.');
   if(nH>12)warns.push('\u26a0 \u00dcber 12h Arbeitszeit \u2013 arbeitszeitrechtlich pr\u00fcfen (\u00a77)');
   var mmdd=ds.slice(5);
   if(mmdd==='12-24')warns.push('\u26a0 24.12.: KV-NAZ endet nach 4h\u00a0/\u00a0sp\u00e4testens 12:00 Uhr');
@@ -985,7 +994,7 @@ function optPanelHTML(d,t,typ,nH,dis){
   if(!sw){
     h+='<span style="color:var(--grau)">Tausch-/Ersatzruhe-Optionen gibt es nur an Sonn- und Feiertagen (Tagesart oben ggf. anpassen). Samstags-Verschiebung folgt in Etappe 2.</span>';
   } else {
-    h+='<label>Behandlung: <select data-date="'+d.ds+'" data-field="tausch" style="font-size:.72rem">'+
+    h+='<label>Behandlung: <select data-date="'+d.ds+'" data-field="tausch" '+(t.einzel?'disabled title="Bei Einzeltag nicht wählbar"':'')+' style="font-size:.72rem">'+
       [['','Sonntag/Feiertag normal: 100 % + Ersatzruhetag (§10 Abs.2)'],
        ['a','Tausch (a): wie Sonntag – 100 % + Ersatzruhetag, Tauschtag frei'],
        ['b','Tausch (b): Zeitausgleich, kein Zuschlag, verknüpfter freier Tag'],
@@ -994,7 +1003,7 @@ function optPanelHTML(d,t,typ,nH,dis){
     h+='<label>Freier Tag / Ersatzruhetag: <select data-date="'+d.ds+'" data-field="ersatz" style="font-size:.72rem"><option value="">– keiner –</option>'+
       ersatzDays().filter(function(x){return x!==d.ds}).map(function(x){var dw=TNAME[new Date(x+'T12:00:00').getDay()];return'<option value="'+x+'"'+(t.ersatz===x?' selected':'')+'>'+dw+' '+dShort(x)+'</option>'}).join('')+'</select></label> &nbsp; ';
     h+='<label title="§10 Abs.4: kein Anspruch, wenn unmittelbar davor und danach mind. 3 Tage kein aufrechtes Arbeitsverhältnis mit demselben Arbeitgeber bestand"><input type="checkbox" data-date="'+d.ds+'" data-field="einzel"'+(t.einzel?' checked':'')+'> Einzeltag (§10 Abs.4: kein Anspruch auf die Zuschläge; Ersatzruhe nach ARG bleibt zu prüfen)</label>';
-    h+='<div style="margin-top:4px;color:var(--grau)">Ersatzruhe nach ARG §6 Abs.1 in der Folgewoche. Ob ein Tauschtag den 100-%-Zuschlag ersetzt, ist im KV nicht geregelt (Frage an Younion) – (a) rechnet den Zuschlag, (b)/(c) nicht bzw. nur 25 %. Für den Ersatzruhetag wird kein Geld extra gerechnet (nur Status). Nachtzuschläge werden von diesen Optionen nicht verändert.</div>';
+    h+='<div style="margin-top:4px;color:var(--grau)">Ersatzruhe nach ARG §6 Abs.1 in der Folgewoche. Ob ein Tauschtag den 100-%-Zuschlag ersetzt, ist im KV nicht geregelt (Frage an Younion) – (a) rechnet den Zuschlag, (b)/(c) nicht bzw. nur 25 %. Für den Ersatzruhetag wird kein Geld extra gerechnet (nur Status). Nachtzuschläge werden durch diese Optionen nicht automatisch verändert. Bei einem Einzeltag ist die Ausnahme nach § 11 Abs. 5 KV manuell zu prüfen.</div>';
   }
   return h+'</td></tr>';
 }
@@ -1263,6 +1272,7 @@ function attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
       var ds=inp.dataset.date,f=inp.dataset.field;
       if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:true,notiz:'',typ:'',tausch:'',ersatz:'',einzel:false};
       state.tage[ds][f]=inp.type==='checkbox'?inp.checked:(f==='pause'?+inp.value:inp.value);
+      if(f==='einzel'&&inp.checked)state.tage[ds].tausch=''; // Einzeltag und Tausch schließen einander aus
       save();
     }
     if(inp.tagName==='SELECT'&&(inp.dataset.field==='typ'||inp.dataset.field==='tausch'||inp.dataset.field==='ersatz')){
@@ -1304,7 +1314,7 @@ function renderGesamt(rows,gtotal,totAusserh,totDrinnen,totBPF,totBPN,diaet){
   document.getElementById('report-grid').innerHTML=
     '<div class="report-box">'+
       '<strong>Arbeitstage gesamt</strong>'+
-      totArbeitsT+' Arbeitstage im Projekt'+
+      totArbeitsT+(totArbeitsT===1?' Arbeitstag':' Arbeitstage')+' im Projekt'+
     '</div>'+
     '<div class="report-box">'+
       '<strong>Arbeit außerhalb Firmensitz (&gt;3h netto) — Ortsgebietsdiät §17</strong>'+
@@ -1594,7 +1604,8 @@ function exportErgebnisseXLSX(){
       return allSame&&vals.length>0?vals[0]+'-Tage':'wechselnd – siehe Kalenderwochen';
     })();
     rows.push(['Wochenpauschalgage:',pg,'Wochenmodell:',wmodLabel]);rows.push([]);
-    rows.push(['KW','Datum','Tag','Von','Bis','Netto h','Nacht h','Faktor-ÜSt h','Zuschläge','Tagessumme €','Außerhalb']);
+    rows.push(['KW','Datum','Tag','Von','Bis','Netto h','Nacht h','Faktor-ÜSt h (Stunden über Limit)','Zuschläge','Tagessumme €','Außerhalb','Hinweise']);
+    var warnSheet=[['Datum','Tag','Hinweis / manuell zu prüfen']];
     var DAYS3=['So','Mo','Di','Mi','Do','Fr','Sa'];
     var s0=new Date(m.startDatum+'T12:00:00'),e0=new Date(m.endDatum+'T12:00:00');
     var sDate=pd(m.startDatum),eDate=pd(m.endDatum);
@@ -1629,8 +1640,10 @@ function exportErgebnisseXLSX(){
         var dd=new Date(d.ds+'T12:00:00');
         var chips=res.s.map(function(cc){return cc.l+': '+cc.b.toFixed(2)+'€';}).join(' | ');
         var aussTxt=(t.ausserhalb&&res.nH>3)?'Diät '+diaet.toFixed(2)+'€':'';
-        rows.push([wk,d.ds,DAYS3[dd.getDay()],t.von,t.bis,
-          GR.r2(res.nH),GR.r2(res.nightH),GR.r2(res.fh),chips,GR.r2(res.total),aussTxt]);
+        var nts=dayNotes(d.ds,t,res);
+        nts.forEach(function(x){warnSheet.push([d.ds,DAYS3[dd.getDay()],x]);});
+        rows.push([wk,d.ds,DAYS3[dd.getDay()],t.von,bisLbl(d.ds,t),
+          GR.r2(res.nH),GR.r2(res.nightH),GR.r2(res.fh),chips,GR.r2(res.total),aussTxt,nts.join(' | ')]);
       });
       rows.push(['','','','','','','','','Wochenbasis: '+wr.wochenbasis.toFixed(2)+'  Zuschläge: '+wr.surchargeTotal.toFixed(2),''+GR.r2(wr.total),'']);
       mTotal+=wr.total;gTotal+=wr.total;rows.push([]);
@@ -1644,8 +1657,9 @@ function exportErgebnisseXLSX(){
     }
     rows.push([]);rows.push(['','','','','','','','','GESAMTSUMME:',''+GR.r2(gTotal),'']);
     var ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:6},{wch:12},{wch:5},{wch:7},{wch:7},{wch:9},{wch:9},{wch:13},{wch:70},{wch:14},{wch:20}];
+    ws['!cols']=[{wch:6},{wch:12},{wch:5},{wch:7},{wch:7},{wch:9},{wch:9},{wch:13},{wch:70},{wch:14},{wch:20},{wch:70}];
     XLSX.utils.book_append_sheet(wb,ws,'Ergebnisse');
+    if(warnSheet.length>1){var wsW2=XLSX.utils.aoa_to_sheet(warnSheet);wsW2['!cols']=[{wch:12},{wch:5},{wch:120}];XLSX.utils.book_append_sheet(wb,wsW2,'Warnungen');}
     XLSX.writeFile(wb,(m.projektname||'Stundenliste').replace(/[\\/:*?"<>|]/g,'_')+'_Ergebnisse.xlsx');
   });
 }
@@ -1671,12 +1685,12 @@ function exportErgebnissePDF(){
     '<div><b>Projekt:</b> '+escH(m.projektname||'—')+'</div><div><b>Zeitraum:</b> '+escH(m.startDatum)+' – '+escH(m.endDatum)+'</div>'+
     '<div><b>Berufsgruppe:</b> '+escH(pi>=0?GR.berufLabel(pi,m.berufCustom):'—')+'</div><div><b>Gagentabelle:</b> '+escH(GR.YEARS[yi]||'—')+'</div>'+
     '<div><b>Wochenpauschalgage:</b> '+fe3(pg)+'</div><div><b>Wochenmodell:</b> '+(function(){var vs=Object.values(state.wochen).map(function(w){return w.wmod;}).filter(Boolean);return vs.length&&vs.every(function(v){return v===vs[0]})?vs[0]+'-Tage':'wechselnd – siehe KW';})()+'</div></div>';
-  html+='<table><tr><th>Datum</th><th>Tag</th><th>Von</th><th>Bis</th><th>Netto h</th><th>Nacht h</th><th>FK-ÜSt h</th><th>Zuschläge</th><th>Summe</th></tr>';
+  html+='<table><tr><th>Datum</th><th>Tag</th><th>Von</th><th>Bis</th><th>Netto h</th><th>Nacht h</th><th title="Stunden über dem Tageslimit (12 h im 5-Tage-, 10 h im 6-Tage-Modell, Samstag 10 h): darauf wirkt der Faktor">Faktor-ÜSt h</th><th>Zuschläge</th><th>Summe</th></tr>';
   html+='<style>tr.msaldo td{background:#fff3cd;font-weight:700;font-size:10px}</style>';
   var s0=new Date(m.startDatum+'T12:00:00'),e0=new Date(m.endDatum+'T12:00:00');
   var sDate3=pd(m.startDatum),eDate3=pd(m.endDatum);
   var wks3=[];for(var d=new Date(s0);d<=e0;d.setDate(d.getDate()+1)){var w3=isoWk(d);if(wks3.indexOf(w3)<0)wks3.push(w3);}
-  var gT=0,mT=0,mLbl='';
+  var gT=0,mT=0,mLbl='',pdfNotes=[];
   wks3.forEach(function(wk){
     var wst=getWoche(wk);
     var wmod_wk=+wst.wmod||wmod;
@@ -1701,7 +1715,8 @@ function exportErgebnissePDF(){
       var dd=new Date(d.ds+'T12:00:00');
       var chips=res.s.map(function(cc){return escH(cc.l)+': '+fe3(cc.b);}).join(' &bull; ');
       if(t.ausserhalb&&res.nH>3)chips+=' &bull; Di\u00e4t: '+fe3(diaet);
-      html+='<tr><td>'+escH(d.ds)+'</td><td>'+DAYS4[dd.getDay()]+'</td><td>'+escH(t.von)+'</td><td>'+escH(t.bis)+'</td>'+
+      dayNotes(d.ds,t,res).forEach(function(x){pdfNotes.push(dShort(d.ds)+' ('+DAYS4[dd.getDay()]+'): '+x);});
+      html+='<tr><td>'+escH(d.ds)+'</td><td>'+DAYS4[dd.getDay()]+'</td><td>'+escH(t.von)+'</td><td>'+escH(bisLbl(d.ds,t))+'</td>'+
         '<td>'+GR.r2(res.nH)+'</td><td>'+GR.r2(res.nightH)+'</td><td>'+GR.r2(res.fh)+'</td>'+
         '<td style="font-size:9px">'+chips+'</td><td>'+fe3(res.total)+'</td></tr>';
     });
@@ -1715,6 +1730,7 @@ function exportErgebnissePDF(){
     html+='<tr><td colspan="9" style="padding:0;height:8px;background:#fff;border:none"></td></tr>';
   }
   html+='<tr class="gtot"><td colspan="8"><b>GESAMTSUMME</b></td><td><b>'+fe3(gT)+'</b></td></tr></table>';
+  if(pdfNotes.length)html+='<h2 style="font-size:12px;margin:10px 0 4px">Warnungen und manuell zu pr\u00fcfende Punkte</h2><ul style="font-size:10px;margin-left:16px">'+pdfNotes.map(function(x){return'<li>'+escH(x)+'</li>';}).join('')+'</ul>';
   html+='<p style="font-size:9px;color:#888;margin-top:8px">Orientierungswerte. KV Filmschaffende ab 1.7.2026. Erstellt: '+new Date().toLocaleDateString('de-AT')+'</p>';
   html+='</body></html>';
   // PDF via Browser-Druckdialog (zuverlässiger als html2canvas)
