@@ -181,7 +181,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
     <div class="fld">
       <label for="s-faktor">Faktor auf Gesamtentgelt für Stunden über Limit</label>
       <input type="number" id="s-faktor" value="1.5" min="1" step="0.1">
-      <p class="fn">Wird auf den vollen OL-Stundenlohn (Over-Limit, z.&thinsp;B. ab der 12. Arbeitsstunde bei 5-Tage-Woche) angewendet — inkl. ÜSt- und Nachtzuschlag, nicht nur auf den Grundlohn. Kein KV-Zuschlag, frei vereinbar. Standard: 1,5. → <a href="ueberstundenrechner.html" style="color:inherit">Rechner</a></p>
+      <p class="fn">Wird auf den vollen OL-Stundenlohn (Over-Limit, für Arbeitszeit über 12 Stunden im 5-Tage-Modell bzw. über 10 Stunden im 6-Tage-Modell) angewendet — inkl. ÜSt- und Nachtzuschlag, nicht nur auf den Grundlohn. Kein KV-Zuschlag, frei vereinbar. Standard: 1,5. → <a href="ueberstundenrechner.html" style="color:inherit">Rechner</a></p>
     </div>
     <div class="fld">
       <label for="s-diaet">Diäten außerhalb Firmensitz (>3h, §17)</label>
@@ -333,7 +333,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 
     <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
       <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Ersatzruhe nicht dokumentiert</strong>
-      So/FT-Arbeit und Sondernächte können Anspruch auf bezahlte Ersatzruhe begründen. Separat mit dem Arbeitgeber dokumentieren.
+      KV §10 Abs.2: Bei Sonn- und Feiertagsarbeit gebührt zusätzlich ein bezahlter Ersatzruhetag (Hinweis pro Woche); Sondernächte (§11 Abs.3) bis max. einen Ersatzruhetag. Nach ARG §6 entsteht Ersatzruhe nur für Arbeit in den 36&nbsp;Stunden vor Wiederaufnahme der Arbeit in der Folgewoche. Der Zuschlag entfällt bei Einzeltagen ohne Arbeitsverhältnis 3&nbsp;Tage davor und danach (§10 Abs.4) – nicht automatisch berücksichtigt. Ersatzruhe separat mit dem Arbeitgeber dokumentieren. Tagesart je Tag manuell wählbar.
     </div>
 
     <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
@@ -348,7 +348,7 @@ table.st td.datum-cell{white-space:nowrap;width:76px;font-size:.76rem}
 
     <div style="background:var(--warnbg);border:1px solid #e8b4bc;border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
       <strong style="display:block;color:var(--rot);margin-bottom:4px">⚠ Teilwochenberechnung (§8 KV)</strong>
-      Gezählt werden Arbeitstage (ohne arbeitsfreie Tage) im Projektzeitraum ÷ 5 oder ÷ 6. Unterschiede zu vertraglichen Regelungen (§8 KV) manuell prüfen. manuell prüfen.
+      Gezählt werden alle Projektkalendertage im Projektzeitraum (auch Samstag und Sonntag, ohne Rücksicht auf eingetragene Stunden) ÷ 5 oder ÷ 6. Unterschiede zu vertraglichen Regelungen (§8 KV) manuell prüfen.
     </div>
 
     <div style="background:var(--infobg);border:1px solid var(--infobord);border-radius:5px;padding:12px 14px;font-size:.8rem;line-height:1.6">
@@ -472,11 +472,31 @@ function holidays(y){
   _hc[y]=h;return h;
 }
 function isHol(ds){return holidays(+ds.slice(0,4)).has(ds)}
-function dayType(ds){
+function calType(ds){
   if(isHol(ds))return'feiertag';
   var d=new Date(ds+'T12:00:00').getDay();
   if(d===0)return'sonntag';if(d===6)return'samstag';return'werktag';
 }
+/* Tagesart: manuelle Wahl (state.tage[ds].typ) hat Vorrang vor dem österr. Kalender (calType) */
+var TYP_OK={werktag:1,samstag:1,sonntag:1,feiertag:1};
+function dayType(ds){
+  var t=(typeof state!=='undefined'&&state.tage)?state.tage[ds]:null;
+  if(t&&t.typ&&TYP_OK[t.typ])return t.typ;
+  return calType(ds);
+}
+var optOpen={};
+var wkCollapsed={}; // eingeklappte Wochen (bleiben beim Neuzeichnen erhalten) // geöffnete Optionspanels (nicht gespeichert)
+function projDays(){
+  var out=[],a=pd(state.meta.startDatum),b=pd(state.meta.endDatum);
+  if(!a||!b||a>b)return out;
+  for(var d=new Date(a);d<=b;d.setDate(d.getDate()+1))out.push(ymd(d));
+  return out;
+}
+function ersatzDays(){var a=projDays();if(!a.length)return a;var last=pd(a[a.length-1]);for(var i=1;i<=14;i++)a.push(ymd(addD(last,i)));return a;}
+function nextWeekKey(ds){var d=new Date(ds+'T12:00:00');return isoWk(addD(d,8-(d.getDay()||7)));}
+function optCode(t){var a=[];if(t.tausch)a.push('tausch='+t.tausch);if(t.ersatz)a.push('ersatz='+t.ersatz);if(t.einzel)a.push('einzel=1');return a.join(';');}
+function parseOpt(c){var o={tausch:'',ersatz:'',einzel:false};String(c||'').split(';').forEach(function(p){var kv=p.split('=');var k=(kv[0]||'').trim(),v=(kv[1]||'').trim();if(k==='tausch'&&/^[abc]$/.test(v))o.tausch=v;else if(k==='ersatz'&&/^\d{4}-\d{2}-\d{2}$/.test(v))o.ersatz=v;else if(k==='einzel'&&v==='1')o.einzel=true;});return o;}
+function isOptDay(t){return !!(t&&(t.tausch||t.ersatz||t.einzel));}
 var TNAME=['So','Mo','Di','Mi','Do','Fr','Sa'];
 var MNAME=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
 
@@ -576,6 +596,10 @@ function pauseLage(vonStr,pauseVonStr,netH,pm){
 /* Tageszuschläge — Faktor multipliziert Gesamtentgelt der OL-Stunden (inkl. Zuschläge) */
 function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErhalten){
   var typ=dayType(ds);
+  var typ0=typ; // Tagesart vor Tausch-/Einzeltag-Option (für Faktorgrenze)
+  var _o=(typeof state!=='undefined'&&state.tage)?state.tage[ds]:null;
+  var tausch=(_o&&(typ==='sonntag'||typ==='feiertag'))?(_o.tausch||''):'';
+  var einzel=!!(_o&&_o.einzel&&(typ==='sonntag'||typ==='feiertag'));
   var vv=pt(v),bb=pt(b);
   if(vv===null||bb===null)return{s:[],total:0,nH:0,nightH:0,fh:0,thr:12,warns:[]};
   if(bb<=vv)bb+=1440;
@@ -593,7 +617,7 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
   if(basis==='mindest'&&pi>=0){std=GR.mindestStundenlohn(pi,yi);tg=GR.mindestTagesgage(pi,yi);}
   else{std=GR.stundenlohnVon(pg);tg=GR.tagesgageVon(pg);}
   var vstd=GR.stundenlohnVon(pg);
-  var thr=(wmod===6)?10:(typ==='samstag'?10:12);
+  var thr=(wmod===6)?10:(typ0==='samstag'?10:12);
   var fh=Math.max(0,nH-thr);
   var s=[],warns=[];
 
@@ -675,8 +699,18 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
   }
 
   // 1. So/FT-Tageszuschlag (Tagesgage, unverändert)
-  if((typ==='sonntag'||typ==='feiertag')&&nH>0)
-    s.push({l:typ==='feiertag'?'Feiertagszuschlag (\u00a710)':'Sonntagszuschlag (\u00a710)',b:GR.r2(tg),typ:'so'});
+  if((typ==='sonntag'||typ==='feiertag')&&nH>0){
+    if(einzel){
+      warns.push('\u2139 \u00a710 Abs.4: kein So/FT-Zuschlag (Einzeltag) \u2013 Voraussetzung selbst pr\u00fcfen. Ersatzruhe nach ARG gesondert pr\u00fcfen (\u00a710 Abs.4 nennt nur die Zuschl\u00e4ge).');
+    } else if(tausch==='b'){
+      warns.push('\u2139 Tausch: Zeitausgleich statt Zuschlag (\u00a710 Abs.2 nicht gerechnet) \u2013 Rechtsfrage offen');
+    } else if(tausch==='c'){
+      if(typ==='sonntag')s.push({l:'Verschiebung auf Sonntag 25% Tagesgage (\u00a76 Abs.2, \u00a710 Abs.5)',b:GR.r2(tg*0.25),typ:'so'});
+      else warns.push('\u26a0 \u00a76 Abs.2 regelt die 25%-Verschiebung nur f\u00fcr Samstag/Sonntag, nicht f\u00fcr Feiertage \u2013 kein Zuschlag gerechnet');
+    } else {
+      s.push({l:typ==='feiertag'?'Feiertagszuschlag (\u00a710)':'Sonntagszuschlag (\u00a710)',b:GR.r2(tg),typ:'so'});
+    }
+  }
 
   // 2. Nacht within limit: NAZ/OT-Aufteilung an tatsächlicher 8h-Grenze (nazEndM)
   addWithinNight(nazNightEarlyM/60,otNightEarlyM/60,earlySnt); // Frühsegment
@@ -752,6 +786,9 @@ function daySurcharges(ds,v,b,pm,pauseVon,pg,pi,yi,basis,wmod,faktor,bezPauseErh
     s.push({l:'Bez. Pause nicht erhalten \u2013 Anspr. \u00a75 Abs.\u00a04 (0,5h)',b:GR.r2(vstd*0.5),typ:'warn'});
 
   // 6. Warnungen
+  if(einzel&&nightH>0.01)warns.push('\u26a0 \u00a711 Abs.5: \u00a710 Abs.4 gilt sinngem\u00e4\u00df auch f\u00fcr Nachtzuschl\u00e4ge \u2013 hier NICHT automatisch entfernt, bitte pr\u00fcfen');
+  if(bb>1440&&(typ0!=='werktag'||dayType(ymd(addD(new Date(ds+'T12:00:00'),1)))!=='werktag'))
+    warns.push('\u26a0 Schicht \u00fcberschreitet Mitternacht: Sa-/So-/Feiertagszuschl\u00e4ge werden nicht nach Kalendertagen getrennt \u2013 manuell pr\u00fcfen');
   if(nH>12)warns.push('\u26a0 \u00dcber 12h Arbeitszeit \u2013 arbeitszeitrechtlich pr\u00fcfen (\u00a77)');
   var mmdd=ds.slice(5);
   if(mmdd==='12-24')warns.push('\u26a0 24.12.: KV-NAZ endet nach 4h\u00a0/\u00a0sp\u00e4testens 12:00 Uhr');
@@ -773,12 +810,15 @@ var state={
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 function load(){try{var s=localStorage.getItem(KEY);if(s)state=JSON.parse(s)}catch(e){}}
 function getTag(ds){
-  if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:true,notiz:''};
+  if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:true,notiz:'',typ:'',tausch:'',ersatz:'',einzel:false};
   var t=state.tage[ds];
   // Migration: alte Datensätze ohne neue Felder
   if(t.pauseVon===undefined)t.pauseVon='';
   if(t.bezPause===undefined)t.bezPause=false;
   if(t.ausserhalb===undefined)t.ausserhalb=false;
+  if(t.tausch===undefined)t.tausch='';
+  if(t.ersatz===undefined)t.ersatz='';
+  if(t.einzel===undefined)t.einzel=false;
   return t;
 }
 function getWoche(wk){
@@ -937,6 +977,27 @@ function renderAll(){
   gb.style.display='';
 }
 
+function optPanelHTML(d,t,typ,nH,dis){
+  if(!optOpen[d.ds]||dis)return'';
+  var sw=(typ==='sonntag'||typ==='feiertag');
+  var h='<tr class="optrow" data-optrow="'+d.ds+'"><td colspan="11" style="background:var(--bg2,#f6f6f6);padding:6px 10px;font-size:.75rem">';
+  h+='<b>Optionen '+TNAME[new Date(d.ds+'T12:00:00').getDay()]+' '+dShort(d.ds)+'</b> &nbsp; ';
+  if(!sw){
+    h+='<span style="color:var(--grau)">Tausch-/Ersatzruhe-Optionen gibt es nur an Sonn- und Feiertagen (Tagesart oben ggf. anpassen). Samstags-Verschiebung folgt in Etappe 2.</span>';
+  } else {
+    h+='<label>Behandlung: <select data-date="'+d.ds+'" data-field="tausch" style="font-size:.72rem">'+
+      [['','Sonntag/Feiertag normal: 100 % + Ersatzruhetag (§10 Abs.2)'],
+       ['a','Tausch (a): wie Sonntag – 100 % + Ersatzruhetag, Tauschtag frei'],
+       ['b','Tausch (b): Zeitausgleich, kein Zuschlag, verknüpfter freier Tag'],
+       ['c','Tausch (c): Verschiebung, 25 % Tagesgage (§6 Abs.2 / §10 Abs.5)']
+      ].map(function(o){return'<option value="'+o[0]+'"'+((t.tausch||'')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></label> &nbsp; ';
+    h+='<label>Freier Tag / Ersatzruhetag: <select data-date="'+d.ds+'" data-field="ersatz" style="font-size:.72rem"><option value="">– keiner –</option>'+
+      ersatzDays().filter(function(x){return x!==d.ds}).map(function(x){var dw=TNAME[new Date(x+'T12:00:00').getDay()];return'<option value="'+x+'"'+(t.ersatz===x?' selected':'')+'>'+dw+' '+dShort(x)+'</option>'}).join('')+'</select></label> &nbsp; ';
+    h+='<label title="§10 Abs.4: kein Anspruch, wenn unmittelbar davor und danach mind. 3 Tage kein aufrechtes Arbeitsverhältnis mit demselben Arbeitgeber bestand"><input type="checkbox" data-date="'+d.ds+'" data-field="einzel"'+(t.einzel?' checked':'')+'> Einzeltag (§10 Abs.4: kein Anspruch auf die Zuschläge; Ersatzruhe nach ARG bleibt zu prüfen)</label>';
+    h+='<div style="margin-top:4px;color:var(--grau)">Ersatzruhe nach ARG §6 Abs.1 in der Folgewoche. Ob ein Tauschtag den 100-%-Zuschlag ersetzt, ist im KV nicht geregelt (Frage an Younion) – (a) rechnet den Zuschlag, (b)/(c) nicht bzw. nur 25 %. Für den Ersatzruhetag wird kein Geld extra gerechnet (nur Status). Nachtzuschläge werden von diesen Optionen nicht verändert.</div>';
+  }
+  return h+'</td></tr>';
+}
 function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt){
   var mon=mondayOf(wk),sun=addDU(mon,6);
   var kwN=wk.split('-W')[1];
@@ -1007,6 +1068,40 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
     // Bez.Pause-Chip entfällt: Anspruch erscheint jetzt direkt als Zulage in den Surcharges
 
     // Typ-Badge
+    var calT=calType(d.ds),manuell=(typ!==calT);
+    var typOpts=[['','Auto ('+({werktag:'Werktag',samstag:'Samstag',sonntag:'Sonntag',feiertag:'Feiertag'})[calT]+')'],
+      ['werktag','Normaler Arbeitstag (kein Sa-/So-/Feiertagszuschlag)'],['samstag','Samstag: 100 % Stundenzuschlag ab 5. Std./15 Uhr (§ 10 Abs. 1)'],['sonntag','Sonntag: 100 % Tagesgage + Ersatzruhetag (§ 10 Abs. 2)'],['feiertag','Feiertag: 100 % Tagesgage + Ersatzruhetag (§ 10 Abs. 2)']];
+    var typSel='<select data-date="'+d.ds+'" data-field="typ" '+(dis?'disabled':'')+' style="font-size:.66rem;padding:1px 2px;max-width:120px;margin-top:2px;'+(manuell?'border:1px solid var(--rot);':'')+'" '+
+      'title="Tagesart. Auto = österreichischer Kalender (Sa/So/gesetzl. Feiertage nach §7 ARG). Manuelle Wahl überschreibt den Kalender – nur verwenden, wenn der Tag nach KV tatsächlich anders zu behandeln ist.">'+
+      typOpts.map(function(o){return'<option value="'+o[0]+'"'+((t.typ||'')===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select>';
+    var ersatzB='';
+    var soWork=(typ==='sonntag'||typ==='feiertag')&&nH>0;
+    var optBtn='<button type="button" data-opt="'+d.ds+'" '+(dis?'disabled':'')+' title="Tagesoptionen: Tausch, Ersatzruhetag, Einzeltag" style="background:none;border:1px solid var(--rand);border-radius:3px;cursor:pointer;font-size:.7rem;padding:0 4px;'+(isOptDay(t)?'color:var(--rot);border-color:var(--rot);':'')+'">\u2699</button>';
+    var optChips='';
+    if(soWork){
+      if(t.einzel)optChips+='<span class="chip chip-info" style="font-size:.62rem" title="§10 Abs.4 nennt nur die Zuschläge – Ersatzruhe nach ARG gesondert prüfen">Ersatzruhe: ARG prüfen</span>';
+      if(t.einzel)optChips+='<span class="chip chip-warn" style="font-size:.62rem" title="\u00a710 Abs.4: kein Anspruch auf die Zuschläge. Ersatzruhe nach ARG gesondert prüfen.">Einzeltag</span>';
+      else if(t.tausch==='b')optChips+='<span class="chip chip-info" style="font-size:.62rem" title="Zeitausgleich statt Zuschlag">Tausch ZA</span>';
+      else if(t.tausch==='c')optChips+='<span class="chip chip-info" style="font-size:.62rem" title="Verschiebung 25% Tagesgage">Verschiebung</span>';
+      if(!t.einzel&&t.tausch!=='c'&&t.ersatz)optChips+='<span class="chip chip-info" style="font-size:.62rem" title="Freier Tag/Ersatzruhe">frei: '+dShort(t.ersatz)+'</span>';
+    }
+    var linkedFrom=Object.keys(state.tage).filter(function(k){var x=state.tage[k];return x&&x.ersatz===d.ds&&!x.einzel&&x.tausch!=='c';});
+    if(linkedFrom.length&&!nH)optChips+='<span class="chip chip-ok" style="font-size:.62rem" title="Freier Tag zugeordnet zu Arbeit am '+linkedFrom.map(dShort).join(', ')+'">frei f\u00fcr '+linkedFrom.map(dShort).join(', ')+'</span>';
+    if(soWork&&!t.einzel&&t.tausch!=='b'&&t.tausch!=='c'){
+      if(!t.ersatz)optChips+='<span class="chip chip-warn" style="font-size:.62rem" title="KV \u00a710 Abs.2: bezahlter Ersatzruhetag gebührt \u2013 noch keiner zugeordnet">Ersatzruhe offen</span>';
+      else if(isoWk(new Date(t.ersatz+'T12:00:00'))!==nextWeekKey(d.ds))dayWarnHtml+='<div style="font-size:.67rem;color:var(--rot);line-height:1.4;margin-top:2px">\u26a0 Ersatzruhe nicht in der Folgewoche (ARG \u00a76 Abs.1) \u2013 nur mit Vereinbarung zul\u00e4ssig</div>';
+      else if(nH>0&&t.ersatz&&getTag(t.ersatz).von)dayWarnHtml+='<div style="font-size:.67rem;color:var(--rot);line-height:1.4;margin-top:2px">\u26a0 Am Ersatzruhetag sind Arbeitsstunden eingetragen</div>';
+    }
+    if(soWork&&t.einzel){
+      // Plausibilitätshinweis: Nachbartage mit Stunden
+      var nb=false;for(var k=-3;k<=3;k++){if(!k)continue;var nds=ymd(addD(new Date(d.ds+'T12:00:00'),k));var nt=state.tage[nds];if(nt&&nt.von&&nt.bis)nb=true;}
+      var sD=state.meta.startDatum,eD=state.meta.endDatum;
+      if(sD&&eD&&d.ds>sD&&d.ds<eD)dayWarnHtml+='<div style="font-size:.67rem;color:var(--rot);line-height:1.4;margin-top:2px">\u26a0 \u00a710 Abs.4: Dieser Tag liegt mitten im Projektzeitraum \u2013 die Ausnahme greift nur, wenn davor und danach mind. 3 Tage kein aufrechtes Arbeitsverhältnis bestand (Vertrag pr\u00fcfen)</div>';
+      if(nb)dayWarnHtml+='<div style="font-size:.67rem;color:var(--rot);line-height:1.4;margin-top:2px">\u26a0 \u00a710 Abs.4: an den 3 Tagen davor/danach sind Stunden eingetragen \u2013 Einzeltag zweifelhaft</div>';
+    }
+    if(soWork)ersatzB='<span class="chip chip-info" style="font-size:.62rem" title="KV §10 Abs.2: zusätzlich bezahlter Ersatzruhetag. Zuschlag entfällt bei Einzeltag ohne Arbeitsverhältnis 3 Tage davor und danach (§10 Abs.4).">+ Ersatzruhetag</span>';
+    if(soWork&&(t.einzel||t.tausch==='b'||t.tausch==='c'))ersatzB='';
+    var manB=manuell?'<span class="chip chip-warn" style="font-size:.62rem" title="Tagesart manuell abweichend vom Kalender ('+calT+')">manuell</span>':'';
     var typB='';
     if(typ==='feiertag')typB='<span class="chip chip-so" style="font-size:.65rem">FT</span>';
     else if(typ==='sonntag')typB='<span class="chip chip-so" style="font-size:.65rem">So</span>';
@@ -1034,9 +1129,9 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
           (t.ausserhalb&&nH>0&&nH<=3?'<span style="color:var(--rot);font-size:.65rem" title="Netto ≤3h – keine Diät">✕</span>':'')+
         '</label>':'')+
       '</td>'+
-      '<td class="zuschlag-cell">'+chips+' '+typB+dayWarnHtml+'</td>'+
+      '<td class="zuschlag-cell">'+chips+' '+typB+' '+(t.einzel||t.tausch?'':ersatzB)+' '+optChips+' '+manB+'<br>'+typSel+' '+optBtn+dayWarnHtml+'</td>'+
       '<td><input type="text" value="'+(t.notiz||'').replace(/"/g,'&quot;')+'" placeholder="…" data-date="'+d.ds+'" data-field="notiz" '+(dis?'disabled':'')+'></td>'+
-    '</tr>';
+    '</tr>'+optPanelHTML(d,t,typ,nH,dis);
   }).join('');
 
   // Woche-Stats-Zeile
@@ -1048,7 +1143,28 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
   if(wr.bezPauseAutoCount)statsItems.push('<span class="ok">'+wr.bezPauseAutoCount+'× Bez. Pause ✓ (auto)</span>');
   if(wr.bezPauseNichtErhalten>0)statsItems.push('<span class="warn">'+wr.bezPauseNichtErhalten+'× bez. Pause nicht erhalten (§5 Abs. 4)</span>');
   else if(wr.bezPauseFaellig>0&&!wr.bezPauseAutoCount)statsItems.push('<span class="ok">'+wr.bezPauseFaellig+'× bez. Pause ✓</span>');
-  if(wr.warn60h?wr.warn60h:false){}
+  var nWorked=0;
+  days.forEach(function(d){var q=state.tage[d.ds];if(d.inRange&&q&&q.von&&q.bis)nWorked++;});
+  if(wmod===5&&nWorked>=6)statsItems.push('<span class="warn" title="KV §7 Abs.2 bzw. WKO-Erläuterung: Mo–Sa je 10 h. Im 5-Tage-Modell rechnet der Rechner mit der Faktorgrenze 12 h je Tag.">\u26a0 '+nWorked+' Arbeitstage in einer 5-Tage-Woche – <a href="#" data-sw6="'+wk+'" style="color:inherit;text-decoration:underline">auf 6-Tage-Modell (Faktorgrenze 10 h) umstellen</a></span>');
+  // Freier Tag/Ersatzruhetag in dieser Woche -> reguläre Arbeitstage begrenzen (ohne So/FT-Arbeit, die hat eigene Ersatzruhe)
+  var wkDs=days.map(function(d){return d.ds;});
+  var freeInWk=Object.keys(state.tage).filter(function(k){var x=state.tage[k];return x&&x.ersatz&&wkDs.indexOf(x.ersatz)>=0&&!x.einzel&&x.tausch!=='c';}).map(function(k){return state.tage[k].ersatz;});
+  freeInWk=freeInWk.filter(function(v,i,a){return a.indexOf(v)===i;});
+  if(freeInWk.length){
+    var regWorked=days.filter(function(d){var q=state.tage[d.ds];if(!(d.inRange&&q&&q.von&&q.bis))return false;var ty=dayType(d.ds);return ty!=='sonntag'&&ty!=='feiertag';}).length;
+    var maxReg=wmod-freeInWk.length;
+    if(regWorked>maxReg)statsItems.push('<span class="warn" title="Ein Ersatzruhe-/Tauschtag fällt in diese Woche (frei: '+freeInWk.map(dShort).join(', ')+'). Im '+wmod+'-Tage-Modell bleiben dann höchstens '+maxReg+' reguläre Arbeitstage. Mehr Arbeitstage heben die Ersatzruhe faktisch auf – Samstagsarbeit/Überstunden und Anspruch prüfen.">\u26a0 Freier Tag '+freeInWk.map(dShort).join(', ')+' in dieser Woche, aber '+regWorked+' Arbeitstage (max. '+maxReg+' im '+wmod+'-Tage-Modell)</span>');
+  }
+  var ersatzN=0,ersatzOk=0,saSpaet=0;
+  days.forEach(function(d){
+    if(!d.inRange)return;
+    var tt=getTag(d.ds);if(!tt.von||!tt.bis)return;
+    var ty=dayType(d.ds),rr=daySurcharges(d.ds,tt.von,tt.bis,+tt.pause||0,tt.pauseVon||'',pg,pi,yi,basis,wmod,faktor,tt.bezPause);
+    if((ty==='sonntag'||ty==='feiertag')&&rr.nH>0&&!tt.einzel&&tt.tausch!=='b'&&tt.tausch!=='c'){ersatzN++;if(tt.ersatz)ersatzOk++;}
+    if(ty==='samstag'){var b2=pt(tt.bis),v2=pt(tt.von);if(b2!==null&&v2!==null&&(b2<=v2||b2>13*60))saSpaet++;}
+  });
+  if(ersatzN)statsItems.push('<span class="warn" title="KV §10 Abs.2: zusätzlich zum Zuschlag gebührt ein bezahlter Ersatzruhetag. Lage: ARG §6 Abs.5 unmittelbar vor der nächsten wöchentlichen Ruhezeit, sofern nichts anderes vereinbart.">'+ersatzN+'× bezahlter Ersatzruhetag (KV §10 Abs.2), davon '+ersatzOk+' zugeordnet</span>');
+  if(saSpaet)statsItems.push('<span title="ARG §3 Abs.2: Die Wochenendruhe beginnt spätestens Samstag 13 Uhr. Arbeit danach fällt in die Wochenendruhe; Ersatzruhe nach ARG §6 und mögliche Ausnahmen (ARG-VO) prüfen. Der KV sieht für Samstage keinen Ersatzruhetag vor.">Sa-Arbeit nach 13:00 – ARG-Wochenendruhe berührt</span>');
   // Ruhezeit-Warnungen aus globalem ruheVerletzt (wird in weekHTML übergeben)
   var ruheWarnDays=days.filter(function(d){return ruheVerletzt&&ruheVerletzt[d.ds];});
   if(ruheWarnDays.length)ruheWarnDays.forEach(function(d){
@@ -1061,11 +1177,12 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
     '<div style="display:flex;align-items:center;gap:10px">'+
       wmodSel+
       '<span class="woche-kenn">'+fe(wr.total)+'</span>'+
-      '<button style="background:none;border:none;cursor:pointer;color:var(--grau);font-size:.85rem" aria-label="Aufklappen">▾</button>'+
+      (wkCollapsed[wk]?'<span style="font-size:.72rem;color:var(--rot)">eingeklappt – '+days.filter(function(d){var q=state.tage[d.ds];return d.inRange&&q&&q.von&&q.bis;}).length+' Tag(e) mit Stunden</span>':'')+
+      '<button type="button" data-collapse="'+wk+'" style="background:none;border:1px solid var(--rand);border-radius:3px;cursor:pointer;color:'+(wkCollapsed[wk]?'var(--rot)':'var(--grau)')+';font-size:.85rem;padding:0 6px" aria-label="Woche auf-/zuklappen">'+(wkCollapsed[wk]?'▸ aufklappen':'▾ zuklappen')+'</button>'+
     '</div>'+
   '</div>'+
   teilBar+
-  '<div class="woche-body">'+
+  '<div class="woche-body"'+(wkCollapsed[wk]?' style="display:none"':'')+'>'+
   '<table class="st">'+
   '<thead><tr>'+
     '<th>Tag</th><th>Datum</th><th>Von</th><th>Bis</th>'+
@@ -1124,8 +1241,9 @@ document.addEventListener('focusin',function(e){
 function attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
   var header=el.querySelector('.woche-header');
   if(header){header.addEventListener('click',function(ev){
-    if(['INPUT','SELECT','BUTTON','LABEL'].includes(ev.target.tagName))return;
-    var b=el.querySelector('.woche-body');if(b)b.style.display=b.style.display==='none'?'':'none';
+    if(['INPUT','SELECT','LABEL'].includes(ev.target.tagName))return;
+    if(ev.target.tagName==='BUTTON'&&!ev.target.dataset.collapse)return;
+    wkCollapsed[wk]=!wkCollapsed[wk];renderAll();
   })}
   // kein Teilwoche-Dropdown mehr (folgt automatisch dem Wochenmodell)
   var wmodSel=el.querySelector('[data-wmod]');
@@ -1136,14 +1254,20 @@ function attachListeners(el,wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst){
     state.wochen[wk].teilwocheArt=(+this.value===6)?'sechstel':'fuenftel';
     save();renderAll();
   });}
+  el.querySelectorAll('[data-sw6]').forEach(function(a){a.addEventListener('click',function(ev){ev.preventDefault();var k=a.dataset.sw6;if(!state.wochen[k])state.wochen[k]={};state.wochen[k].wmod=6;state.wochen[k].teilwocheArt='sechstel';save();renderAll();});});
+  el.querySelectorAll('[data-opt]').forEach(function(b){
+    b.addEventListener('click',function(ev){ev.stopPropagation();var k=b.dataset.opt;optOpen[k]=!optOpen[k];renderAll();});
+  });
   el.querySelectorAll('[data-date]').forEach(function(inp){
     function sv(){
       var ds=inp.dataset.date,f=inp.dataset.field;
-      if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:true,notiz:''};
+      if(!state.tage[ds])state.tage[ds]={von:'',bis:'',pause:30,pauseVon:'',bezPause:false,ausserhalb:true,notiz:'',typ:'',tausch:'',ersatz:'',einzel:false};
       state.tage[ds][f]=inp.type==='checkbox'?inp.checked:(f==='pause'?+inp.value:inp.value);
       save();
     }
-    if(inp.type==='time'){
+    if(inp.tagName==='SELECT'&&(inp.dataset.field==='typ'||inp.dataset.field==='tausch'||inp.dataset.field==='ersatz')){
+      inp.addEventListener('change',function(){sv();renderAll();});
+    } else if(inp.type==='time'){
       // Zeitfelder: speichern sofort, rendern erst nach blur
       // → nativer Browser-Picker (Maus, Touch, Tastatur) bleibt ungestört offen
       inp.addEventListener('change',sv);
@@ -1362,7 +1486,7 @@ function exportEingabenXLSX(){
     rows.push(['Faktor ÜSt über Limit:',m.faktor||1.5]);
     rows.push(['Diät (€/Tag):',m.diaet||15.40]);
     rows.push([]);
-    rows.push(['Datum','Wochentag','Von','Bis','Pause (Min)','Pause ab','Außerhalb (j/n)','Notiz','Bez. Pause erhalten (j/n)']);
+    rows.push(['Datum','Wochentag','Von','Bis','Pause (Min)','Pause ab','Außerhalb (j/n)','Notiz','Bez. Pause erhalten (j/n)','Tagesart (leer=Auto)','Optionen']);
     var DAYS2=['So','Mo','Di','Mi','Do','Fr','Sa'];
     var s0=new Date(m.startDatum+'T12:00:00'),e0=new Date(m.endDatum+'T12:00:00');
     for(var d=new Date(s0);d<=e0;d.setDate(d.getDate()+1)){
@@ -1376,11 +1500,11 @@ function exportEingabenXLSX(){
               var nh2=Math.max(0,bb2-vv2-(+t.pause||0))/60;if(nh2>9)return 'j (auto)';}
           }
           return t.bezPause===true?'j':t.bezPause===false?'n':'';
-        }())]);
+        }()),t.typ||'',optCode(t)]);
 
     }
     var ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:14},{wch:7},{wch:7},{wch:7},{wch:13},{wch:20},{wch:16},{wch:32},{wch:24}];
+    ws['!cols']=[{wch:14},{wch:7},{wch:7},{wch:7},{wch:13},{wch:20},{wch:16},{wch:32},{wch:24},{wch:18},{wch:34}];
     XLSX.utils.book_append_sheet(wb,ws,'Eingaben');
     // Wochen-Sheet: individuelle Wochenmodelle und Teilwochenart sichern
     var wRows=[['KW','Wochenmodell','Teilwochenart']];
@@ -1407,8 +1531,10 @@ function importFromXLSX(file){
         state.meta.projektname=cell(4,1);
         state.meta.startDatum =cell(5,1);
         state.meta.endDatum   =cell(6,1);
-        var bi=GR.POS.findIndex(function(p){return p[0]===cell(7,1);});
-        if(bi>=0)state.meta.berufIndex=bi;
+        var berufText=cell(7,1);
+        var bi=GR.POS.findIndex(function(p){return p[0]===berufText;});
+        if(bi>=0){state.meta.berufIndex=bi;state.meta.berufCustom='';}
+        else if(berufText){state.meta.berufIndex=GR.CUSTOM_IDX;state.meta.berufCustom=berufText;}
         var ji=GR.YEARS.findIndex(function(y){return y===cell(8,1);});
         if(ji>=0)state.meta.jahrIndex=ji;
         var gage=parseFloat(cell(9,1));if(!isNaN(gage))state.meta.pauschalgage=gage;
@@ -1417,14 +1543,16 @@ function importFromXLSX(file){
         var bpCell=cell(12,1);state.meta.bezPauseAuto=bpCell.toLowerCase().includes('ja');
         var fak=parseFloat(cell(13,1));if(!isNaN(fak))state.meta.faktor=fak;
         var dv=parseFloat(cell(14,1));if(!isNaN(dv))state.meta.diaet=dv;
-        state.tage={};
+        state.tage={};state.wochen={};
         for(var i=16;i<rows.length;i++){
           var ds2=cell(i,0);
           if(!/^\d{4}-\d{2}-\d{2}$/.test(ds2))continue;
           var pm2=rows[i][4];var bp2=cell(i,8).toLowerCase();
           state.tage[ds2]={von:cell(i,2),bis:cell(i,3),pause:pm2!==''?+pm2:0,pauseVon:cell(i,5),
             ausserhalb:cell(i,6).toLowerCase()==='j',notiz:cell(i,7),
-            bezPause:bp2===''?null:bp2.startsWith('j')};
+            bezPause:bp2===''?null:bp2.startsWith('j'),
+            typ:TYP_OK[cell(i,9)]?cell(i,9):''};
+          var po=parseOpt(cell(i,10));state.tage[ds2].tausch=po.tausch;state.tage[ds2].ersatz=po.ersatz;state.tage[ds2].einzel=po.einzel;
         }
         // Wochen-Sheet einlesen wenn vorhanden
         if(wb.SheetNames.length>1){
