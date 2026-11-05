@@ -242,18 +242,20 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
           <ul>
             <li>Projektzeitraum mit automatischer Wochenstruktur</li>
             <li>Mittagspause mit Lagekontrolle (≤ 6h nach Arbeitsbeginn)</li>
-            <li>Nacht-, Samstags- und Feiertagszuschläge zeitgenau</li>
+            <li>Nacht-, Samstags-, Sonn- und Feiertagszuschläge nach Starttag der Schicht</li>
+            <li>Tagesoptionen je Tag: Tausch/Zeitausgleich, Ersatzruhetag, Einzeltag</li>
+            <li>Warnungen bei offenen KV-Fragen, Ruhezeit und Arbeitstagen pro Woche — auch im Export</li>
             <li>Faktor-Überstunden ab 12h/Tag (5T) bzw. 10h/Tag (6T) — pro Woche einstellbar</li>
             <li>Bezahlte Pflichtpause §5 Abs. 4 und Abrechnungspraxis dokumentierbar</li>
             <li>Außerhalb-Checkbox für Diäten §17</li>
-            <li>Excel-Sicherung (Eingaben) und Excel/PDF-Ergebnisexport</li>
+            <li>Excel-Sicherung (Eingaben), Excel-Ergebnisexport und Druckansicht (als PDF speichern)</li>
             <li>Import gesicherter Excel-Daten</li>
           </ul>
         </div>
         <div class="marken-reihe">
           <span class="tag">Lokal gespeichert</span>
           <span class="tag">Excel Import/Export</span>
-          <span class="tag">PDF-Download</span>
+          <span class="tag">Druck / PDF</span>
         </div>
         <div class="tool-fuss">
           <a class="btn btn-prim" href="stundenrechner.html">Zur Stundenliste →</a>
@@ -340,14 +342,14 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
     <h2>Haftungsausschluss</h2>
 
     <div class="warn-box">
-      <strong>Kein Ersatz für Rechtsberatung.</strong> Diese Tools wurden mit großer Sorgfalt auf Basis des Kollektivvertrags Filmschaffende erstellt, ersetzen jedoch keine rechtliche oder steuerliche Beratung. Für verbindliche Auskünfte wende dich an younion – Die Younion, die WKO Fachgruppe Film- und Musikwirtschaft oder einen Rechtsanwalt.
+      <strong>Kein Ersatz für Rechtsberatung.</strong> Diese Tools wurden mit großer Sorgfalt auf Basis des Kollektivvertrags Filmschaffende erstellt, ersetzen jedoch keine rechtliche oder steuerliche Beratung. Für verbindliche Auskünfte wende dich an younion – Die Daseinsgewerkschaft, die WKO Fachgruppe Film- und Musikwirtschaft oder einen Rechtsanwalt.
     </div>
 
     <div class="two-col">
       <div class="info-box">
         <h3>Richtigkeit der Berechnungen</h3>
         <p>Alle Berechnungen basieren auf dem Kollektivvertrag Filmschaffende in der jeweils angegebenen Fassung. Die Mindestgagentarife wurden aus den offiziellen Tabellen der WKO und younion entnommen. Trotz sorgfältiger Erstellung wird keine Gewähr für die Richtigkeit, Vollständigkeit oder Aktualität der Ergebnisse übernommen.</p>
-        <p>Insbesondere zum Widerspruch in §10 Abs. 1 und §10 Abs. 6 KV ab 1.7.2026 (Berechnungsbasis Sa/So/Feiertag-Zuschläge) steht eine Klärung durch die Schiedskommission aus. Der Rechner zeigt beide Lesarten.</p>
+        <p>Insbesondere zum Widerspruch in §10 Abs. 1 und §10 Abs. 6 KV ab 1.7.2026 (Berechnungsbasis Sa/So/Feiertag-Zuschläge) ist im KV-Text keine Klärung enthalten. Die Rechner zeigen beide Lesarten. Weitere offene Auslegungsfragen (z. B. Tausch- und Ersatzruhetage, Schichten über Mitternacht) kennzeichnet die Stundenliste als Warnung und rechnet sie nicht stillschweigend.</p>
       </div>
       <div class="info-box">
         <h3>Aktualität</h3>
@@ -357,7 +359,7 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
       <div class="info-box">
         <h3>Datenschutz</h3>
         <p>Diese Seite verwendet keine Cookies, keine Tracker und keine externen Dienste. Der Gagenrechner und der CO₂-Rechner speichern keinerlei Daten. Die Stundenliste speichert Eingaben ausschließlich lokal im Browser (localStorage) des jeweiligen Geräts – kein Server, keine Weitergabe.</p>
-        <p>Für Excel- und PDF-Export in der Stundenliste werden die Bibliotheken SheetJS und html2pdf.js bei Bedarf von <a href="https://cdnjs.cloudflare.com" target="_blank" rel="noopener">cdnjs.cloudflare.com</a> geladen (nur beim ersten Klick, nur wenn Internetverbindung vorhanden). Es werden dabei keine Nutzerdaten übertragen.</p>
+        <p>Für Excel-Export in der Stundenliste wird die Bibliothek SheetJS bei Bedarf von <a href="https://cdnjs.cloudflare.com" target="_blank" rel="noopener">cdnjs.cloudflare.com</a> geladen (nur beim ersten Klick, nur wenn Internetverbindung vorhanden). Es werden dabei keine Nutzerdaten übertragen. Die PDF-Ausgabe läuft über den Druckdialog des Browsers.</p>
         <p>Die Seite wird über GitHub Pages bereitgestellt. Es gelten die <a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener">Datenschutzbestimmungen von GitHub</a>.</p>
       </div>
       <div class="info-box">
@@ -386,7 +388,7 @@ footer{background:var(--schwarz);color:#9aa0a8;font-size:.8rem;
       </div>
       <div class="info-box">
         <h3>Quellen &amp; Grundlagen</h3>
-        <p>Kollektivvertrag für DienstnehmerInnen in österreichischen Filmproduktionsunternehmen (Filmschaffende), gültig ab 1.7.2026 — WKO Fachgruppe Film- und Musikwirtschaft / younion – Die Younion.</p>
+        <p>Kollektivvertrag für DienstnehmerInnen in österreichischen Filmproduktionsunternehmen (Filmschaffende), gültig ab 1.7.2026 — WKO Fachgruppe Film- und Musikwirtschaft / younion – Die Daseinsgewerkschaft.</p>
         <p>Mindestgagentarife 2024, 2025 und ab 1.7.2026 gemäß den publizierten Tabellen der Kollektivvertragsparteien.</p>
         <p>
           <a href="https://www.wko.at/kollektivvertrag" target="_blank" rel="noopener">wko.at/kollektivvertrag</a><br>

@@ -208,7 +208,7 @@
         §10 Abs. 1 verweist auf den Stundenlohn gemäß <strong>§9 Abs. 5</strong>
         (= vereinbarte Wochengage ÷ 40), während das neu eingefügte <strong>§10 Abs. 6</strong>
         (ebenso §11 Abs. 6) ausdrücklich den <em>Mindestgagentarif × 4,33 ÷ 173</em>
-        als Berechnungsgrundlage vorschreibt. Eine Klärung durch die Schiedskommission steht aus.
+        als Berechnungsgrundlage vorschreibt. Eine Klärung ist im KV-Text nicht enthalten.
       </p>
       <div class="kv-toggle-options" role="radiogroup" aria-label="Berechnungsbasis §10/§11">
         <label>
@@ -291,7 +291,7 @@
       Alle Berechnungen mit voller Präzision (keine Kaskadenrundung); gerundet wird nur die Anzeige.
       Mindestgagen-Vergleich centgerundet. Zum §10/§11-Toggle: §10 Abs. 1 verweist auf §9 Abs. 5
       (vereinbarte Wochengage ÷ 40), §10 Abs. 6 und §11 Abs. 6 schreiben den Mindestgagentarif × 4,33 ÷ 173
-      vor &ndash; ein Widerspruch im KV-Text ab 1.7.2026, der durch die Schiedskommission zu klären wäre.
+      vor &ndash; ein Widerspruch im KV-Text ab 1.7.2026, der von den Kollektivvertragsparteien zu klären wäre. Die Tageszuschläge (§10 Abs. 2 und 5) beruhen in beiden Varianten auf Wochengage ÷ 5; Abs. 6 regelt nur den Stundenlohn.
       Ohne Gewähr; maßgeblich ist der Kollektivvertrag.
     </p>
   </div><!-- /gr-ergebnis -->
@@ -418,10 +418,32 @@ var GR = (function () {
     return { nacht50: std * 0.5, sa100: std, saso: tg * 0.25, feiertag: tg };
   }
 
+  /* Offizielle Wochenpauschalgagen ab 1.7.2026 laut WKO-Tabelle, wo sie von der Formel (Wochengage × 1,385 × 1,2881166, gerundet) um einen Cent abweichen. */
+  var OFFIZIELL_PG_2026 = {
+    "Herstellungsleitung I 1)": 3808.71,
+    "1. Aufnahmeleitung II 2)": 1992.75,
+    "Musikaufnahmeleitung": 2151.06,
+    "Kamera I 1)": 5219.30,
+    "Kamera III 3)": 2981.89,
+    "Kamera im Verbund": 2248.62,
+    "Postproduktionskoordination": 1959.25,
+    "Digital Image Technician (DIT)": 1959.25,
+    "Data Wrangler": 1378.85,
+    "Außenrequisite": 1961.92,
+    "Maskenbild, Frisur": 2392.64,
+    "Filmarchitektassistenz (Szenenbildassistenz)": 2019.84,
+    "Medienfachkraft 4)": 1526.52,
+    "Motivaufnahmeleitung": 1671.19,
+    "Mischtonmeister:in": 3145.10,
+    "2. Tonassistenz": 1454.93,
+    "Best Boy/Girl": 1860.57
+  };
+
   /* Mindest-Pauschalgage (inkl. SZ/UEL) für das gewählte Jahr */
   function mindestPauschalgage(posIndex, yearIndex) {
     var minW = POSITIONS[posIndex][1 + yearIndex];
     if (!minW) return 0;
+    if (yearIndex === 2 && OFFIZIELL_PG_2026.hasOwnProperty(POSITIONS[posIndex][0])) return OFFIZIELL_PG_2026[POSITIONS[posIndex][0]];
     return r2(minW * P7 * F);
   }
 
@@ -635,8 +657,11 @@ var GR = (function () {
       : 'Vereinbarte Wochengrundgage ÷ 40 (§9 Abs. 5)';
     $('fn-nacht50').textContent = '§11 Abs. 2: 50 % des Stundenlohns für Nachtstunden (22–6 Uhr) in der NAZ — ' + bT;
     $('fn-sa100').textContent   = '§10 Abs. 1: 100 % des Stundenlohns ab der 5. Sa-Stunde / ab 15:00 — ' + bT;
-    $('fn-saso').textContent    = '§10 Abs. 5: 25 % der Tagesgage (Sa/So bei verschobener Arbeitswoche) — ' + bT.replace('Stundenlohn','Tagesgage');
-    $('fn-ft').textContent      = '§10 Abs. 2: 100 % der Tagesgage (Sonn-/Feiertag; Sonntagszuschlag nur ohne Verschiebung) — ' + bT.replace('Stundenlohn','Tagesgage');
+    var bTag = basis === 'mindest'
+      ? 'Tagesgage = Mindest-Wochengage ÷ 5 (Abs. 6 regelt nur den Stundenlohn; die Tagesbasis ist eine Auslegung)'
+      : 'Tagesgage = vereinbarte Wochengrundgage ÷ 5';
+    $('fn-saso').textContent    = '§10 Abs. 5: 25 % der Tagesgage (Sa/So bei verschobener Arbeitswoche) — ' + bTag;
+    $('fn-ft').textContent      = '§10 Abs. 2: 100 % der Tagesgage (Sonn-/Feiertag; Sonntagszuschlag nur ohne Verschiebung) — ' + bTag;
 
     // Mindestgagen-Check & Status
     $('w-min').textContent = minW === 0 ? 'freie Vereinbarung' : fmt(minW);
@@ -647,7 +672,10 @@ var GR = (function () {
       status.innerHTML = 'Freie Vereinbarung &ndash; für diese Berufsgruppe ist im KV keine Mindestgage festgelegt.';
     } else {
       var pct = (res.pct >= 0 ? '+' : '−') + pctF.format(Math.abs(res.pct * 100)) + '\u202f%';
-      if (res.status === 'ok') {
+      if (res.status === 'ok' && res.pct === 0) {
+        status.className = 'gr-status ok';
+        status.innerHTML = '✓ Deine Wochengrundgage entspricht der KV-Mindestgage.';
+      } else if (res.status === 'ok') {
         status.className = 'gr-status ok';
         status.innerHTML = '✓ Deine Wochengrundgage liegt über der KV-Mindestgage.'
           + '<span class="pct">' + pct + '</span>';

@@ -1173,7 +1173,7 @@ function weekHTML(wk,days,pg,wmod,faktor,basis,pi,yi,partial,wst,wr,ruheVerletzt
     if(ty==='samstag'){var b2=pt(tt.bis),v2=pt(tt.von);if(b2!==null&&v2!==null&&(b2<=v2||b2>13*60))saSpaet++;}
   });
   if(ersatzN)statsItems.push('<span class="warn" title="KV §10 Abs.2: zusätzlich zum Zuschlag gebührt ein bezahlter Ersatzruhetag. Lage: ARG §6 Abs.5 unmittelbar vor der nächsten wöchentlichen Ruhezeit, sofern nichts anderes vereinbart.">'+ersatzN+'× bezahlter Ersatzruhetag (KV §10 Abs.2), davon '+ersatzOk+' zugeordnet</span>');
-  if(saSpaet)statsItems.push('<span title="ARG §3 Abs.2: Die Wochenendruhe beginnt spätestens Samstag 13 Uhr. Arbeit danach fällt in die Wochenendruhe; Ersatzruhe nach ARG §6 und mögliche Ausnahmen (ARG-VO) prüfen. Der KV sieht für Samstage keinen Ersatzruhetag vor.">Sa-Arbeit nach 13:00 – ARG-Wochenendruhe berührt</span>');
+  if(saSpaet)statsItems.push('<span title="ARG §3 Abs.2: Die Wochenendruhe beginnt spätestens Samstag 13 Uhr. Arbeit danach fällt in die Wochenendruhe; Die ARG-VO erlaubt im Film laut Anlage Aufnahmen sowie Auf- und Abbau von Szenenbildern (Wortlaut im RIS prüfen), die Ersatzruhe nach ARG §6 bleibt aber bestehen. Der KV sieht für Samstage keinen Ersatzruhetag vor.">Sa-Arbeit nach 13:00 – ARG-Wochenendruhe berührt</span>');
   // Ruhezeit-Warnungen aus globalem ruheVerletzt (wird in weekHTML übergeben)
   var ruheWarnDays=days.filter(function(d){return ruheVerletzt&&ruheVerletzt[d.ds];});
   if(ruheWarnDays.length)ruheWarnDays.forEach(function(d){
@@ -1456,15 +1456,6 @@ function initSetup(){
 /* ====================================================
  * XLSX IMPORT / EXPORT
  * ==================================================== */
-function loadHtml2Pdf(cb){
-  if(window.html2pdf){cb();return;}
-  var s=document.createElement('script');
-  s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-  s.onload=cb;
-  s.onerror=function(){alert('html2pdf-Bibliothek nicht ladbar. Bitte Internetverbindung prüfen.');};
-  document.head.appendChild(s);
-}
-
 function loadXLSX(cb){
   if(window.XLSX){cb();return;}
   var s=document.createElement('script');
